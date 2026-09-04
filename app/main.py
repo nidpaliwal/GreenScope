@@ -408,7 +408,7 @@ class ReportGenerateResponse(BaseModel):
 reports_db = {}
 
 
-@app.get("/")
+@app.get("/", response_class=FileResponse)
 async def root():
     return FileResponse(os.path.join(os.path.dirname(__file__), "..", "static", "index.html"))
 
@@ -636,7 +636,32 @@ async def generate_report(request: ReportGenerateRequest):
     )
 
     reports_db[report_id] = response
-    save_report_to_db(report)
+    # Save to SQLite for persistence
+    report_dict = {
+        "report_id": report_id,
+        "location": location_str,
+        "latitude": lat,
+        "longitude": lng,
+        "environment": env,
+        "photo_analysis": photo_analysis,
+        "recommendations": [
+            {
+                "plant_name": r.plant_name,
+                "scientific_name": r.scientific_name,
+                "reasoning": r.reasoning,
+                "suitability_score": r.suitability_score,
+                "care_guide": r.care_guide,
+                "growth_duration": r.growth_duration,
+                "score_breakdown": r.score_breakdown,
+                "water_requirement": r.water_requirement,
+                "sun_requirement": r.sun_requirement,
+                "planting_season": r.planting_season,
+            } for r in recommendations
+        ],
+        "generated_at": time.time(),
+        "processing_time_ms": processing_time_ms,
+    }
+    save_report_to_db(report_dict)
     return response
 
 
