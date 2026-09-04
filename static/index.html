@@ -3,188 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GreenScope - AI Gardening Report Generator</title>
+    <title>GreenScope - AI Gardening Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f8fafc;
-            --fg: #0f172a;
-            --muted: #64748b;
-            --accent: #10b981;
-            --accent-hover: #059669;
-            --card: #ffffff;
-            --border: #e2e8f0;
-            --warning: #f59e0b;
-            --error: #ef4444;
+            --bg: #f8fafc; --fg: #0f172a; --muted: #64748b;
+            --accent: #10b981; --accent-hover: #059669;
+            --card: #ffffff; --border: #e2e8f0;
+            --warning: #f59e0b; --error: #ef4444;
         }
         * { box-sizing: border-box; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--fg);
-            min-height: 100vh;
-            margin: 0;
-        }
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            width: 100%;
-        }
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-        }
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .input-field {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid var(--border);
-            border-radius: 6px;
-            font-size: 16px;
-            background: white;
-            color: var(--fg);
-            transition: border-color 0.2s ease;
-        }
-        .input-field:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-        }
-        .card {
-            background: var(--card);
-            border-radius: 8px;
-            padding: 24px;
-            border: 1px solid var(--border);
-        }
-        .confidence-high {
-            background: rgba(16, 185, 129, 0.1);
-            border-left: 3px solid var(--accent);
-        }
-        .confidence-medium {
-            background: rgba(245, 158, 11, 0.1);
-            border-left: 3px solid var(--warning);
-        }
-        .confidence-low {
-            background: rgba(239, 68, 68, 0.1);
-            border-left: 3px solid var(--error);
-        }
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .status-ready {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--accent);
-        }
-        .status-waiting {
-            background: rgba(100, 116, 139, 0.1);
-            color: var(--muted);
-        }
-        .env-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 12px;
-        }
-        .env-stat {
-            text-align: center;
-            padding: 12px 8px;
-            border-radius: 6px;
-            background: var(--bg);
-        }
-        .env-stat .label {
-            font-size: 11px;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .env-stat .value {
-            font-size: 18px;
-            font-weight: 600;
-            margin-top: 4px;
-        }
-        .score-bar {
-            height: 8px;
-            border-radius: 4px;
-            background: var(--border);
-            overflow: hidden;
-            margin-top: 4px;
-        }
-        .score-bar-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.5s ease;
-        }
-        .photo-features {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        .photo-feature {
-            font-size: 12px;
-            padding: 4px 10px;
-            border-radius: 12px;
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--accent);
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-up {
-            animation: fadeInUp 0.5s ease-out forwards;
-        }
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
-        @media (max-width: 640px) {
-            .env-grid { grid-template-columns: repeat(3, 1fr); }
-        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; margin: 0; }
+        .btn-primary { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; width: 100%; }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .input-field { width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 6px; font-size: 16px; background: white; color: var(--fg); transition: border-color 0.2s ease; }
+        .input-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1); }
+        .card { background: var(--card); border-radius: 8px; padding: 24px; border: 1px solid var(--border); }
+        .confidence-high { background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--accent); }
+        .confidence-medium { background: rgba(245, 158, 11, 0.1); border-left: 3px solid var(--warning); }
+        .confidence-low { background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--error); }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .status-ready { background: rgba(16, 185, 129, 0.1); color: var(--accent); }
+        .status-waiting { background: rgba(100, 116, 139, 0.1); color: var(--muted); }
+        .env-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+        .env-stat { text-align: center; padding: 12px 8px; border-radius: 6px; background: var(--bg); }
+        .env-stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .env-stat .value { font-size: 16px; font-weight: 600; margin-top: 4px; }
+        .score-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+        .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+        .category-badge { display: inline-block; padding: 6px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; background: var(--bg); margin: 4px; }
+        .risk-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: var(--bg); margin-bottom: 6px; font-size: 13px; }
+        .risk-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .risk-good { background: var(--accent); }
+        .risk-warn { background: var(--warning); }
+        .risk-bad { background: var(--error); }
+        .comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .comp-table th { text-align: left; padding: 8px; border-bottom: 2px solid var(--border); color: var(--muted); font-size: 11px; text-transform: uppercase; }
+        .comp-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+        .photo-feature { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); color: var(--accent); display: inline-block; margin: 2px; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+        .delay-1 { animation-delay: 0.1s; } .delay-2 { animation-delay: 0.2s; } .delay-3 { animation-delay: 0.3s; }
     </style>
 </head>
 <body>
-    <nav class="border-b border-border/50 backdrop-blur-sm">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <nav class="border-b border-border/50">
+        <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <span class="text-xl font-bold" style="color: var(--fg);">GreenScope</span>
-                <span class="text-sm" style="color: var(--muted);">AI Gardening Intelligence</span>
+                <span class="text-xl font-bold" style="color:var(--fg);">GreenScope</span>
+                <span class="text-sm" style="color:var(--muted);">AI Gardening Intelligence</span>
             </div>
-            <span class="text-xs" style="color: var(--muted);">v0.0.2</span>
+            <span class="text-xs" style="color:var(--muted);">v0.0.3</span>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-6 py-8">
+    <main class="max-w-4xl mx-auto px-6 py-8">
         <section class="mb-8 animate-fade-in-up delay-1">
-            <div class="card max-w-2xl mx-auto text-center">
+            <div class="card text-center">
                 <h1 class="text-3xl font-bold tracking-tight mb-2">GreenScope</h1>
-                <p class="text-lg" style="color: var(--muted);">
-                    Discover what you can grow based on your location, soil, and garden conditions
-                </p>
+                <p class="text-lg" style="color:var(--muted);">Discover what you can grow based on your location, soil, and garden conditions</p>
             </div>
         </section>
 
         <section class="mb-8 animate-fade-in-up delay-2">
-            <div class="card max-w-2xl mx-auto">
+            <div class="card">
                 <form id="generateForm" novalidate>
                     <div class="grid grid-cols-1 gap-4 mb-6">
                         <div>
-                            <label class="block text-sm font-medium mb-2" for="location-select">
-                                Location <span class="text-red-500">*</span>
-                            </label>
+                            <label class="block text-sm font-medium mb-2" for="location-select">Location <span class="text-red-500">*</span></label>
                             <select id="location-select" class="input-field" required>
                                 <option value="" disabled selected>Select a location...</option>
                                 <option value="San Francisco, CA">San Francisco, CA</option>
@@ -195,78 +83,76 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-2" for="photo">
-                                Garden Photo (Optional)
-                            </label>
-                            <input type="file" id="photo" class="input-file hidden" accept="image/jpeg, image/png">
-                            <button type="button" class="btn-input flex items-center gap-2"
+                            <label class="block text-sm font-medium mb-2" for="photo">Garden Photo (Optional)</label>
+                            <input type="file" id="photo" class="hidden" accept="image/jpeg, image/png">
+                            <button type="button" id="photoBtn"
                                 style="width:100%;padding:12px 16px;border:2px dashed var(--border);border-radius:6px;background:white;cursor:pointer;color:var(--muted);"
                                 onclick="document.getElementById('photo').click()">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8m8 4h-8M4 6h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z"/>
-                                </svg>
                                 <span id="photoLabel">Upload Photo</span>
                             </button>
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary mt-6 py-3" disabled id="submitBtn">
+                    <button type="submit" class="btn-primary py-3" disabled id="submitBtn">
                         <span id="btnText">Analyze My Garden</span>
-                        <span id="btnLoading" class="hidden">
-                            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Analyzing...
-                        </span>
+                        <span id="btnLoading" class="hidden">Analyzing...</span>
                     </button>
                 </form>
             </div>
         </section>
 
-        <section id="resultsSection" class="hidden mb-8">
-            <div class="max-w-2xl mx-auto space-y-6">
+        <section id="resultsSection" class="hidden mb-8 space-y-6">
 
-                <div id="envCard" class="card animate-fade-in-up delay-1">
-                    <h2 class="text-lg font-bold mb-3">Location Environment</h2>
-                    <div id="envLocation" class="text-sm mb-3" style="color:var(--muted);"></div>
-                    <div id="envGrid" class="env-grid"></div>
-                </div>
+            <div id="envCard" class="card animate-fade-in-up delay-1">
+                <h2 class="text-lg font-bold mb-2">Location Environment</h2>
+                <div id="envLocation" class="text-sm mb-3" style="color:var(--muted);"></div>
+                <div id="envGrid" class="env-grid"></div>
+            </div>
 
-                <div id="photoCard" class="card hidden animate-fade-in-up delay-2">
-                    <h2 class="text-lg font-bold mb-3">Garden Analysis</h2>
-                    <div id="photoFeatures" class="photo-features"></div>
-                </div>
+            <div id="photoCard" class="card hidden animate-fade-in-up delay-2">
+                <h2 class="text-lg font-bold mb-2">Garden Analysis</h2>
+                <div id="photoFeatures"></div>
+            </div>
 
-                <div class="card animate-fade-in-up delay-3">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-bold">Plant Recommendations</h2>
-                        <span id="reportStatus" class="status-badge status-waiting">Generating...</span>
-                    </div>
-                    <div id="recommendations" class="space-y-4"></div>
-                    <div id="exportSection" class="mt-6 pt-6 border-t border-border/50">
-                        <button id="pdfBtn" class="btn-primary w-full mb-3" disabled>Download as PDF</button>
-                        <button id="shareBtn" class="btn-primary w-full" disabled>Share Report</button>
-                    </div>
+            <div id="riskCard" class="card animate-fade-in-up delay-2">
+                <h2 class="text-lg font-bold mb-2">Garden Health Assessment</h2>
+                <div id="riskGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3"></div>
+                <div id="riskWarnings"></div>
+            </div>
+
+            <div id="categoriesCard" class="card animate-fade-in-up delay-2">
+                <h2 class="text-lg font-bold mb-2">Best For You</h2>
+                <div id="categoriesGrid" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <div class="card animate-fade-in-up delay-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold">Plant Recommendations</h2>
+                    <span id="reportStatus" class="status-badge status-waiting">Generating...</span>
                 </div>
+                <div id="recommendations" class="space-y-4"></div>
+            </div>
+
+            <div id="comparisonCard" class="card animate-fade-in-up delay-4">
+                <h2 class="text-lg font-bold mb-3">Comparison Table</h2>
+                <div style="overflow-x:auto;">
+                    <table class="comp-table" id="compTable"></table>
+                </div>
+            </div>
+
+            <div id="rejectedCard" class="card animate-fade-in-up delay-4">
+                <h2 class="text-lg font-bold mb-2">Why Not These Plants?</h2>
+                <div id="rejectedList" class="space-y-3"></div>
+            </div>
+
+            <div class="card animate-fade-in-up delay-4">
+                <button id="pdfBtn" class="btn-primary w-full mb-3" disabled>Download as PDF</button>
+                <button id="shareBtn" class="btn-primary w-full" disabled>Share Report</button>
             </div>
         </section>
     </main>
 
-    <div id="reportModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center">
-        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-8 shadow-2xl" id="modalContent">
-            <h3 class="text-xl font-bold mb-4">Report Preview</h3>
-            <div id="modalReport" class="space-y-4"></div>
-            <button id="closeModal" class="btn-primary w-full mt-4">Close</button>
-        </div>
-    </div>
-
     <script>
-        const API = {
-            report: '/api/v1/generate-report',
-            geocode: '/api/v1/geocode',
-            reports: '/api/v1/reports/'
-        };
-
+        const API = { report: '/api/v1/generate-report', reports: '/api/v1/reports/' };
         let currentReportId = null;
 
         const form = document.getElementById('generateForm');
@@ -276,15 +162,13 @@
         const btnLoading = document.getElementById('btnLoading');
         const resultsSection = document.getElementById('resultsSection');
         const recommendationsDiv = document.getElementById('recommendations');
-        const envCard = document.getElementById('envCard');
-        const photoCard = document.getElementById('photoCard');
         const pdfBtn = document.getElementById('pdfBtn');
         const shareBtn = document.getElementById('shareBtn');
         const reportStatus = document.getElementById('reportStatus');
         const photoInput = document.getElementById('photo');
         const photoLabel = document.getElementById('photoLabel');
 
-        const LOCATION_COORDS = {
+        const COORDS = {
             'San Francisco, CA': { lat: 37.7749, lng: -122.4194 },
             'New York, NY': { lat: 40.7128, lng: -74.0060 },
             'Austin, TX': { lat: 30.2672, lng: -97.7431 },
@@ -292,25 +176,15 @@
             'Denver, CO': { lat: 39.7392, lng: -104.9903 },
         };
 
-        locationInput.addEventListener('change', () => {
-            submitBtn.disabled = !locationInput.value;
-        });
-
+        locationInput.addEventListener('change', () => { submitBtn.disabled = !locationInput.value; });
         photoInput.addEventListener('change', () => {
-            if (photoInput.files.length > 0) {
-                photoLabel.textContent = photoInput.files[0].name;
-            } else {
-                photoLabel.textContent = 'Upload Photo';
-            }
+            photoLabel.textContent = photoInput.files.length ? photoInput.files[0].name : 'Upload Photo';
         });
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const location = locationInput.value;
-            if (!location) {
-                alert('Please select a location');
-                return;
-            }
+            if (!location) return alert('Please select a location');
             let photoData = null;
             const file = photoInput.files[0];
             if (file) {
@@ -329,33 +203,19 @@
             submitBtn.disabled = true;
             btnText.classList.add('hidden');
             btnLoading.classList.remove('hidden');
-
-            const coords = LOCATION_COORDS[location] || { lat: 37.7749, lng: -122.4194 };
-
+            const c = COORDS[location] || { lat: 37.7749, lng: -122.4194 };
             try {
-                const response = await fetch(API.report, {
+                const r = await fetch(API.report, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        location: { location, latitude: coords.lat, longitude: coords.lng },
-                        photo,
-                        num_recommendations: 4
-                    })
+                    body: JSON.stringify({ location: { location, latitude: c.lat, longitude: c.lng }, photo, num_recommendations: 4 })
                 });
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.detail || 'Failed to generate report');
-                }
-                const data = await response.json();
+                if (!r.ok) throw new Error((await r.json()).detail || 'Failed');
+                const data = await r.json();
                 currentReportId = data.report_id;
                 displayReport(data);
-            } catch (error) {
-                alert('Error: ' + error.message);
-            } finally {
-                submitBtn.disabled = false;
-                btnText.classList.remove('hidden');
-                btnLoading.classList.add('hidden');
-            }
+            } catch (err) { alert('Error: ' + err.message); }
+            finally { submitBtn.disabled = false; btnText.classList.remove('hidden'); btnLoading.classList.add('hidden'); }
         }
 
         function displayReport(report) {
@@ -363,8 +223,7 @@
             reportStatus.textContent = 'Report ready';
 
             const env = report.environment || {};
-            document.getElementById('envLocation').innerHTML =
-                `<strong>${report.location}</strong> &mdash; USDA Zone ${env.usda_zone || 'N/A'}`;
+            document.getElementById('envLocation').innerHTML = `<strong>${report.location}</strong> — USDA Zone ${env.usda_zone || 'N/A'}`;
             document.getElementById('envGrid').innerHTML = [
                 { icon: '🌡', label: 'Avg Temp', value: `${env.avg_temp_c || '?'}°C` },
                 { icon: '💧', label: 'Rainfall', value: `${env.rainfall_mm || '?'}mm/yr` },
@@ -372,70 +231,96 @@
                 { icon: '🌱', label: 'Soil pH', value: env.ph || '?' },
                 { icon: '🪴', label: 'Soil Type', value: env.soil_type || '?' },
                 { icon: '❄️', label: 'Frost Risk', value: env.frost_risk || '?' },
-            ].map(s => `
-                <div class="env-stat">
-                    <div class="label">${s.icon} ${s.label}</div>
-                    <div class="value">${s.value}</div>
-                </div>
-            `).join('');
+            ].map(s => `<div class="env-stat"><div class="label">${s.icon} ${s.label}</div><div class="value">${s.value}</div></div>`).join('');
 
             if (report.photo_analysis) {
-                photoCard.classList.remove('hidden');
-                document.getElementById('photoFeatures').innerHTML =
-                    report.photo_analysis.features.map(f =>
-                        `<span class="photo-feature">✓ ${f}</span>`
-                    ).join('');
-            } else {
-                photoCard.classList.add('hidden');
+                document.getElementById('photoCard').classList.remove('hidden');
+                document.getElementById('photoFeatures').innerHTML = report.photo_analysis.features.map(f => `<span class="photo-feature">✓ ${f}</span>`).join('');
+            }
+
+            if (report.garden_risk) {
+                const gr = report.garden_risk;
+                document.getElementById('riskGrid').innerHTML = [
+                    { label: 'Sunlight', value: gr.sunlight },
+                    { label: 'Water', value: gr.water },
+                    { label: 'Temperature', value: gr.temperature },
+                    { label: 'Soil', value: gr.soil },
+                    { label: 'Overall', value: gr.overall },
+                ].map(r => {
+                    const cls = r.value === 'GOOD' || r.value === 'LOW' ? 'risk-good' : r.value === 'MODERATE' ? 'risk-warn' : 'risk-bad';
+                    return `<div class="risk-item"><span class="risk-dot ${cls}"></span><span><strong>${r.label}:</strong> ${r.value}</span></div>`;
+                }).join('');
+                document.getElementById('riskWarnings').innerHTML = gr.warnings.length
+                    ? `<div style="margin-top:8px;padding:10px;border-radius:6px;background:rgba(245,158,11,0.1);font-size:13px;color:#92400e;"><strong>Warnings:</strong> ${gr.warnings.join('; ')}</div>`
+                    : '<p style="font-size:13px;color:var(--muted);margin-top:8px;">No warnings — conditions look good!</p>';
+            }
+
+            if (report.categories) {
+                const cats = report.categories;
+                const labels = { best_overall: 'Best Overall', best_low_water: 'Best Low-Water', fastest_harvest: 'Fastest Harvest', best_flower: 'Best Flower', best_herb: 'Best Herb' };
+                document.getElementById('categoriesGrid').innerHTML = Object.entries(cats).map(([k, v]) =>
+                    `<div class="category-badge"><strong>${labels[k] || k}:</strong> ${v}</div>`
+                ).join('');
             }
 
             const recs = report.recommendations;
             recommendationsDiv.innerHTML = recs.map((rec, idx) => {
-                const cls = getConfidenceClass(rec.confidence_tp_percent);
+                const cls = rec.confidence_tp_percent >= 80 ? 'high' : rec.confidence_tp_percent >= 60 ? 'medium' : 'low';
                 const bd = rec.score_breakdown || {};
-                const scoreItems = [
-                    { key: 'climate', label: 'Climate', max: 100 },
-                    { key: 'ph', label: 'pH', max: 100 },
-                    { key: 'sunlight', label: 'Sunlight', max: 100 },
-                    { key: 'water', label: 'Water', max: 100 },
-                    { key: 'soil', label: 'Soil', max: 100 },
-                ];
-                const breakdownHtml = scoreItems.map(s => {
-                    const val = bd[s.key] || 0;
+                const bars = ['climate', 'ph', 'sunlight', 'water', 'soil'].map(k => {
+                    const val = bd[k] || 0;
                     const color = val >= 80 ? 'var(--accent)' : val >= 60 ? 'var(--warning)' : 'var(--error)';
-                    return `
-                        <div style="display:flex;align-items:center;gap:8px;font-size:13px;">
-                            <span style="width:70px;color:var(--muted);">${s.label}</span>
-                            <div style="flex:1;" class="score-bar">
-                                <div class="score-bar-fill" style="width:${val}%;background:${color};"></div>
-                            </div>
-                            <span style="width:35px;text-align:right;font-weight:500;">${val.toFixed(0)}</span>
-                        </div>`;
+                    return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                        <span style="width:65px;color:var(--muted);text-transform:capitalize;">${k}</span>
+                        <div style="flex:1;" class="score-bar"><div class="score-bar-fill" style="width:${val}%;background:${color};"></div></div>
+                        <span style="width:30px;text-align:right;font-weight:500;">${val.toFixed(0)}</span></div>`;
                 }).join('');
-
                 return `
-                <div class="confidence-${cls} animate-fade-in-up delay-${idx + 1}" style="padding:16px;border-radius:8px;margin-bottom:12px;">
+                <div class="confidence-${cls} animate-fade-in-up" style="padding:16px;border-radius:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:start;">
                         <div>
-                            <h4 style="font-weight:600;font-size:17px;">${idx + 1}. ${rec.plant_name}</h4>
+                            <h4 style="font-weight:600;font-size:16px;">${idx + 1}. ${rec.plant_name}</h4>
                             <p style="font-size:12px;color:var(--muted);font-style:italic;">${rec.scientific_name || ''}</p>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-size:24px;font-weight:700;color:${cls === 'high' ? 'var(--accent)' : cls === 'medium' ? 'var(--warning)' : 'var(--error)'};">
-                                ${rec.confidence_tp_percent.toFixed(0)}%
-                            </div>
-                            <div style="font-size:11px;color:var(--muted);">Suitability</div>
+                            <div style="font-size:22px;font-weight:700;color:${cls === 'high' ? 'var(--accent)' : cls === 'medium' ? 'var(--warning)' : 'var(--error)'};">${rec.confidence_tp_percent.toFixed(0)}%</div>
+                            <div style="font-size:10px;color:var(--muted);">Suitability</div>
                         </div>
                     </div>
-                    <div style="margin-top:12px;">
-                        ${breakdownHtml}
+                    <div style="margin-top:10px;">${bars}</div>
+                    <div style="margin-top:10px;font-size:12px;color:var(--muted);">
+                        💧 ${rec.water_requirement || '?'} water &nbsp; ☀️ ${rec.sun_requirement || '?'} sun &nbsp; 🌱 ${rec.growth_duration || '?'} &nbsp; 📅 ${rec.planting_season || '?'}
                     </div>
-                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-                        <p style="font-size:13px;color:var(--muted);"><strong>Care:</strong> ${rec.care_guide}</p>
-                        ${rec.growth_duration ? `<p style="font-size:12px;color:var(--muted);margin-top:4px;"><strong>Growth:</strong> ${rec.growth_duration}</p>` : ''}
+                    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);">
+                        ${rec.care_guide}
                     </div>
                 </div>`;
             }).join('');
+
+            if (report.comparison_table && report.comparison_table.length) {
+                const ct = report.comparison_table;
+                document.getElementById('compTable').innerHTML = `
+                    <thead><tr><th>Plant</th><th>Suitability</th><th>Water</th><th>Sun</th><th>Growth</th></tr></thead>
+                    <tbody>${ct.map((r, i) => `<tr style="${i === 0 ? 'font-weight:600;' : ''}">
+                        <td>${i + 1}. ${r.name}</td>
+                        <td>${r.suitability.toFixed(0)}%</td>
+                        <td>${r.water}</td>
+                        <td>${r.sun}</td>
+                        <td>${r.growth}</td></tr>`).join('')}</tbody>`;
+            }
+
+            if (report.rejected_plants && report.rejected_plants.length) {
+                document.getElementById('rejectedList').innerHTML = report.rejected_plants.map(r => `
+                    <div style="padding:10px;border-radius:6px;background:var(--bg);border-left:3px solid var(--border);">
+                        <div style="display:flex;justify-content:space-between;">
+                            <strong>${r.plant_name}</strong>
+                            <span style="color:var(--muted);font-size:13px;">${r.suitability.toFixed(0)}% suitability</span>
+                        </div>
+                        <div style="font-size:12px;color:var(--muted);margin-top:4px;">
+                            ${r.reasons.join(' — ')}
+                        </div>
+                    </div>`).join('');
+            }
 
             resultsSection.classList.remove('hidden');
             pdfBtn.disabled = false;
@@ -443,53 +328,29 @@
             currentReportId = report.report_id;
         }
 
-        function getConfidenceClass(percent) {
-            if (percent >= 80) return 'high';
-            if (percent >= 60) return 'medium';
-            return 'low';
-        }
-
         pdfBtn.addEventListener('click', async () => {
             if (!currentReportId) return;
             try {
-                const response = await fetch(`/api/v1/reports/${currentReportId}`);
-                if (!response.ok) throw new Error('Failed to fetch report');
-                const report = await response.json();
+                const r = await fetch(`/api/v1/reports/${currentReportId}`);
+                if (!r.ok) throw new Error('Failed');
+                const report = await r.json();
                 const { jsPDF } = await import('https://cdn.skypack.dev/jspdf');
                 const doc = new jsPDF();
-                doc.setFontSize(18);
-                doc.text('GreenScope - Gardening Report', 20, 20);
-                doc.setFontSize(12);
-                doc.text(`Location: ${report.location}`, 20, 35);
-                doc.text(`Generated: ${new Date(report.generated_at * 1000).toLocaleDateString()}`, 20, 45);
-                doc.setFontSize(14);
-                doc.text('Recommendations:', 20, 60);
-                let y = 75;
-                report.recommendations.forEach((rec, idx) => {
+                doc.setFontSize(18); doc.text('GreenScope Report', 20, 20);
+                doc.setFontSize(12); doc.text(`Location: ${report.location}`, 20, 35);
+                let y = 50;
+                report.recommendations.forEach((rec, i) => {
                     if (y > 270) { doc.addPage(); y = 20; }
-                    doc.setFontSize(11);
-                    doc.text(`${idx + 1}. ${rec.plant_name} - ${rec.confidence_tp_percent.toFixed(0)}% suitability`, 20, y);
-                    y += 8;
-                    doc.setFontSize(9);
-                    doc.text(`   ${rec.care_guide.substring(0, 80)}`, 20, y);
-                    y += 10;
+                    doc.setFontSize(11); doc.text(`${i + 1}. ${rec.plant_name} - ${rec.confidence_tp_percent.toFixed(0)}%`, 20, y); y += 8;
+                    doc.setFontSize(9); doc.text(`   ${rec.care_guide.substring(0, 80)}`, 20, y); y += 10;
                 });
-                doc.save(`GreenScope-Report-${currentReportId}.pdf`);
-            } catch (error) {
-                const html = document.getElementById('recommendations').innerText;
-                navigator.clipboard.writeText(html);
-                alert('Report copied to clipboard!');
-            }
+                doc.save(`GreenScope-${currentReportId}.pdf`);
+            } catch { const t = document.getElementById('recommendations').innerText; navigator.clipboard.writeText(t); alert('Copied to clipboard!'); }
         });
 
         shareBtn.addEventListener('click', () => {
             if (!currentReportId) return;
-            const url = window.location.origin + `/api/v1/reports/${currentReportId}`;
-            navigator.clipboard.writeText(url).then(() => alert('Report link copied!'));
-        });
-
-        document.getElementById('closeModal').addEventListener('click', () => {
-            document.getElementById('reportModal').classList.add('hidden');
+            navigator.clipboard.writeText(window.location.origin + `/api/v1/reports/${currentReportId}`).then(() => alert('Link copied!'));
         });
 
         document.getElementById('location-select').focus();

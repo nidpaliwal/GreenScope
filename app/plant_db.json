@@ -12,7 +12,9 @@
       "temperature_max": 30,
       "soil": ["loam", "sandy loam"],
       "growth_days": 80,
-      "category": "vegetable"
+      "category": "vegetable",
+      "watering_tip": "Water deeply 1-2 inches per week; more during fruiting",
+      "planting_season": "Spring after last frost"
     },
     {
       "id": 2,
@@ -26,7 +28,9 @@
       "temperature_max": 30,
       "soil": ["loam", "potting soil"],
       "growth_days": 49,
-      "category": "herb"
+      "category": "herb",
+      "watering_tip": "Water when top inch of soil is dry",
+      "planting_season": "Spring after last frost"
     },
     {
       "id": 3,
@@ -40,7 +44,9 @@
       "temperature_max": 25,
       "soil": ["sandy", "loamy"],
       "growth_days": 900,
-      "category": "flower"
+      "category": "flower",
+      "watering_tip": "Water moderately until established; then reduce",
+      "planting_season": "Spring or Fall"
     },
     {
       "id": 4,
@@ -54,7 +60,9 @@
       "temperature_max": 27,
       "soil": ["loam", "sandy loam"],
       "growth_days": 63,
-      "category": "flower"
+      "category": "flower",
+      "watering_tip": "Water regularly but allow soil to dry between waterings",
+      "planting_season": "Spring after last frost"
     },
     {
       "id": 5,
@@ -68,21 +76,25 @@
       "temperature_max": 30,
       "soil": ["loam", "sandy loam"],
       "growth_days": 70,
-      "category": "vegetable"
+      "category": "vegetable",
+      "watering_tip": "Water consistently; allow soil to dry slightly between waterings",
+      "planting_season": "Spring after last frost"
     },
     {
       "id": 6,
-      "name": "Citrus",
-      "scientific_name": "Citrus × sinensis",
+      "name": "Mint",
+      "scientific_name": "Mentha",
       "min_ph": 6.0,
       "max_ph": 7.0,
-      "sun": "full",
-      "water": "medium",
-      "temperature_min": 13,
+      "sun": "partial",
+      "water": "high",
+      "temperature_min": 15,
       "temperature_max": 30,
-      "soil": ["sandy loam", "loam"],
-      "growth_days": 1095,
-      "category": "fruit"
+      "soil": ["loam", "potting soil"],
+      "growth_days": 90,
+      "category": "herb",
+      "watering_tip": "Keep soil consistently moist",
+      "planting_season": "Spring or Fall"
     },
     {
       "id": 7,
@@ -96,24 +108,12 @@
       "temperature_max": 20,
       "soil": ["loam", "sandy loam"],
       "growth_days": 37,
-      "category": "vegetable"
+      "category": "vegetable",
+      "watering_tip": "Water consistently; soil should remain moist",
+      "planting_season": "Early Spring or Fall"
     },
     {
       "id": 8,
-      "name": "Mint",
-      "scientific_name": "Mentha",
-      "min_ph": 6.0,
-      "max_ph": 7.0,
-      "sun": "partial",
-      "water": "high",
-      "temperature_min": 15,
-      "temperature_max": 30,
-      "soil": ["loam", "potting soil"],
-      "growth_days": 90,
-      "category": "herb"
-    },
-    {
-      "id": 9,
       "name": "Kale",
       "scientific_name": "Brassica oleracea",
       "min_ph": 6.0,
@@ -124,10 +124,12 @@
       "temperature_max": 24,
       "soil": ["loam", "sandy loam"],
       "growth_days": 55,
-      "category": "vegetable"
+      "category": "vegetable",
+      "watering_tip": "Water consistently; soil should remain moist but not waterlogged",
+      "planting_season": "Early Spring or Late Summer"
     },
     {
-      "id": 10,
+      "id": 9,
       "name": "Rosemary",
       "scientific_name": "Salvia rosmarinus",
       "min_ph": 6.0,
@@ -138,7 +140,105 @@
       "temperature_max": 30,
       "soil": ["sandy", "loamy"],
       "growth_days": 365,
-      "category": "herb"
+      "category": "herb",
+      "watering_tip": "Water moderately; allow soil to dry between waterings",
+      "planting_season": "Spring"
+    },
+    {
+      "id": 10,
+      "name": "Citrus",
+      "scientific_name": "Citrus x sinensis",
+      "min_ph": 6.0,
+      "max_ph": 7.0,
+      "sun": "full",
+      "water": "medium",
+      "temperature_min": 13,
+      "temperature_max": 30,
+      "soil": ["sandy loam", "loam"],
+      "growth_days": 1095,
+      "category": "fruit",
+      "watering_tip": "Water deeply but infrequently; allow soil to dry between waterings",
+      "planting_season": "Spring"
+    },
+    {
+      "id": 11,
+      "name": "Sunflower",
+      "scientific_name": "Helianthus annuus",
+      "min_ph": 6.0,
+      "max_ph": 7.5,
+      "sun": "full",
+      "water": "medium",
+      "temperature_min": 18,
+      "temperature_max": 33,
+      "soil": ["loam", "sandy loam"],
+      "growth_days": 70,
+      "category": "flower",
+      "watering_tip": "Water deeply once a week",
+      "planting_season": "Spring after last frost"
+    },
+    {
+      "id": 12,
+      "name": "Zucchini",
+      "scientific_name": "Cucurbita pepo",
+      "min_ph": 6.0,
+      "max_ph": 7.0,
+      "sun": "full",
+      "water": "high",
+      "temperature_min": 18,
+      "temperature_max": 29,
+      "soil": ["loam", "sandy loam"],
+      "growth_days": 50,
+      "category": "vegetable",
+      "watering_tip": "Water deeply and consistently; 1-2 inches per week",
+      "planting_season": "Spring after last frost"
+    },
+    {
+      "id": 13,
+      "name": "Thyme",
+      "scientific_name": "Thymus vulgaris",
+      "min_ph": 6.0,
+      "max_ph": 8.0,
+      "sun": "full",
+      "water": "low",
+      "temperature_min": 10,
+      "temperature_max": 30,
+      "soil": ["sandy", "loamy"],
+      "growth_days": 90,
+      "category": "herb",
+      "watering_tip": "Water sparingly; prefers drier conditions",
+      "planting_season": "Spring"
+    },
+    {
+      "id": 14,
+      "name": "Strawberry",
+      "scientific_name": "Fragaria x ananassa",
+      "min_ph": 5.5,
+      "max_ph": 6.5,
+      "sun": "full",
+      "water": "medium",
+      "temperature_min": 10,
+      "temperature_max": 26,
+      "soil": ["sandy loam", "loam"],
+      "growth_days": 60,
+      "category": "fruit",
+      "watering_tip": "Water consistently; 1-1.5 inches per week",
+      "planting_season": "Spring"
+    },
+    {
+      "id": 15,
+      "name": "Lettuce",
+      "scientific_name": "Lactuca sativa",
+      "min_ph": 6.0,
+      "max_ph": 7.0,
+      "sun": "partial",
+      "water": "medium",
+      "temperature_min": 7,
+      "temperature_max": 21,
+      "soil": ["loam", "sandy loam"],
+      "growth_days": 30,
+      "category": "vegetable",
+      "watering_tip": "Keep soil consistently moist; shallow roots need frequent watering",
+      "planting_season": "Spring and Fall"
     }
   ]
 }

@@ -276,6 +276,18 @@ class ReportRecommendation(BaseModel):
     care_guide: str
     growth_duration: Optional[str] = None
     score_breakdown: Optional[dict] = None
+    water_requirement: Optional[str] = None
+    sun_requirement: Optional[str] = None
+    planting_season: Optional[str] = None
+
+
+class GardenRisk(BaseModel):
+    sunlight: str
+    water: str
+    temperature: str
+    soil: str
+    overall: str
+    warnings: List[str]
 
 
 class ReportGenerateResponse(BaseModel):
@@ -286,6 +298,10 @@ class ReportGenerateResponse(BaseModel):
     environment: dict
     photo_analysis: Optional[dict] = None
     recommendations: List[ReportRecommendation]
+    rejected_plants: Optional[List[dict]] = None
+    categories: Optional[dict] = None
+    garden_risk: Optional[GardenRisk] = None
+    comparison_table: Optional[List[dict]] = None
     generated_at: float
     processing_time_ms: float
     disclaimer: str = Field(
@@ -342,31 +358,12 @@ async def generate_report(request: ReportGenerateRequest):
         scored.append((plant, result))
 
     scored.sort(key=lambda x: x[1]["total"], reverse=True)
+
     top = scored[:request.num_recommendations]
+    rejected = scored[request.num_recommendations:]
 
     recommendations = []
     for plant, score_result in top:
-        breakdown = score_result["breakdown"]
-        reasons = score_result["reasons"]
-        score_lines = "\n".join(f"  {r['category']}: {r['score']:.0f}/100 - {r['detail']}" for r in reasons)
-
-        if score_result["total"] >= 80:
-            perf = "Excellent"
-        elif score_result["total"] >= 65:
-            perf = "Good"
-        elif score_result["total"] >= 50:
-            perf = "Fair"
-        else:
-            perf = "Poor"
-
-        reasoning = (
-            f"Suitability: {score_result['total']:.0f}/100 ({perf})\n"
-            f"Environment: {env['avg_temp_c']}C avg, {env['rainfall_mm']}mm rainfall, "
-            f"pH {env['ph']}, {env['sunlight_hours']}h sunlight\n"
-            f"Photo: {photo_obs_to_str(photo_obs)}\n\n"
-            f"Score Breakdown:\n{score_lines}"
-        )
-
         days = plant.get("growth_days", 60)
         if days >= 365:
             growth_str = f"{days // 365} year(s)"
@@ -382,6 +379,17 @@ async def generate_report(request: ReportGenerateRequest):
             f"Temperature range: {plant['temperature_min']}-{plant['temperature_max']}C."
         )
 
+        reasons = score_result["reasons"]
+        score_lines = "\n".join(
+            f"  {r['category']}: {r['score']:.0f}/100 - {r['detail']}" for r in reasons
+        )
+        reasoning = (
+            f"Suitability: {score_result['total']:.0f}/100\n"
+            f"Environment: {env['avg_temp_c']}C avg, {env['rainfall_mm']}mm rainfall, "
+            f"pH {env['ph']}, {env['sunlight_hours']}h sunlight\n\n"
+            f"Score Breakdown:\n{score_lines}"
+        )
+
         recommendations.append(ReportRecommendation(
             plant_name=plant["name"],
             scientific_name=plant.get("scientific_name"),
@@ -390,7 +398,115 @@ async def generate_report(request: ReportGenerateRequest):
             care_guide=care_guide,
             growth_duration=growth_str,
             score_breakdown=score_result["breakdown"],
+            water_requirement=plant.get("water"),
+            sun_requirement=plant.get("sun"),
+            planting_season=plant.get("planting_season", "Spring"),
         ))
+
+    # Categories
+    categories = {}
+    if recommendations:
+        categories["best_overall"] = recommendations[0].plant_name
+        low_water = [r for r in recommendations if r.water_requirement == "low"]
+        if low_water:
+            categories["best_low_water"] = low_water[0].plant_name
+        fastest = min(recommendations, key=lambda r: _parse_days(r.growth_duration))
+        categories["fastest_harvest"] = fastest.plant_name
+        flowers = [r for r in recommendations if any(
+            p["name"] == r.plant_name and p.get("category") == "flower"
+            for p in PLANTS
+        )]
+        if flowers:
+            categories["best_flower"] = flowers[0].plant_name
+        herbs = [r for r in recommendations if any(
+            p["name"] == r.plant_name and p.get("category") == "herb"
+            for p in PLANTS
+        )]
+        if herbs:
+            categories["best_herb"] = herbs[0].plant_name
+
+    # Rejected plants with reasons
+    rejected_list = []
+    for plant, score_result in rejected:
+        low_scores = [r for r in score_result["reasons"] if r["score"] < 60]
+        rejection_reasons = [f"{r['category']}: {r['detail']}" for r in low_scores]
+        if not rejection_reasons:
+            rejection_reasons = ["Lower suitability than top picks"]
+        rejected_list.append({
+            "plant_name": plant["name"],
+            "suitability": score_result["total"],
+            "reasons": rejection_reasons,
+        })
+
+    # Garden Risk Assessment
+    risk_warnings = []
+    sunlight_status = "GOOD"
+    if env["sunlight_hours"] < 5:
+        sunlight_status = "LOW"
+        risk_warnings.append("Limited sunlight may restrict full-sun plants")
+    elif env["sunlight_hours"] > 8:
+        sunlight_status = "HIGH"
+        risk_warnings.append("Intense sunlight may cause heat stress without adequate watering")
+
+    water_status = "MODERATE"
+    if env["rainfall_mm"] < 400:
+        water_status = "LOW"
+        risk_warnings.append("Low rainfall requires regular irrigation")
+    elif env["rainfall_mm"] > 1000:
+        water_status = "HIGH"
+        risk_warnings.append("High rainfall may cause waterlogging or fungal issues")
+
+    temp_status = "GOOD"
+    if env["avg_temp_c"] < 8:
+        temp_status = "COLD"
+        risk_warnings.append("Cold temperatures limit tropical and warm-season plants")
+    elif env["avg_temp_c"] > 25:
+        temp_status = "HOT"
+        risk_warnings.append("Heat may stress cool-season plants")
+
+    soil_status = "GOOD"
+    if env["ph"] < 5.5 or env["ph"] > 8.0:
+        soil_status = "EXTREME pH"
+        risk_warnings.append(f"Soil pH {env['ph']} may need amendment")
+
+    if env["frost_risk"] == "high":
+        risk_warnings.append("High frost risk: protect tender plants in winter")
+
+    risk_scores = [0, 0, 0, 0]
+    for i, s in enumerate([sunlight_status, water_status, temp_status, soil_status]):
+        if s == "GOOD":
+            risk_scores[i] = 90
+        elif s in ("MODERATE", "HIGH", "HOT"):
+            risk_scores[i] = 70
+        else:
+            risk_scores[i] = 40
+    avg_risk = sum(risk_scores) / 4
+    overall_risk = "LOW" if avg_risk >= 80 else "MODERATE" if avg_risk >= 60 else "HIGH"
+
+    garden_risk = GardenRisk(
+        sunlight=sunlight_status,
+        water=water_status,
+        temperature=temp_status,
+        soil=soil_status,
+        overall=overall_risk,
+        warnings=risk_warnings,
+    )
+
+    # Comparison table (all scored plants)
+    comparison = []
+    for plant, score_result in scored[:8]:
+        days = plant.get("growth_days", 60)
+        if days >= 365:
+            growth_str = f"{days // 365} yr"
+        else:
+            growth_str = f"{days}d"
+        comparison.append({
+            "name": plant["name"],
+            "suitability": score_result["total"],
+            "water": plant.get("water", "medium"),
+            "sun": plant.get("sun", "full"),
+            "growth": growth_str,
+        })
 
     processing_time_ms = (time.time() - start_time) * 1000
 
@@ -409,12 +525,25 @@ async def generate_report(request: ReportGenerateRequest):
         environment=env,
         photo_analysis=photo_analysis,
         recommendations=recommendations,
+        rejected_plants=rejected_list,
+        categories=categories,
+        garden_risk=garden_risk,
+        comparison_table=comparison,
         generated_at=time.time(),
         processing_time_ms=round(processing_time_ms, 2),
     )
 
     reports_db[report_id] = response
     return response
+
+
+def _parse_days(growth_str: str) -> int:
+    if not growth_str:
+        return 999
+    if "year" in growth_str:
+        num = int(growth_str.split()[0])
+        return num * 365
+    return int(growth_str.split()[0])
 
 
 @app.get("/api/v1/reports/{report_id}", response_model=ReportGenerateResponse)
