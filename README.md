@@ -1,116 +1,113 @@
-# GreenScope - AI Gardening Report Generator
+# GreenScope - AI Gardening Intelligence
 
-## 🌿 Turn a photo and pin drop into a personalized growing report
+## Discover what you can grow based on your location, soil, and garden conditions
 
-GreenScope generates AI-powered gardening reports based on your location, soil conditions, and garden photo. Select your location, upload a photo, and get tailored plant recommendations with confidence percentages and care guides.
+GreenScope combines environmental data, plant science, and garden analysis to generate explainable plant recommendations with suitability scores.
 
-## 📸 Live Demo
+## How It Works
 
-**Visit the demo:** The frontend is deployed at `static/index.html` - open it in any modern browser.
-
-**How to use:**
-1. Select a location from the dropdown (or enter custom coordinates)
-2. optionally upload a garden photo
-3. Click **"Generate My Report"** (button is now enabled when a valid location is selected)
-4. View your personalized gardening report with plant recommendations
-
-> ⚠️ **Note:** The submit button is now enabled/disabled based on location selection. If it appears disabled, please select a location first.
-
-## 🏗️ Architecture
-
-```text
-+----------------------+       +----------------------+       +----------------------+
-|  static/index.html    | <-->  |  app/main.py (FastAPI)| <-->  |  External APIs (TBD) |
-|  - HTML + JS frontend|       |  - Pydantic models   |       |  - Nominatim geocoding|
-|  - Tailwind CSS      |       |  - API endpoints     |       |  - PlantNet analysis  |
-|  - Vanilla JS        |       |  - In-memory DB      |       |  - Claude LLM         |
-+----------------------+       +----------------------+       +----------------------+
+```
+Location + Photo
+      |
+      v
+Environmental Data (temp, rainfall, pH, soil, sunlight)
+      |
+      v
+Plant Database (10 plants with growing requirements)
+      |
+      v
+Scoring Engine (climate 25%, pH 20%, sunlight 15%, water 15%, soil 15%, photo 10%)
+      |
+      v
+Top 4 Candidates with suitability scores + breakdown
 ```
 
-## 🛠️ Tech Stack
-
-| Layer      | Technology                                |
-| ---------- | ----------------------------------------- |
-| Frontend   | HTML5, Tailwind CSS via CDN, Vanilla JS   |
-| Backend    | FastAPI (Python)                          |
-| Models     | Pydantic v2                               |
-| Geocoding  | Mock data (5 cities) — Nominatim planned  |
-| Report gen | Mock rule-based recommendations — LLM planned|
-| Deployment | Static files served via any web server    |
-
-## 📦 What's Mocked vs Real
-
-| Feature         | Status        | Details                                |
-| --------------- | ------------- | -------------------------------------- |
-| **Geocoding**   | ⚠️ Mocked     | 5 hardcoded cities; others default to SF coords |
-| **Photo analysis** | ⚠️ Mocked   | Placeholder vegetation info; not used in recommendations |
-| **Recommendations** | ⚠️ Mocked   | Static plant list; same output regardless of input |
-| **Confidence scores** | ⚠️ Static | Fixed percentages (87.5%, 72.3%, etc.) |
-| **CORS**        | ✅ Fixed      | `allow_origins=["*"]` with `allow_credentials=False` |
-| **Persistence** | ⚠️ In-memory  | `reports_db = {}` — lost on server restart |
-
-## 🚀 Setup & Run
-
-### Prerequisites
-
-- Python 3.10+
-- pip (Python package installer)
-
-### Install & Start Backend
+## Quick Start
 
 ```bash
-# 1. Clone and cd into project
-cd GreenScope
-
-# 2. Install dependencies
 pip install -r requirements.txt
-
-# 3. Start the FastAPI server
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Run Frontend
+Open `static/index.html` in a browser and select a location.
 
-Open `static/index.html` in any modern web browser. No backend needed for basic demo, but the form will connect to `http://localhost:8000` if the backend is running.
-
-### Requirements (`requirements.txt`)
+## Architecture
 
 ```
-fastapi
-uvicorn[standard]
-pydantic[dotenv]
+static/index.html          app/main.py              app/plant_db.json
+  (Frontend)        --->   (FastAPI API)        ---> (Plant Database)
+                              |
+                      Scoring Engine
+                              |
+                      Recommendation Response
+                              +--- environment data
+                              +--- photo analysis
+                              +--- plant recommendations
+                              +--- score breakdowns
 ```
 
-## 📡 API Endpoints
+## API Endpoints
 
-| Method | Endpoint                | Description                    |
-| ------ | ----------------------- | ------------------------------ |
-| `GET`  | `/`                     | Root health check              |
-| `POST` | `/api/v1/geocode`       | Geocode location to lat/lng    |
-| `POST` | `/api/v1/generate-report` | Generate gardening report      |
-| `GET`  | `/api/v1/reports/{id}`  | Retrieve generated report      |
-| `GET`  | `/api/v1/health`        | Health check                   |
+| Method | Endpoint                | Description                      |
+|--------|-------------------------|----------------------------------|
+| `GET`  | `/`                     | Health check                     |
+| `POST` | `/api/v1/geocode`       | Geocode location to lat/lng      |
+| `POST` | `/api/v1/generate-report` | Generate gardening report        |
+| `GET`  | `/api/v1/reports/{id}`  | Retrieve generated report        |
+| `GET`  | `/api/v1/health`        | Health check                     |
 
-## 📋 Roadmap
+## Scoring Algorithm
 
-| Priority | Feature                          | Est. Effort |
-| -------- | -------------------------------- | ----------- |
-| 🔴 **High**    | Fix submit button + crash (done)       | 15 min      |
-| 🔴 **High**    | Fix UUID bug + delete duplicate models | 10 min      |
-| 🟠 **Medium**  | Fix CORS config (done)                 | 5 min       |
-| 🟠 **Medium**  | Vary recommendations by input          | 30 min      |
-| 🟡 **Low**     | Add pytest tests (3-4 cases)           | 20 min      |
-| 🟡 **Low**     | Real geocoding via Nominatim/OSM       | 1-2 hours   |
-| 🟢 **Low**     | Claude LLM-based report generation     | 2-3 hours   |
-| 🟢 **Low**     | PDF export with real data              | 1 hour      |
-| 🟢 **Low**     | User persistence (DB migration)        | 1-2 hours   |
+Each plant is scored against your location's environmental conditions:
 
-## 🙏 Acknowledgments
+| Factor      | Weight | What It Measures                              |
+|-------------|--------|-----------------------------------------------|
+| Climate     | 25%    | How well plant temperature range matches location |
+| pH          | 20%    | Soil pH compatibility                         |
+| Sunlight    | 15%    | Sun hours vs plant requirement (full/partial) |
+| Water       | 15%    | Rainfall vs plant water needs                 |
+| Soil        | 15%    | Soil type match                               |
+| Photo       | 10%    | Garden observation bonus                      |
 
-- UI built with [Tailwind CSS](https://tailwindcss.com) via CDN
-- Icons from [Heroicons](https://heroicons.com)
-- FastAPI for the excellent Python API framework
+## What's Real vs Mocked
+
+| Feature              | Status   | Details                                    |
+|----------------------|----------|--------------------------------------------|
+| **Scoring engine**   | Real     | Deterministic scoring based on plant DB    |
+| **Plant database**   | Real     | 10 plants with full growing requirements   |
+| **Environment data** | Mocked   | 5 cities with climate data                 |
+| **Photo analysis**   | Mocked   | Rule-based from filename heuristics         |
+| **Geocoding**        | Mocked   | 5 hardcoded city coordinates               |
+| **Persistence**      | In-memory| Reports lost on server restart             |
+
+## Tech Stack
+
+- **Backend:** FastAPI, Pydantic v2, Python 3.10+
+- **Frontend:** HTML5, Tailwind CSS (CDN), Vanilla JS
+- **Data:** JSON plant database, in-memory report store
+- **Tests:** pytest (15 tests passing)
+
+## Tests
+
+```bash
+python -m pytest tests/ -v
+```
+
+## Project Structure
+
+```
+GreenScope/
+  app/
+    main.py           # FastAPI backend + scoring engine
+    plant_db.json     # Plant knowledge base
+  static/
+    index.html        # Frontend
+  tests/
+    test_api.py       # API tests (15 cases)
+  requirements.txt
+  README.md
+```
 
 ---
 
-**GreenScope** — Turning your garden into a data-driven growing guide. 🌱
+**GreenScope** - Explainable garden intelligence for your space.
