@@ -328,3 +328,18 @@ def test_plant_this_month_season_present(client):
     assert d["season"] in ["spring", "summer", "fall", "winter"]
     assert d["current_month"] in ["January", "February", "March", "April", "May", "June",
                                    "July", "August", "September", "October", "November", "December"]
+
+
+# --- Report Page ---
+
+def test_report_page_serves_html(client):
+    r = client.get("/report/test-id")
+    assert r.status_code == 200
+    assert r.headers["content-type"].startswith("text/html")
+    assert "GreenScope" in r.text
+
+
+def test_report_page_has_fetch_script(client):
+    r = client.get("/report/test-id")
+    assert "loadReport" in r.text
+    assert "api/v1/reports/" in r.text

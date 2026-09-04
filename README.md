@@ -51,7 +51,8 @@ Categories | Garden Risk | Comparison Table | Why Not?
 | `GET`  | `/`                           | Serve frontend           |
 | `POST` | `/api/v1/geocode`             | Geocode location         |
 | `POST` | `/api/v1/generate-report`     | Generate gardening report|
-| `GET`  | `/api/v1/reports/{id}`        | Retrieve report          |
+| `GET`  | `/api/v1/reports/{id}`        | Retrieve report data     |
+| `GET`  | `/report/{id}`                | Share report page        |
 | `GET`  | `/api/v1/plant-this-month`    | Seasonal planting calendar|
 | `GET`  | `/api/v1/health`              | Health check             |
 
@@ -75,14 +76,14 @@ Categories | Garden Risk | Comparison Table | Why Not?
 | Environment data     | Mocked   | 5 cities with climate data                 |
 | Photo analysis       | Mocked   | Rule-based from filename heuristics         |
 | Geocoding            | Mocked   | 5 hardcoded city coordinates               |
-| Persistence          | In-memory| Reports lost on server restart             |
+| Persistence          | SQLite   | Reports persist to `reports.db`             |
 
 ## Tech Stack
 
 - **Backend:** FastAPI, Pydantic v2, Python 3.10+
 - **Frontend:** HTML5, Tailwind CSS (CDN), Vanilla JS
-- **Data:** JSON plant database, in-memory report store
-- **Tests:** pytest (36 tests passing)
+- **Data:** JSON plant database, SQLite persistence (`reports.db`)
+- **Tests:** pytest (38 tests passing)
 
 ## Tests
 
@@ -100,7 +101,7 @@ GreenScope/
   static/
     index.html        # Frontend with environment cards, categories, risk
   tests/
-    test_api.py       # API tests (36 cases)
+    test_api.py       # API tests (38 cases)
   requirements.txt
   .gitignore
   README.md

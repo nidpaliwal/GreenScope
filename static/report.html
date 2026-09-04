@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenScope Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc; --fg: #0f172a; --muted: #64748b;
+            --accent: #10b981; --accent-hover: #059669;
+            --card: #ffffff; --border: #e2e8f0;
+            --warning: #f59e0b; --error: #ef4444;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; margin: 0; }
+        .card { background: var(--card); border-radius: 8px; padding: 24px; border: 1px solid var(--border); }
+        .confidence-high { background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--accent); }
+        .confidence-medium { background: rgba(245, 158, 11, 0.1); border-left: 3px solid var(--warning); }
+        .confidence-low { background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--error); }
+        .env-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+        .env-stat { text-align: center; padding: 12px 8px; border-radius: 6px; background: var(--bg); }
+        .env-stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .env-stat .value { font-size: 16px; font-weight: 600; margin-top: 4px; }
+        .score-bar { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+        .score-bar-fill { height: 100%; border-radius: 3px; }
+        .category-badge { display: inline-block; padding: 6px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; background: var(--bg); margin: 4px; }
+        .risk-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: var(--bg); margin-bottom: 6px; font-size: 13px; }
+        .risk-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .risk-good { background: var(--accent); }
+        .risk-warn { background: var(--warning); }
+        .risk-bad { background: var(--error); }
+        .comp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .comp-table th { text-align: left; padding: 8px; border-bottom: 2px solid var(--border); color: var(--muted); font-size: 11px; text-transform: uppercase; }
+        .comp-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+        .photo-feature { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); color: var(--accent); display: inline-block; margin: 2px; }
+        .loading { text-align: center; padding: 60px 20px; color: var(--muted); }
+        .error { text-align: center; padding: 60px 20px; color: var(--error); }
+    </style>
+</head>
+<body>
+    <nav class="border-b border-border/50">
+        <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl font-bold" style="color:var(--fg);">GreenScope</span>
+                <span class="text-sm" style="color:var(--muted);">Shared Report</span>
+            </div>
+            <a href="/" style="font-size:13px;color:var(--accent);text-decoration:none;">Create Your Own</a>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-6 py-8">
+        <div id="content" class="loading">Loading report...</div>
+    </main>
+
+    <script>
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        async function loadReport() {
+            const path = window.location.pathname;
+            const reportId = path.split('/report/')[1];
+            if (!reportId) {
+                document.getElementById('content').innerHTML = '<div class="error">Invalid report link</div>';
+                return;
+            }
+            try {
+                const r = await fetch(`/api/v1/reports/${reportId}`);
+                if (!r.ok) throw new Error('Report not found');
+                const report = await r.json();
+                document.title = `GreenScope Report - ${report.location}`;
+                renderReport(report);
+            } catch (err) {
+                document.getElementById('content').innerHTML = `<div class="error">Report not found or expired.</div>`;
+            }
+        }
+
+        function renderReport(report) {
+            const env = report.environment || {};
+            let html = '';
+
+            html += `<div class="card mb-6">
+                <h1 class="text-2xl font-bold mb-1">${escapeHtml(report.location)}</h1>
+                <p style="color:var(--muted);font-size:13px;">Generated ${new Date(report.generated_at * 1000).toLocaleDateString()}</p>
+            </div>`;
+
+            html += `<div class="card mb-6">
+                <h2 class="text-lg font-bold mb-2">Location Environment</h2>
+                <div class="env-grid">
+                    <div class="env-stat"><div class="label">🌡 Avg Temp</div><div class="value">${env.avg_temp_c || '?'}°C</div></div>
+                    <div class="env-stat"><div class="label">💧 Rainfall</div><div class="value">${env.rainfall_mm || '?'}mm/yr</div></div>
+                    <div class="env-stat"><div class="label">☀️ Sunlight</div><div class="value">${env.sunlight_hours || '?'}h/day</div></div>
+                    <div class="env-stat"><div class="label">🌱 Soil pH</div><div class="value">${env.ph || '?'}</div></div>
+                    <div class="env-stat"><div class="label">🪴 Soil Type</div><div class="value">${escapeHtml(env.soil_type || '?')}</div></div>
+                    <div class="env-stat"><div class="label">❄️ Frost Risk</div><div class="value">${escapeHtml(env.frost_risk || '?')}</div></div>
+                </div>
+            </div>`;
+
+            if (report.photo_analysis && report.photo_analysis.features) {
+                html += `<div class="card mb-6">
+                    <h2 class="text-lg font-bold mb-2">Garden Analysis</h2>
+                    <div>${report.photo_analysis.features.map(f => `<span class="photo-feature">✓ ${escapeHtml(f)}</span>`).join('')}</div>
+                </div>`;
+            }
+
+            if (report.garden_risk) {
+                const gr = report.garden_risk;
+                html += `<div class="card mb-6">
+                    <h2 class="text-lg font-bold mb-2">Garden Health Assessment</h2>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px;">
+                        ${[{l:'Sunlight',v:gr.sunlight},{l:'Water',v:gr.water},{l:'Temperature',v:gr.temperature},{l:'Soil',v:gr.soil},{l:'Overall',v:gr.overall}].map(r => {
+                            const cls = r.v === 'GOOD' || r.v === 'LOW' ? 'risk-good' : r.v === 'MODERATE' ? 'risk-warn' : 'risk-bad';
+                            return `<div class="risk-item"><span class="risk-dot ${cls}"></span><span><strong>${escapeHtml(r.l)}:</strong> ${escapeHtml(r.v)}</span></div>`;
+                        }).join('')}
+                    </div>
+                    ${gr.warnings.length ? `<div style="padding:10px;border-radius:6px;background:rgba(245,158,11,0.1);font-size:13px;color:#92400e;"><strong>Warnings:</strong> ${escapeHtml(gr.warnings.join('; '))}</div>` : ''}
+                </div>`;
+            }
+
+            if (report.categories) {
+                const labels = { best_overall: 'Best Overall', best_low_water: 'Best Low-Water', fastest_harvest: 'Fastest Harvest', best_flower: 'Best Flower', best_herb: 'Best Herb' };
+                html += `<div class="card mb-6">
+                    <h2 class="text-lg font-bold mb-2">Best For You</h2>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        ${Object.entries(report.categories).map(([k, v]) => `<div class="category-badge"><strong>${escapeHtml(labels[k] || k)}:</strong> ${escapeHtml(v)}</div>`).join('')}
+                    </div>
+                </div>`;
+            }
+
+            html += `<div class="card mb-6">
+                <h2 class="text-xl font-bold mb-4">Plant Recommendations</h2>
+                <div style="display:flex;flex-direction:column;gap:16px;">
+                    ${report.recommendations.map((rec, idx) => {
+                        const cls = rec.suitability_score >= 80 ? 'high' : rec.suitability_score >= 60 ? 'medium' : 'low';
+                        const bd = rec.score_breakdown || {};
+                        const bars = ['climate', 'ph', 'sunlight', 'water', 'soil'].map(k => {
+                            const val = bd[k] || 0;
+                            const color = val >= 80 ? 'var(--accent)' : val >= 60 ? 'var(--warning)' : 'var(--error)';
+                            return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;">
+                                <span style="width:65px;color:var(--muted);text-transform:capitalize;">${escapeHtml(k)}</span>
+                                <div style="flex:1;" class="score-bar"><div class="score-bar-fill" style="width:${val}%;background:${color};"></div></div>
+                                <span style="width:30px;text-align:right;font-weight:500;">${val.toFixed(0)}</span></div>`;
+                        }).join('');
+                        return `<div class="confidence-${cls}" style="padding:16px;border-radius:8px;">
+                            <div style="display:flex;justify-content:space-between;align-items:start;">
+                                <div>
+                                    <h4 style="font-weight:600;font-size:16px;">${idx + 1}. ${escapeHtml(rec.plant_name)}</h4>
+                                    <p style="font-size:12px;color:var(--muted);font-style:italic;">${escapeHtml(rec.scientific_name || '')}</p>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:22px;font-weight:700;color:${cls === 'high' ? 'var(--accent)' : cls === 'medium' ? 'var(--warning)' : 'var(--error)'};">${rec.suitability_score.toFixed(0)}%</div>
+                                    <div style="font-size:10px;color:var(--muted);">Suitability</div>
+                                </div>
+                            </div>
+                            <div style="margin-top:10px;">${bars}</div>
+                            <div style="margin-top:10px;font-size:12px;color:var(--muted);">
+                                💧 ${escapeHtml(rec.water_requirement || '?')} water &nbsp; ☀️ ${escapeHtml(rec.sun_requirement || '?')} sun &nbsp; 🌱 ${escapeHtml(rec.growth_duration || '?')} &nbsp; 📅 ${escapeHtml(rec.planting_season || '?')}
+                            </div>
+                            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);">
+                                ${escapeHtml(rec.care_guide)}
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
+
+            if (report.comparison_table && report.comparison_table.length) {
+                html += `<div class="card mb-6">
+                    <h2 class="text-lg font-bold mb-3">Comparison Table</h2>
+                    <div style="overflow-x:auto;">
+                        <table class="comp-table">
+                            <thead><tr><th>Plant</th><th>Suitability</th><th>Water</th><th>Sun</th><th>Growth</th></tr></thead>
+                            <tbody>${report.comparison_table.map((r, i) => `<tr style="${i === 0 ? 'font-weight:600;' : ''}">
+                                <td>${i + 1}. ${escapeHtml(r.name)}</td>
+                                <td>${r.suitability.toFixed(0)}%</td>
+                                <td>${escapeHtml(r.water)}</td>
+                                <td>${escapeHtml(r.sun)}</td>
+                                <td>${escapeHtml(r.growth)}</td></tr>`).join('')}</tbody>
+                        </table>
+                    </div>
+                </div>`;
+            }
+
+            if (report.rejected_plants && report.rejected_plants.length) {
+                html += `<div class="card mb-6">
+                    <h2 class="text-lg font-bold mb-2">Why Not These Plants?</h2>
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        ${report.rejected_plants.map(r => `<div style="padding:10px;border-radius:6px;background:var(--bg);border-left:3px solid var(--border);">
+                            <div style="display:flex;justify-content:space-between;">
+                                <strong>${escapeHtml(r.plant_name)}</strong>
+                                <span style="color:var(--muted);font-size:13px;">${r.suitability.toFixed(0)}% suitability</span>
+                            </div>
+                            <div style="font-size:12px;color:var(--muted);margin-top:4px;">
+                                ${escapeHtml(r.reasons.join(' — '))}
+                            </div>
+                        </div>`).join('')}
+                    </div>
+                </div>`;
+            }
+
+            html += `<div class="card" style="text-align:center;">
+                <p style="font-size:12px;color:var(--muted);">${escapeHtml(report.disclaimer || '')}</p>
+            </div>`;
+
+            document.getElementById('content').innerHTML = html;
+        }
+
+        loadReport();
+    </script>
+</body>
+</html>

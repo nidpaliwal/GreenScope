@@ -7,7 +7,6 @@ from typing import List, Optional
 import uuid
 import time
 import json
-import math
 import os
 import sqlite3
 
@@ -80,35 +79,22 @@ def save_report_to_db(report):
 def load_report_from_db(report_id):
     conn = get_db()
     row = conn.execute(
-        "SELECT environment, photo_analysis, recommendations, generated_at, processing_time_ms FROM reports WHERE report_id = ?",
+        "SELECT location, latitude, longitude, environment, photo_analysis, recommendations, generated_at, processing_time_ms FROM reports WHERE report_id = ?",
         (report_id,),
     ).fetchone()
     conn.close()
     if row is None:
         return None
-    env = json.loads(row[0])
-    photo_analysis = json.loads(row[2]) if row[2] else None
-    recs = json.loads(row[3])
-    generated_at = row[3] if isinstance(row[3], float) else json.loads(row[3])["generated_at"]
-    processing_time_ms = row[4] if isinstance(row[4], float) else json.loads(row[4])["processing_time_ms"]
     return {
-        "environment": env,
-        "photo_analysis": photo_analysis,
-        "recommendations": recs,
-        "generated_at": generated_at,
-        "processing_time_ms": processing_time_ms,
+        "location": row[0],
+        "latitude": row[1],
+        "longitude": row[2],
+        "environment": json.loads(row[3]),
+        "photo_analysis": json.loads(row[4]) if row[4] else None,
+        "recommendations": json.loads(row[5]),
+        "generated_at": row[6],
+        "processing_time_ms": row[7],
     }
-
-
-# --- Plant Knowledge Base ---
-
-def load_plant_db():
-    db_path = os.path.join(os.path.dirname(__file__), "plant_db.json")
-    with open(db_path, "r") as f:
-        return json.load(f)["plants"]
-
-
-PLANTS = load_plant_db()
 
 
 # --- Location Environmental Data ---
@@ -636,32 +622,8 @@ async def generate_report(request: ReportGenerateRequest):
     )
 
     reports_db[report_id] = response
-    # Save to SQLite for persistence
-    report_dict = {
-        "report_id": report_id,
-        "location": location_str,
-        "latitude": lat,
-        "longitude": lng,
-        "environment": env,
-        "photo_analysis": photo_analysis,
-        "recommendations": [
-            {
-                "plant_name": r.plant_name,
-                "scientific_name": r.scientific_name,
-                "reasoning": r.reasoning,
-                "suitability_score": r.suitability_score,
-                "care_guide": r.care_guide,
-                "growth_duration": r.growth_duration,
-                "score_breakdown": r.score_breakdown,
-                "water_requirement": r.water_requirement,
-                "sun_requirement": r.sun_requirement,
-                "planting_season": r.planting_season,
-            } for r in recommendations
-        ],
-        "generated_at": time.time(),
-        "processing_time_ms": processing_time_ms,
-    }
-    save_report_to_db(report_dict)
+    # Save the response model so the persistence helper can access its fields.
+    save_report_to_db(response)
     return response
 
 
@@ -797,6 +759,12 @@ async def get_report(report_id: str):
         processing_time_ms=report.get('processing_time_ms', 0.0),
         disclaimer=ReportGenerateResponse.model_fields['disclaimer'].default,
     )
+
+
+@app.get("/report/{report_id}", response_class=FileResponse)
+async def serve_report_page(report_id: str):
+    report_path = os.path.join(os.path.dirname(__file__), "..", "static", "report.html")
+    return FileResponse(report_path)
 
 
 # --- Mount static files (after API routes) ---

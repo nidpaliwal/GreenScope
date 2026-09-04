@@ -155,6 +155,13 @@
         const API = { report: '/api/v1/generate-report', reports: '/api/v1/reports/' };
         let currentReportId = null;
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         const form = document.getElementById('generateForm');
         const locationInput = document.getElementById('location-select');
         const submitBtn = document.getElementById('submitBtn');
@@ -223,7 +230,7 @@
             reportStatus.textContent = 'Report ready';
 
             const env = report.environment || {};
-            document.getElementById('envLocation').innerHTML = `<strong>${report.location}</strong> — USDA Zone ${env.usda_zone || 'N/A'}`;
+            document.getElementById('envLocation').innerHTML = `<strong>${escapeHtml(report.location)}</strong> — USDA Zone ${escapeHtml(env.usda_zone || 'N/A')}`;
             document.getElementById('envGrid').innerHTML = [
                 { icon: '🌡', label: 'Avg Temp', value: `${env.avg_temp_c || '?'}°C` },
                 { icon: '💧', label: 'Rainfall', value: `${env.rainfall_mm || '?'}mm/yr` },
@@ -231,11 +238,11 @@
                 { icon: '🌱', label: 'Soil pH', value: env.ph || '?' },
                 { icon: '🪴', label: 'Soil Type', value: env.soil_type || '?' },
                 { icon: '❄️', label: 'Frost Risk', value: env.frost_risk || '?' },
-            ].map(s => `<div class="env-stat"><div class="label">${s.icon} ${s.label}</div><div class="value">${s.value}</div></div>`).join('');
+            ].map(s => `<div class="env-stat"><div class="label">${s.icon} ${escapeHtml(s.label)}</div><div class="value">${escapeHtml(String(s.value))}</div></div>`).join('');
 
             if (report.photo_analysis) {
                 document.getElementById('photoCard').classList.remove('hidden');
-                document.getElementById('photoFeatures').innerHTML = report.photo_analysis.features.map(f => `<span class="photo-feature">✓ ${f}</span>`).join('');
+                document.getElementById('photoFeatures').innerHTML = report.photo_analysis.features.map(f => `<span class="photo-feature">✓ ${escapeHtml(f)}</span>`).join('');
             }
 
             if (report.garden_risk) {
@@ -248,10 +255,10 @@
                     { label: 'Overall', value: gr.overall },
                 ].map(r => {
                     const cls = r.value === 'GOOD' || r.value === 'LOW' ? 'risk-good' : r.value === 'MODERATE' ? 'risk-warn' : 'risk-bad';
-                    return `<div class="risk-item"><span class="risk-dot ${cls}"></span><span><strong>${r.label}:</strong> ${r.value}</span></div>`;
+                    return `<div class="risk-item"><span class="risk-dot ${cls}"></span><span><strong>${escapeHtml(r.label)}:</strong> ${escapeHtml(r.value)}</span></div>`;
                 }).join('');
                 document.getElementById('riskWarnings').innerHTML = gr.warnings.length
-                    ? `<div style="margin-top:8px;padding:10px;border-radius:6px;background:rgba(245,158,11,0.1);font-size:13px;color:#92400e;"><strong>Warnings:</strong> ${gr.warnings.join('; ')}</div>`
+                    ? `<div style="margin-top:8px;padding:10px;border-radius:6px;background:rgba(245,158,11,0.1);font-size:13px;color:#92400e;"><strong>Warnings:</strong> ${escapeHtml(gr.warnings.join('; '))}</div>`
                     : '<p style="font-size:13px;color:var(--muted);margin-top:8px;">No warnings — conditions look good!</p>';
             }
 
@@ -259,7 +266,7 @@
                 const cats = report.categories;
                 const labels = { best_overall: 'Best Overall', best_low_water: 'Best Low-Water', fastest_harvest: 'Fastest Harvest', best_flower: 'Best Flower', best_herb: 'Best Herb' };
                 document.getElementById('categoriesGrid').innerHTML = Object.entries(cats).map(([k, v]) =>
-                    `<div class="category-badge"><strong>${labels[k] || k}:</strong> ${v}</div>`
+                    `<div class="category-badge"><strong>${escapeHtml(labels[k] || k)}:</strong> ${escapeHtml(v)}</div>`
                 ).join('');
             }
 
@@ -271,7 +278,7 @@
                     const val = bd[k] || 0;
                     const color = val >= 80 ? 'var(--accent)' : val >= 60 ? 'var(--warning)' : 'var(--error)';
                     return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;">
-                        <span style="width:65px;color:var(--muted);text-transform:capitalize;">${k}</span>
+                        <span style="width:65px;color:var(--muted);text-transform:capitalize;">${escapeHtml(k)}</span>
                         <div style="flex:1;" class="score-bar"><div class="score-bar-fill" style="width:${val}%;background:${color};"></div></div>
                         <span style="width:30px;text-align:right;font-weight:500;">${val.toFixed(0)}</span></div>`;
                 }).join('');
@@ -279,8 +286,8 @@
                 <div class="confidence-${cls} animate-fade-in-up" style="padding:16px;border-radius:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:start;">
                         <div>
-                            <h4 style="font-weight:600;font-size:16px;">${idx + 1}. ${rec.plant_name}</h4>
-                            <p style="font-size:12px;color:var(--muted);font-style:italic;">${rec.scientific_name || ''}</p>
+                            <h4 style="font-weight:600;font-size:16px;">${idx + 1}. ${escapeHtml(rec.plant_name)}</h4>
+                            <p style="font-size:12px;color:var(--muted);font-style:italic;">${escapeHtml(rec.scientific_name || '')}</p>
                         </div>
                         <div style="text-align:right;">
                             <div style="font-size:22px;font-weight:700;color:${cls === 'high' ? 'var(--accent)' : cls === 'medium' ? 'var(--warning)' : 'var(--error)'};">${rec.suitability_score.toFixed(0)}%</div>
@@ -289,10 +296,10 @@
                     </div>
                     <div style="margin-top:10px;">${bars}</div>
                     <div style="margin-top:10px;font-size:12px;color:var(--muted);">
-                        💧 ${rec.water_requirement || '?'} water &nbsp; ☀️ ${rec.sun_requirement || '?'} sun &nbsp; 🌱 ${rec.growth_duration || '?'} &nbsp; 📅 ${rec.planting_season || '?'}
+                        💧 ${escapeHtml(rec.water_requirement || '?')} water &nbsp; ☀️ ${escapeHtml(rec.sun_requirement || '?')} sun &nbsp; 🌱 ${escapeHtml(rec.growth_duration || '?')} &nbsp; 📅 ${escapeHtml(rec.planting_season || '?')}
                     </div>
                     <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);">
-                        ${rec.care_guide}
+                        ${escapeHtml(rec.care_guide)}
                     </div>
                 </div>`;
             }).join('');
@@ -302,22 +309,22 @@
                 document.getElementById('compTable').innerHTML = `
                     <thead><tr><th>Plant</th><th>Suitability</th><th>Water</th><th>Sun</th><th>Growth</th></tr></thead>
                     <tbody>${ct.map((r, i) => `<tr style="${i === 0 ? 'font-weight:600;' : ''}">
-                        <td>${i + 1}. ${r.name}</td>
+                        <td>${i + 1}. ${escapeHtml(r.name)}</td>
                         <td>${r.suitability.toFixed(0)}%</td>
-                        <td>${r.water}</td>
-                        <td>${r.sun}</td>
-                        <td>${r.growth}</td></tr>`).join('')}</tbody>`;
+                        <td>${escapeHtml(r.water)}</td>
+                        <td>${escapeHtml(r.sun)}</td>
+                        <td>${escapeHtml(r.growth)}</td></tr>`).join('')}</tbody>`;
             }
 
             if (report.rejected_plants && report.rejected_plants.length) {
                 document.getElementById('rejectedList').innerHTML = report.rejected_plants.map(r => `
                     <div style="padding:10px;border-radius:6px;background:var(--bg);border-left:3px solid var(--border);">
                         <div style="display:flex;justify-content:space-between;">
-                            <strong>${r.plant_name}</strong>
+                            <strong>${escapeHtml(r.plant_name)}</strong>
                             <span style="color:var(--muted);font-size:13px;">${r.suitability.toFixed(0)}% suitability</span>
                         </div>
                         <div style="font-size:12px;color:var(--muted);margin-top:4px;">
-                            ${r.reasons.join(' — ')}
+                            ${escapeHtml(r.reasons.join(' — '))}
                         </div>
                     </div>`).join('');
             }
@@ -350,7 +357,8 @@
 
         shareBtn.addEventListener('click', () => {
             if (!currentReportId) return;
-            navigator.clipboard.writeText(window.location.origin + `/api/v1/reports/${currentReportId}`).then(() => alert('Link copied!'));
+            const shareUrl = window.location.origin + `/report/${currentReportId}`;
+            navigator.clipboard.writeText(shareUrl).then(() => alert('Report link copied!'));
         });
 
         document.getElementById('location-select').focus();
