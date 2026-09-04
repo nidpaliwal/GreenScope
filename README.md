@@ -11,7 +11,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-Open `static/index.html` in a browser and select a location.
+Open `http://localhost:8000` in a browser (single URL serves both API and frontend).
 
 ## How It Works
 
@@ -48,10 +48,11 @@ Categories | Garden Risk | Comparison Table | Why Not?
 
 | Method | Endpoint                      | Description              |
 |--------|-------------------------------|--------------------------|
-| `GET`  | `/`                           | Health check             |
+| `GET`  | `/`                           | Serve frontend           |
 | `POST` | `/api/v1/geocode`             | Geocode location         |
 | `POST` | `/api/v1/generate-report`     | Generate gardening report|
 | `GET`  | `/api/v1/reports/{id}`        | Retrieve report          |
+| `GET`  | `/api/v1/plant-this-month`    | Seasonal planting calendar|
 | `GET`  | `/api/v1/health`              | Health check             |
 
 ## Scoring Algorithm
@@ -81,7 +82,7 @@ Categories | Garden Risk | Comparison Table | Why Not?
 - **Backend:** FastAPI, Pydantic v2, Python 3.10+
 - **Frontend:** HTML5, Tailwind CSS (CDN), Vanilla JS
 - **Data:** JSON plant database, in-memory report store
-- **Tests:** pytest (15 tests passing)
+- **Tests:** pytest (36 tests passing)
 
 ## Tests
 
@@ -99,7 +100,7 @@ GreenScope/
   static/
     index.html        # Frontend with environment cards, categories, risk
   tests/
-    test_api.py       # API tests (15 cases)
+    test_api.py       # API tests (36 cases)
   requirements.txt
   .gitignore
   README.md

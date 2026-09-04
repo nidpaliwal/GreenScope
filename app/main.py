@@ -644,6 +644,10 @@ async def get_report(report_id: str):
     return reports_db[report_id]
 
 
+# --- Mount static files (after API routes) ---
+app.mount("/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "..", "static"), html=True), name="static")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
