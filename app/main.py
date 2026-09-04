@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
@@ -8,6 +9,95 @@ import time
 import json
 import math
 import os
+import sqlite3
+
+
+# --- Plant Knowledge Base ---
+
+def load_plant_db():
+    db_path = os.path.join(os.path.dirname(__file__), "plant_db.json")
+    with open(db_path, "r") as f:
+        return json.load(f)["plants"]
+
+
+PLANTS = load_plant_db()
+
+# --- SQLite Database for Report Persistence ---
+
+def get_db():
+    db_path = os.path.join(os.path.dirname(__file__), "reports.db")
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS reports (
+            report_id TEXT PRIMARY KEY,
+            location TEXT,
+            latitude REAL,
+            longitude REAL,
+            environment TEXT,
+            photo_analysis TEXT,
+            recommendations TEXT,
+            generated_at REAL,
+            processing_time_ms REAL
+        )"""
+    )
+    conn.commit()
+    return conn
+
+
+def save_report_to_db(report):
+    conn = get_db()
+    conn.execute(
+        """INSERT OR REPLACE INTO reports 
+        (report_id, location, latitude, longitude, environment, photo_analysis, recommendations, generated_at, processing_time_ms)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            report.report_id,
+            report.location,
+            report.latitude,
+            report.longitude,
+            json.dumps(report.environment),
+            json.dumps(report.photo_analysis) if report.photo_analysis else None,
+            json.dumps([{
+                "plant_name": r.plant_name,
+                "scientific_name": r.scientific_name,
+                "reasoning": r.reasoning,
+                "suitability_score": r.suitability_score,
+                "care_guide": r.care_guide,
+                "growth_duration": r.growth_duration,
+                "score_breakdown": r.score_breakdown,
+                "water_requirement": r.water_requirement,
+                "sun_requirement": r.sun_requirement,
+                "planting_season": r.planting_season,
+            } for r in report.recommendations]),
+            report.generated_at,
+            report.processing_time_ms,
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+
+def load_report_from_db(report_id):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT environment, photo_analysis, recommendations, generated_at, processing_time_ms FROM reports WHERE report_id = ?",
+        (report_id,),
+    ).fetchone()
+    conn.close()
+    if row is None:
+        return None
+    env = json.loads(row[0])
+    photo_analysis = json.loads(row[2]) if row[2] else None
+    recs = json.loads(row[3])
+    generated_at = row[3] if isinstance(row[3], float) else json.loads(row[3])["generated_at"]
+    processing_time_ms = row[4] if isinstance(row[4], float) else json.loads(row[4])["processing_time_ms"]
+    return {
+        "environment": env,
+        "photo_analysis": photo_analysis,
+        "recommendations": recs,
+        "generated_at": generated_at,
+        "processing_time_ms": processing_time_ms,
+    }
 
 
 # --- Plant Knowledge Base ---
@@ -236,7 +326,7 @@ def photo_obs_to_str(photo_obs: dict) -> str:
 
 # --- FastAPI App ---
 
-app = FastAPI(title="GreenScope API", version="1.0.0")
+app = FastAPI(title="GreenScope API", version="0.0.6")
 
 app.add_middleware(
     CORSMiddleware,
@@ -257,8 +347,12 @@ class LocationInput(BaseModel):
 
 class PhotoUpload(BaseModel):
     image_id: str = Field(..., description="Uploaded image identifier")
-    filename: str = Field(..., description="Original filename")
-    base64: Optional[str] = Field(None, description="Base64 encoded image data")
+    filename: str = Field(..., description="Original filename", max_length=255)
+    base64: Optional[str] = Field(
+        None, 
+        description="Base64 encoded image data",
+        max_length=10_000_000  # ~10MB max
+    )
 
 
 class ReportGenerateRequest(BaseModel):
@@ -272,7 +366,7 @@ class ReportRecommendation(BaseModel):
     plant_name: str
     scientific_name: Optional[str] = None
     reasoning: str
-    confidence_tp_percent: float
+    suitability_score: float
     care_guide: str
     growth_duration: Optional[str] = None
     score_breakdown: Optional[dict] = None
@@ -316,7 +410,7 @@ reports_db = {}
 
 @app.get("/")
 async def root():
-    return {"message": "GreenScope API is running", "version": "1.0.0"}
+    return FileResponse(os.path.join(os.path.dirname(__file__), "..", "static", "index.html"))
 
 
 @app.get("/api/v1/health", response_model=dict)
@@ -337,7 +431,8 @@ async def geocode_location(location: LocationInput):
     for key, (lat, lng) in mock_geocodes.items():
         if key in loc_key:
             return {"latitude": lat, "longitude": lng, "formatted": location.location}
-    return {"latitude": 37.7749, "longitude": -122.4194, "formatted": location.location or "Unknown location"}
+    # Instead of silently falling back to SF, return an error
+    raise HTTPException(status_code=400, detail="Location not supported. Please select a supported location or provide coordinates.")
 
 
 @app.post("/api/v1/generate-report", response_model=ReportGenerateResponse)
@@ -345,9 +440,16 @@ async def generate_report(request: ReportGenerateRequest):
     start_time = time.time()
     report_id = str(uuid.uuid4())
 
-    lat = request.location.latitude or 37.7749
-    lng = request.location.longitude or -122.4194
-    location_str = request.location.location or "Unknown location"
+    # Resolve location to coordinates using geocode function
+    if request.location.latitude is None or request.location.longitude is None:
+        geocoded = await geocode_location(request.location)
+        lat = geocoded["latitude"]
+        lng = geocoded["longitude"]
+        location_str = geocoded["formatted"]
+    else:
+        lat = request.location.latitude
+        lng = request.location.longitude
+        location_str = request.location.location or "Unknown location"
 
     env = get_env_for_location(lat, lng, location_str)
     photo_obs = analyze_photo(request.photo)
@@ -394,7 +496,7 @@ async def generate_report(request: ReportGenerateRequest):
             plant_name=plant["name"],
             scientific_name=plant.get("scientific_name"),
             reasoning=reasoning,
-            confidence_tp_percent=score_result["total"],
+            suitability_score=score_result["total"],
             care_guide=care_guide,
             growth_duration=growth_str,
             score_breakdown=score_result["breakdown"],
@@ -534,6 +636,7 @@ async def generate_report(request: ReportGenerateRequest):
     )
 
     reports_db[report_id] = response
+    save_report_to_db(report)
     return response
 
 
@@ -639,9 +742,36 @@ async def plant_this_month(location: str = "San Francisco, CA", latitude: float 
 
 @app.get("/api/v1/reports/{report_id}", response_model=ReportGenerateResponse)
 async def get_report(report_id: str):
-    if report_id not in reports_db:
+    report = load_report_from_db(report_id)
+    if report is None:
         raise HTTPException(status_code=404, detail="Report not found")
-    return reports_db[report_id]
+    recs = []
+    for r in report.get('recommendations', []):
+        rec = ReportRecommendation(
+            plant_name=r['plant_name'],
+            scientific_name=r.get('scientific_name'),
+            reasoning=r['reasoning'],
+            suitability_score=r['suitability_score'],
+            care_guide=r['care_guide'],
+            growth_duration=r.get('growth_duration'),
+            score_breakdown=r.get('score_breakdown'),
+            water_requirement=r.get('water_requirement'),
+            sun_requirement=r.get('sun_requirement'),
+            planting_season=r.get('planting_season'),
+        )
+        recs.append(rec)
+    return ReportGenerateResponse(
+        report_id=report_id,
+        location=report.get('location', ''),
+        latitude=report.get('latitude', 0.0),
+        longitude=report.get('longitude', 0.0),
+        environment=report.get('environment', {}),
+        photo_analysis=report.get('photo_analysis'),
+        recommendations=recs,
+        generated_at=report.get('generated_at', time.time()),
+        processing_time_ms=report.get('processing_time_ms', 0.0),
+        disclaimer=ReportGenerateResponse.model_fields['disclaimer'].default,
+    )
 
 
 # --- Mount static files (after API routes) ---

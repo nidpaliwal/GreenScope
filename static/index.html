@@ -265,7 +265,7 @@
 
             const recs = report.recommendations;
             recommendationsDiv.innerHTML = recs.map((rec, idx) => {
-                const cls = rec.confidence_tp_percent >= 80 ? 'high' : rec.confidence_tp_percent >= 60 ? 'medium' : 'low';
+                const cls = rec.suitability_score >= 80 ? 'high' : rec.suitability_score >= 60 ? 'medium' : 'low';
                 const bd = rec.score_breakdown || {};
                 const bars = ['climate', 'ph', 'sunlight', 'water', 'soil'].map(k => {
                     const val = bd[k] || 0;
@@ -283,7 +283,7 @@
                             <p style="font-size:12px;color:var(--muted);font-style:italic;">${rec.scientific_name || ''}</p>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-size:22px;font-weight:700;color:${cls === 'high' ? 'var(--accent)' : cls === 'medium' ? 'var(--warning)' : 'var(--error)'};">${rec.confidence_tp_percent.toFixed(0)}%</div>
+                            <div style="font-size:22px;font-weight:700;color:${cls === 'high' ? 'var(--accent)' : cls === 'medium' ? 'var(--warning)' : 'var(--error)'};">${rec.suitability_score.toFixed(0)}%</div>
                             <div style="font-size:10px;color:var(--muted);">Suitability</div>
                         </div>
                     </div>
@@ -341,7 +341,7 @@
                 let y = 50;
                 report.recommendations.forEach((rec, i) => {
                     if (y > 270) { doc.addPage(); y = 20; }
-                    doc.setFontSize(11); doc.text(`${i + 1}. ${rec.plant_name} - ${rec.confidence_tp_percent.toFixed(0)}%`, 20, y); y += 8;
+                    doc.setFontSize(11); doc.text(`${i + 1}. ${rec.plant_name} - ${rec.suitability_score.toFixed(0)}%`, 20, y); y += 8;
                     doc.setFontSize(9); doc.text(`   ${rec.care_guide.substring(0, 80)}`, 20, y); y += 10;
                 });
                 doc.save(`GreenScope-${currentReportId}.pdf`);

@@ -15,7 +15,8 @@ def client():
 def test_root_endpoint(client):
     r = client.get("/")
     assert r.status_code == 200
-    assert "GreenScope" in r.json()["message"]
+    assert r.headers["content-type"].startswith("text/html")
+    assert "GreenScope" in r.text
 
 
 def test_health_check(client):
@@ -62,8 +63,7 @@ def test_geocode_denver(client):
 
 def test_geocode_unknown_defaults(client):
     r = client.post("/api/v1/geocode", json={"location": "Somewhere Unknown"})
-    assert r.status_code == 200
-    assert r.json()["latitude"] == 37.7749
+    assert r.status_code == 400
 
 
 # --- Report Generation ---
@@ -103,9 +103,9 @@ def test_generate_report_different_locations(client):
     ny_top = ny["recommendations"][0]["plant_name"]
     austin_top = austin["recommendations"][0]["plant_name"]
 
-    scores = [sf["recommendations"][0]["confidence_tp_percent"],
-              ny["recommendations"][0]["confidence_tp_percent"],
-              austin["recommendations"][0]["confidence_tp_percent"]]
+    scores = [sf["recommendations"][0]["suitability_score"],
+              ny["recommendations"][0]["suitability_score"],
+              austin["recommendations"][0]["suitability_score"]]
 
     assert len(set(scores)) > 1 or len({sf_top, ny_top, austin_top}) > 1, \
         "Different locations should produce meaningfully different results"
@@ -124,7 +124,7 @@ def test_recommendation_has_score_breakdown(client):
 def test_suitability_score_range(client):
     r = client.post("/api/v1/generate-report", json={"location": {"location": "Denver, CO"}})
     for rec in r.json()["recommendations"]:
-        assert 0 <= rec["confidence_tp_percent"] <= 100
+        assert 0 <= rec["suitability_score"] <= 100
 
 
 def test_environment_data_complete(client):

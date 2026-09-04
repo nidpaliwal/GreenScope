@@ -8,7 +8,7 @@ GreenScope combines environmental data, plant science, and garden analysis to ge
 
 ```bash
 pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
 Open `http://localhost:8000` in a browser (single URL serves both API and frontend).
