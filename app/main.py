@@ -546,6 +546,97 @@ def _parse_days(growth_str: str) -> int:
     return int(growth_str.split()[0])
 
 
+# --- Seasonal Planting Calendar ---
+
+PLANTING_CALENDAR = {
+    "spring": ["Tomato", "Basil", "Peppers", "Marigold", "Sunflower", "Zucchini", "Strawberry", "Lettuce", "Thyme", "Mint"],
+    "summer": ["Peppers", "Basil", "Tomato", "Marigold", "Sunflower", "Zucchini", "Citrus"],
+    "fall": ["Spinach", "Kale", "Lettuce", "Lavender", "Rosemary", "Mint", "Thyme", "Strawberry"],
+    "winter": ["Spinach", "Kale", "Lettuce"],
+}
+
+MONTH_TO_SEASON = {
+    1: "winter", 2: "winter", 3: "spring", 4: "spring", 5: "spring",
+    6: "summer", 7: "summer", 8: "summer", 9: "fall", 10: "fall", 11: "fall", 12: "winter",
+}
+
+
+def get_season_for_location(lat: float, month: int) -> str:
+    base = MONTH_TO_SEASON[month]
+    if lat < 25:
+        offsets = {"spring": "summer", "winter": "spring", "fall": "winter", "summer": "summer"}
+        return offsets.get(base, base)
+    elif lat > 45:
+        offsets = {"spring": "winter", "summer": "spring", "fall": "fall", "winter": "winter"}
+        return offsets.get(base, base)
+    return base
+
+
+class SeasonalPlanting(BaseModel):
+    plant_name: str
+    scientific_name: Optional[str] = None
+    best_planting_window: str
+    days_to_harvest: Optional[str] = None
+    suitability: float
+    category: Optional[str] = None
+
+
+class PlantThisMonthResponse(BaseModel):
+    location: str
+    latitude: float
+    longitude: float
+    current_month: str
+    season: str
+    plants: List[SeasonalPlanting]
+
+
+@app.get("/api/v1/plant-this-month", response_model=PlantThisMonthResponse)
+async def plant_this_month(location: str = "San Francisco, CA", latitude: float = None, longitude: float = None):
+    now = time.localtime()
+    month = now.tm_mon
+    month_names = ["", "January", "February", "March", "April", "May", "June",
+                   "July", "August", "September", "October", "November", "December"]
+    month_name = month_names[month]
+
+    lat = latitude or 37.7749
+    lng = longitude or -122.4194
+    env = get_env_for_location(lat, lng, location)
+
+    season = get_season_for_location(lat, month)
+    seasonal_plants = PLANTING_CALENDAR.get(season, PLANTING_CALENDAR["spring"])
+
+    plant_map = {p["name"]: p for p in PLANTS}
+    scored = []
+    for name in seasonal_plants:
+        if name in plant_map:
+            plant = plant_map[name]
+            result = score_plant(plant, env, {})
+            days = plant.get("growth_days", 60)
+            if days >= 365:
+                growth_str = f"{days // 365} year(s)"
+            else:
+                growth_str = f"{days} days"
+            scored.append(SeasonalPlanting(
+                plant_name=plant["name"],
+                scientific_name=plant.get("scientific_name"),
+                best_planting_window=f"Plant now in {month_name}",
+                days_to_harvest=growth_str,
+                suitability=result["total"],
+                category=plant.get("category"),
+            ))
+
+    scored.sort(key=lambda x: x.suitability, reverse=True)
+
+    return PlantThisMonthResponse(
+        location=location,
+        latitude=lat,
+        longitude=lng,
+        current_month=month_name,
+        season=season,
+        plants=scored,
+    )
+
+
 @app.get("/api/v1/reports/{report_id}", response_model=ReportGenerateResponse)
 async def get_report(report_id: str):
     if report_id not in reports_db:
