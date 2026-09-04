@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenScope - AI Gardening Report Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --fg: #0f172a;
+            --muted: #64748b;
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+            background: white;
+            color: var(--fg);
+            transition: border-color 0.2s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: var(--muted);
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 8px;
+            padding: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .confidence-high {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid var(--accent);
+        }
+
+        .confidence-medium {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 3px solid var(--warning);
+        }
+
+        .confidence-low {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid var(--error);
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-ready {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent);
+        }
+
+        .status-waiting {
+            background: rgba(100, 116, 139, 0.1);
+            color: var(--muted);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+
+        @media (max-width: 640px) {
+            .px-8 {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+            .px-6 {
+                padding-left: 1.5rem !important;
+                padding-right: 1.5rem !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="border-b border-border/50 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl font-bold" style="color: var(--fg);">GreenScope</span>
+                <span class="text-sm" style="color: var(--muted);">AI Gardening Report</span>
+            </div>
+            <span class="text-xs" style="color: var(--muted);">v1.0.0</span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        
+        <!-- Welcome Section -->
+        <section class="mb-8 animate-fade-in-up delay-1">
+            <div class="card max-w-2xl mx-auto">
+                <h1 class="text-3xl font-bold tracking-tight mb-2">GreenScope</h1>
+                <p class="text-lg" style="color: var(--muted);">
+                    Turn a photo and pin drop into a personalized growing report
+                </p>
+            </div>
+        </section>
+
+        <!-- Input Form -->
+        <section class="mb-8 animate-fade-in-up delay-2">
+            <div class="card max-w-2xl mx-auto">
+                <form id="generateForm" novalidate>
+                    <div class="grid grid-cols-1 gap-4 mb-6">
+                        
+                        <!-- Location Input -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2" for="location-select">
+                                Location
+                                <span class="text-red-500">*</span>
+                            </label>
+                            <select
+                                id="location-select"
+                                class="input-field"
+                                required
+                            >
+                                <option value="" disabled selected>Select a location...</option>
+                                <option value="san-francisco,-ca">San Francisco, CA</option>
+                                <option value="new-york,-ny">New York, NY</option>
+                                <option value="austin,--tx">Austin, TX</option>
+                                <option value="seattle,--wa">Seattle, WA</option>
+                                <option value="denver,--co">Denver, CO</option>
+                                <option value="custom">Custom location / coordinates</option>
+                            </select>
+                        </div>
+
+                        <!-- Photo Upload -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2" for="photo">
+                                Garden Photo (Optional)
+                            </label>
+                            <input
+                                type="file"
+                                id="photo"
+                                class="input-file hidden"
+                                accept="image/jpeg, image/png"
+                            >
+                            <button
+                                type="button"
+                                class="btn-input flex items-center gap-2"
+                                onclick="document.getElementById('photo').click()"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8m8 4h-8M4 6h16c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z"/>
+                                </svg>
+                                Upload Photo
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn-primary mt-6 py-3"
+                        disabled id="submitBtn"
+                    >
+                        <span id="btnText">Generate My Report</span>
+                        <span id="btnLoading" class="hidden">
+                            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24">
+                                <circle
+                                    class="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    stroke-width="4"
+                                ></circle>
+                                <path
+                                    class="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                            </svg>
+                            Processing...
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Results Section (hidden initially) -->
+        <section id="resultsSection" class="hidden mb-8 animate-fade-in-up delay-3">
+            <div class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold">Your Growing Report</h2>
+                    <span id="reportStatus" class="status-badge status-waiting">
+                        Generating...
+                    </span>
+                </div>
+
+                <div id="recommendations" class="space-y-4"></div>
+
+                <div id="exportSection" class="mt-6 pt-6 border-t border-border/50">
+                    <button
+                        id="pdfBtn"
+                        class="btn-primary w-full mb-3"
+                        disabled
+                    >
+                        Download as PDF
+                    </button>
+                    <button
+                        id="shareBtn"
+                        class="btn-primary w-full"
+                        disabled
+                    >
+                        Share Report
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Report Modal (for PDF preview) -->
+    <div
+        id="reportModal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center"
+    >
+        <div
+            class="bg-white rounded-lg p-6 max-w-2xl w-full mx-8 shadow-2xl transform scale-95 opacity-0 transition-all duration-300"
+            id="modalContent"
+        >
+            <h3 class="text-xl font-bold mb-4">Report Preview</h3>
+            <div id="modalReport" class="space-y-4"></div>
+            <button
+                id="closeModal"
+                class="btn-primary w-full mt-4"
+            >
+                Close
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Check if we're in development mode
+        const IS_DEMO = true;
+
+        // Initialize Language Model integration (mock for demo)
+        const LLM_CONFIG = {
+            apiEndpoint: '/api/v1/generate-report',
+            geocodeEndpoint: '/api/v1/geocode',
+            reportStatusEndpoint: '/api/v1/reports/'
+        };
+
+        // State management
+        let currentReportId = null;
+        let formState = {
+            location: '',
+            photo: null,
+            latitude: 37.7749,  // Default: San Francisco
+            longitude: -122.4194
+        };
+
+        // DOM Elements
+        const form = document.getElementById('generateForm');
+        const locationInput = document.getElementById('location-select');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnLoading = document.getElementById('btnLoading');
+        const resultsSection = document.getElementById('resultsSection');
+        const recommendationsDiv = document.getElementById('recommendations');
+        const exportSection = document.getElementById('exportSection');
+        const pdfBtn = document.getElementById('pdfBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const reportModal = document.getElementById('reportModal');
+        const modalContent = document.getElementById('modalContent');
+        const modalReport = document.getElementById('modalReport');
+        const closeModal = document.getElementById('closeModal');
+        const reportStatus = document.getElementById('reportStatus');
+
+        // Enable/submit button based on location selection
+        locationInput.addEventListener('change', () => {
+            const value = locationInput.value.trim();
+            // Enable button if a valid (non-"custom") location is selected
+            // Disable if empty or "custom" is selected
+            if (value && value !== 'custom') {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+        });
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const locationSelect = document.getElementById('location-select');
+            const location = locationSelect.value.trim();
+            if (!location || location === 'custom') {
+                alert('Please select a location');
+                return;
+            }
+
+            // Get photo if uploaded
+            let photoData = null;
+            const file = document.getElementById('photo').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    photoData = {
+                        image_id: 'temp_' + Date.now(),
+                        filename: file.name,
+                        base64: e.target.result
+                    };
+                    await submitReport(location, photoData);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                await submitReport(location, null);
+            }
+        });
+
+        async function submitReport(location, photo) {
+            // Show loading state
+            submitBtn.disabled = true;
+            btnText.classList.add('hidden');
+            btnLoading.classList.remove('hidden');
+
+            try {
+                const response = await fetch(LLM_CONFIG.apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        location: {
+                            location: location,
+                            latitude: formState.latitude,
+                            longitude: formState.longitude
+                        },
+                        photo: photo,
+                        num_recommendations: 4
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to generate report');
+                }
+
+                const data = await response.json();
+                currentReportId = data.report_id;
+                displayReport(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to generate report: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnLoading.classList.add('hidden');
+            }
+        }
+
+        function displayReport(report) {
+            // Update status
+            reportStatus.className = 'status-badge status-ready';
+            reportStatus.textContent = 'Report ready';
+
+            // Store report state
+            formState.location = report.location;
+            const recs = report.recommendations;
+            recommendationsDiv.innerHTML = recs.map((rec, idx) => `
+                <div class="confidence-${getConfidenceClass(rec.confidence_tp_percent)} animate-fade-in-up delay-${idx + 1}">
+                    <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--bg);">
+                            <span class="text-lg" style="color: var(--accent);">${rec.plant_name[0]}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-medium text-lg line-clamp-2">${rec.plant_name}</h4>
+                            <p class="text-sm" style="color: var(--muted); line-clamp-3">${rec.reasoning}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 flex items-center gap-2">
+                        <span class="text-xs px-2 py-1 rounded" style="background: rgba(16,185,129,0.1); color: var(--accent);">
+                            TP% ${rec.confidence_tp_percent}%
+                        </span>
+                    </div>
+
+                    <div class="mt-3 pt-3 border-t border-border/20">
+                        <p class="text-sm" style="color: var(--muted); mb-1"><strong>Care Guide:</strong> ${rec.care_guide}</p>
+                        ${rec.growth_duration ? `<p class="text-xs" style="color: var(--muted);"><strong>Growth:</strong> ${rec.growth_duration}</p>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            // Show results
+            resultsSection.classList.remove('hidden');
+            exportSection.classList.add('block');
+
+            // Update export buttons
+            pdfBtn.disabled = false;
+            shareBtn.disabled = false;
+
+            currentReportId = report.report_id;
+        }
+
+        function getConfidenceClass(percent) {
+            if (percent >= 80) return 'high';
+            if (percent >= 60) return 'medium';
+            return 'low';
+        }
+
+        // Export PDF functionality
+        pdfBtn.addEventListener('click', async () => {
+            if (!currentReportId) return;
+
+            try {
+                const response = await fetch(`/api/v1/reports/${currentReportId}`);
+                if (!response.ok) throw new Error('Failed to fetch report');
+                
+                const report = await response.json();
+                const { jsPDF } = await import('https://cdn.skypack.dev/jspdf');
+                
+                const doc = new jsPDF();
+                
+                doc.setFontSize(18);
+                doc.text('GreenScope - Gardening Report', 20, 20);
+                
+                doc.setFontSize(12);
+                doc.text(`Location: ${report.location}`, 20, 40);
+                doc.text(`Generated: ${new Date(report.generated_at * 1000).toLocaleDateString()}`, 20, 55);
+                
+                doc.setFontSize(14);
+                doc.text('Recommendations:', 20, 70);
+                
+                let y = 85;
+                report.recommendations.forEach((rec, idx) => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    doc.setFontSize(11);
+                    doc.text(`${idx + 1}. ${rec.plant_name} - TP% ${rec.confidence_tp_percent}%`, 20, y);
+                    y += 8;
+                    doc.setFontSize(9);
+                    doc.text(`   Reasoning: ${rec.reasoning.substring(0, 60)}...`, 20, y);
+                    y += 6;
+                    doc.text(`   Care: ${rec.care_guide}`, 20, y);
+                    y += 6;
+                });
+
+                doc.save(`GreenScope-Report-${currentReportId}.pdf`);
+            } catch (error) {
+                console.error('PDF generation error:', error);
+                // Fallback: copy to clipboard
+                const reportHtml = document.getElementById('recommendations').innerHTML;
+                const textVersion = extractTextFromHtml(reportHtml);
+                navigator.clipboard.writeText(textVersion);
+                alert('Report details copied to clipboard! You can paste into a document.');
+            }
+        });
+
+        function extractTextFromHtml(html) {
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+            return temp.innerText || temp.textContent;
+        }
+
+        // Share functionality
+        shareBtn.addEventListener('click', () => {
+            if (!currentReportId) return;
+
+            if (navigator.share) {
+                fetch(`/api/v1/reports/${currentReportId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        navigator.share({
+                            title: 'GreenScope Gardening Report',
+                            text: `Check out my GreenScope report for ${data.location}!`,
+                            url: window.location.origin + `/report/${data.report_id}`
+                        });
+                    })
+                    .catch(() => {
+                        // Fallback: copy link
+                        const url = window.location.origin + `/report/${currentReportId}`;
+                        navigator.clipboard.writeText(url);
+                        alert('Report link copied to clipboard!');
+                    });
+            } else {
+                const url = window.location.origin + `/report/${currentReportId}`;
+                navigator.clipboard.writeText(url);
+                alert('Report link copied to clipboard!');
+            }
+        });
+
+        // Modal close
+        closeModal.addEventListener('click', () => {
+            reportModal.classList.add('hidden');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+        });
+
+        // Click outside to close
+        reportModal.addEventListener('click', (e) => {
+            if (e.target === reportModal) {
+                closeModal.click();
+            }
+        });
+
+        // Initialize
+        document.getElementById('location-select').focus();
+    </script>
+</body>
+</html>
