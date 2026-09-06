@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GreenScope Report</title>
+    <meta name="description" content="GreenScope gardening report with personalized plant recommendations for your location in India.">
+    <meta property="og:title" content="GreenScope Report">
+    <meta property="og:description" content="Personalized plant recommendations with real climate data and explainable scoring.">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -73,7 +79,7 @@
                 const r = await fetch(`/api/v1/reports/${reportId}`);
                 if (!r.ok) throw new Error('Report not found');
                 const report = await r.json();
-                document.title = `GreenScope Report - ${report.location}`;
+                document.title = `GreenScope Report — ${report.location}`;
                 renderReport(report);
             } catch (err) {
                 document.getElementById('content').innerHTML = `<div class="error">Report not found or expired.</div>`;

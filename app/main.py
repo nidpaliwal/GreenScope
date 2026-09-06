@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from functools import lru_cache
 import uuid
 import time
 import json
@@ -23,9 +24,13 @@ def load_plant_db():
 PLANTS = load_plant_db()
 
 # --- SQLite Database for Report Persistence ---
+# On Render free tier, disk is ephemeral — reports survive until next deploy/spin-down.
+# For persistent reports, set DATABASE_URL env var to a persistent path.
 
 def get_db():
-    db_path = os.path.join(os.path.dirname(__file__), "reports.db")
+    db_path = os.environ.get("DATABASE_URL", os.path.join(os.path.dirname(__file__), "reports.db"))
+    if db_path.startswith("sqlite:///"):
+        db_path = db_path[len("sqlite:///"):]
     conn = sqlite3.connect(db_path)
     conn.execute(
         """CREATE TABLE IF NOT EXISTS reports (
@@ -190,7 +195,8 @@ DEFAULT_ENV = {
 }
 
 
-def get_env_for_location(lat: float, lng: float, location_str: str) -> dict:
+def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
+    """Returns (env_dict, data_source) where data_source is 'live_api' or 'fallback'."""
     # Try Open-Meteo Climate API first
     try:
         import httpx
@@ -244,7 +250,7 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> dict:
                         "ph": ph,
                         "frost_risk": frost,
                         "agro_zone": f"Lat {lat:.1f}, Lng {lng:.1f}",
-                    }
+                    }, "live_api"
     except Exception:
         pass
 
@@ -252,7 +258,7 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> dict:
     loc_key = location_str.lower().strip()
     for key, env in LOCATION_ENV.items():
         if key in loc_key:
-            return env.copy()
+            return env.copy(), "fallback"
     env = DEFAULT_ENV.copy()
     if lat < 12:
         env["avg_temp_c"] = 28
@@ -263,7 +269,7 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> dict:
         env["avg_temp_c"] = 18
         env["frost_risk"] = "low"
         env["rainfall_mm"] = 1200
-    return env
+    return env, "fallback"
 
 
 # --- Scoring Engine ---
@@ -547,6 +553,10 @@ class ReportGenerateResponse(BaseModel):
     comparison_table: Optional[List[dict]] = None
     generated_at: float
     processing_time_ms: float
+    data_source: Optional[str] = Field(
+        default="live_api",
+        description="'live_api' if real Nominatim+Open-Meteo data, 'fallback' if hardcoded data used"
+    )
     disclaimer: str = Field(
         default="Suitability scores are calculated from climate, soil, sunlight, water, and photo data. "
         "Results should be verified with local gardening advice."
@@ -567,15 +577,23 @@ async def health_check():
     return {"status": "healthy", "service": "GreenScope API"}
 
 
-@app.post("/api/v1/geocode", response_model=dict)
+# --- Geocoding Cache (Nominatim rate-limit protection) ---
+_geocode_cache = {}
+
 async def geocode_location(location: LocationInput):
+    cache_key = location.location.strip().lower()
+
+    # Check cache first (Nominatim rate-limit protection)
+    if cache_key in _geocode_cache:
+        return _geocode_cache[cache_key]
+
     # Try Nominatim (OpenStreetMap) geocoding first
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             r = await client.get(
                 "https://nominatim.openstreetmap.org/search",
                 params={"q": location.location, "format": "json", "limit": 1},
-                headers={"User-Agent": "GreenScope/0.1.0"}
+                headers={"User-Agent": "GreenScope/0.1 (hackathon project; contact: github.com/nidpaliwal/GreenScope)"}
             )
             if r.status_code == 200:
                 data = r.json()
@@ -583,7 +601,12 @@ async def geocode_location(location: LocationInput):
                     lat = float(data[0]["lat"])
                     lng = float(data[0]["lon"])
                     display = data[0].get("display_name", location.location)
-                    return {"latitude": lat, "longitude": lng, "formatted": display.split(",")[0]}
+                    result = {"latitude": lat, "longitude": lng, "formatted": display.split(",")[0]}
+                    _geocode_cache[cache_key] = result
+                    return result
+            elif r.status_code == 429:
+                # Nominatim rate-limited — fall through to hardcoded
+                pass
     except Exception:
         pass
 
@@ -616,6 +639,11 @@ async def geocode_location(location: LocationInput):
     return {"latitude": 20.5937, "longitude": 78.9629, "formatted": location.location}
 
 
+@app.post("/api/v1/geocode", response_model=dict)
+async def geocode_endpoint(location: LocationInput):
+    return await geocode_location(location)
+
+
 @app.post("/api/v1/generate-report", response_model=ReportGenerateResponse)
 async def generate_report(request: ReportGenerateRequest):
     start_time = time.time()
@@ -636,7 +664,7 @@ async def generate_report(request: ReportGenerateRequest):
         lng = request.location.longitude
         location_str = request.location.location or "Unknown location"
 
-    env = get_env_for_location(lat, lng, location_str)
+    env, data_source = get_env_for_location(lat, lng, location_str)
     photo_obs = analyze_photo(request.photo)
 
     scored = []
@@ -818,6 +846,7 @@ async def generate_report(request: ReportGenerateRequest):
         comparison_table=comparison,
         generated_at=time.time(),
         processing_time_ms=round(processing_time_ms, 2),
+        data_source=data_source,
     )
 
     reports_db[report_id] = response
@@ -882,7 +911,7 @@ async def plant_this_month(location: str = "Delhi, NCR", latitude: float = None,
 
     lat = latitude or 28.6139
     lng = longitude or 77.2090
-    env = get_env_for_location(lat, lng, location)
+    env, _ = get_env_for_location(lat, lng, location)
 
     season = get_season_for_location(lat, month)
     seasonal_plants = PLANTING_CALENDAR.get(season, []) + PLANTING_CALENDAR.get("year-round", [])

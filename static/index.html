@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GreenScope - AI Gardening Intelligence</title>
+    <title>GreenScope — AI Gardening Intelligence for India</title>
+    <meta name="description" content="Discover what you can grow based on your location, soil, and garden conditions. India-focused with 50 plants including Tulsi, Neem, Ashwagandha.">
+    <meta property="og:title" content="GreenScope — AI Gardening Intelligence for India">
+    <meta property="og:description" content="Real climate data + explainable plant scoring. Get personalized recommendations for any location in India.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -55,6 +61,14 @@
         .comp-table th { text-align: left; padding: 8px; border-bottom: 2px solid var(--border); color: var(--muted); font-size: 11px; text-transform: uppercase; }
         .comp-table td { padding: 8px; border-bottom: 1px solid var(--border); }
         .photo-feature { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); color: var(--accent); display: inline-block; margin: 2px; }
+        .skeleton { background: linear-gradient(90deg, var(--border) 25%, #f1f5f9 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+        .dark .skeleton { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .data-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+        .data-badge.live { background: rgba(16,185,129,0.15); color: #059669; }
+        .data-badge.fallback { background: rgba(245,158,11,0.15); color: #d97706; }
+        .dark .data-badge.live { background: rgba(16,185,129,0.2); color: #34d399; }
+        .dark .data-badge.fallback { background: rgba(245,158,11,0.2); color: #fbbf24; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
         .delay-1 { animation-delay: 0.1s; } .delay-2 { animation-delay: 0.2s; } .delay-3 { animation-delay: 0.3s; } .delay-4 { animation-delay: 0.4s; }
@@ -126,7 +140,10 @@
                     <div id="errorBox" class="hidden mb-4" style="padding:12px;border-radius:6px;background:rgba(239,68,68,0.1);color:#991b1b;font-size:14px;"></div>
                     <button type="submit" class="btn-primary py-3" disabled id="submitBtn">
                         <span id="btnText">Analyze My Garden</span>
-                        <span id="btnLoading" class="hidden">Analyzing...</span>
+                        <span id="btnLoading" class="hidden flex items-center justify-center gap-2">
+                            <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                            Fetching real climate data...
+                        </span>
                     </button>
                 </form>
             </div>
@@ -145,7 +162,10 @@
         <section id="resultsSection" class="hidden mb-8 space-y-6">
 
             <div id="envCard" class="card animate-fade-in-up delay-1">
-                <h2 class="text-lg font-bold mb-2">Location Environment</h2>
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-lg font-bold">Location Environment</h2>
+                    <span id="dataSourceBadge" class="data-badge live"></span>
+                </div>
                 <div id="envLocation" class="text-sm mb-3" style="color:var(--muted);"></div>
                 <div id="map" style="height:180px;border-radius:8px;margin-bottom:12px;z-index:0;"></div>
                 <div id="envGrid" class="env-grid"></div>
@@ -377,6 +397,15 @@
         function displayReport(report) {
             reportStatus.className = 'status-badge status-ready';
             reportStatus.textContent = 'Report ready';
+
+            const dsBadge = document.getElementById('dataSourceBadge');
+            if (report.data_source === 'live_api') {
+                dsBadge.textContent = 'LIVE DATA';
+                dsBadge.className = 'data-badge live';
+            } else {
+                dsBadge.textContent = 'FALLBACK DATA';
+                dsBadge.className = 'data-badge fallback';
+            }
 
             const env = report.environment || {};
             document.getElementById('envLocation').innerHTML = `<strong>${escapeHtml(report.location)}</strong> — Agro Zone: ${escapeHtml(env.agro_zone || 'N/A')}`;
