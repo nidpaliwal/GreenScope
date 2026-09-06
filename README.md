@@ -55,15 +55,16 @@ Categories | Garden Risk | Comparison Table | Why Not?
 - **Custom Locations**: Type any location name, not limited to dropdown
 - **Input Validation**: Size limits, error handling, graceful fallbacks
 
-## Demo Script (30 seconds)
+## Demo Script (lead with differentiators, in this order)
 
-**Lead with "Why Not?"** — that's the most differentiated feature.
+1. **Tags** — point at badges on any recommendation: "Air-purifying, pollinator-friendly, companion hints — the app knows these plants relate to each other, not just their climate numbers."
+2. **"Why Not?"** — scroll to rejected plants: "Every rejection has a reason. No black box."
+3. **Feedback loop** — tap 👍 on a card: "Votes accumulate per plant, so recommendations improve with real gardener feedback."
+4. **ICS export** — "One click adds season-aware planting reminders to Google Calendar — Kharif crops in June, Rabi in October."
+5. **Udaipur vs Kolkata** (30-second wow): same plant, different score, clear reason why.
+6. **Point at the frost/heat banner and flip the Hindi toggle** — easy to miss in a fast demo, so call them out explicitly.
 
-1. "Type Udaipur, Rajasthan" → Show arid climate (24°C, 580mm rainfall, sandy soil)
-2. "Now try Kolkata, West Bengal" → Show humid climate (26°C, 1600mm, alluvial soil)
-3. Point at the same plant (e.g., Turmeric): "In Kolkata it scores 85% because it loves moisture. In Udaipur it drops to 60% because it needs more water."
-4. "The score breakdown shows exactly why — climate, pH, sunlight, water, soil — each weighted and scored."
-5. "We chose deterministic, explainable scoring over a black-box model because gardeners need to trust WHY a plant was recommended."
+**"Where's the AI?" (prewritten answer):** "We chose deterministic, explainable scoring over a black-box model because gardeners need to trust *why* a plant was recommended — every score decomposes into six weighted factors you can inspect. The photo analysis is real pixel-level computer vision: brightness, vegetation index, and soil detection with calibrated confidence scores, honestly labeled as estimates. Explainability *is* the intelligence here."
 
 **Key talking points:**
 - Real APIs: Nominatim geocoding (any location in India) + Open-Meteo climate data
@@ -83,6 +84,9 @@ Categories | Garden Risk | Comparison Table | Why Not?
 | `GET`  | `/api/v1/reports/{id}`        | Retrieve report data     |
 | `GET`  | `/report/{id}`                | Share report page        |
 | `GET`  | `/api/v1/plant-this-month`    | Seasonal planting calendar|
+| `GET`  | `/api/v1/reports/{id}/calendar.ics` | Season-aware planting reminders (ICS) |
+| `POST` | `/api/v1/feedback`            | Thumbs up/down per plant suggestion |
+| `GET`  | `/api/v1/feedback/summary`    | Aggregated helpfulness per plant |
 | `GET`  | `/api/v1/health`              | Health check             |
 
 ## What's Real vs Mocked
@@ -94,7 +98,7 @@ Categories | Garden Risk | Comparison Table | Why Not?
 | Scoring engine       | Real   | Deterministic scoring from plant DB             |
 | Plant database       | Real   | 50 Indian plants with full growing requirements |
 | Photo analysis       | Real   | Pillow-based brightness/vegetation analysis     |
-| Persistence          | Real   | SQLite (reports persist to `reports.db`)         |
+| Persistence          | Real*  | SQLite (`reports.db`); *ephemeral disk on free tiers — survives a demo session, wiped on redeploy/spin-down |
 | Soil type inference  | Mocked | Based on latitude/region heuristics              |
 
 ## Scoring Algorithm
@@ -141,7 +145,7 @@ Plus free-text input for any other location (Varanasi, Kochi, Indore, etc.)
 - **Frontend:** HTML5, Tailwind CSS (CDN), Leaflet maps, Vanilla JS
 - **APIs:** Nominatim (geocoding, cached), Open-Meteo (climate)
 - **Data:** JSON plant database, SQLite persistence (`reports.db`, ephemeral on free tiers)
-- **Tests:** pytest (47 tests passing)
+- **Tests:** pytest (49 tests passing)
 
 ## Tests
 
@@ -160,7 +164,7 @@ GreenScope/
     index.html        # Frontend with custom location input
     report.html       # Shareable report page
   tests/
-    test_api.py       # API tests (47 cases)
+    test_api.py       # API tests (49 cases)
   requirements.txt
   render.yaml         # One-click Render deploy config
   .gitignore

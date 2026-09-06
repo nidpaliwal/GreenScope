@@ -68,7 +68,11 @@
         .data-badge.live { background: rgba(16,185,129,0.15); color: #059669; }
         .data-badge.fallback { background: rgba(245,158,11,0.15); color: #d97706; }
         .dark .data-badge.live { background: rgba(16,185,129,0.2); color: #34d399; }
-        .dark .data-badge.fallback { background: rgba(245,158,11,0.2); color: #fbbf24; }
+        .dark         .data-badge.fallback { background: rgba(245,158,11,0.2); color: #fbbf24; }
+        .plant-link { color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+        .plant-link:hover { color: var(--accent); }
+        #plantModal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+        #plantModalCard { max-width: 560px; width: 100%; max-height: 85vh; overflow-y: auto; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
         .delay-1 { animation-delay: 0.1s; } .delay-2 { animation-delay: 0.2s; } .delay-3 { animation-delay: 0.3s; } .delay-4 { animation-delay: 0.4s; }
@@ -238,6 +242,16 @@
         </section>
     </main>
 
+    <div id="plantModal" class="hidden" role="dialog" aria-modal="true" aria-label="Plant details" onclick="if(event.target===this)closePlantModal()">
+        <div id="plantModalCard" class="card">
+            <div class="flex items-center justify-between mb-2">
+                <h3 id="plantModalTitle" class="text-xl font-bold"></h3>
+                <button onclick="closePlantModal()" aria-label="Close plant details" style="border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;background:none;color:var(--fg);">✕</button>
+            </div>
+            <div id="plantModalBody"></div>
+        </div>
+    </div>
+
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -357,12 +371,13 @@
                 const r = await fetch(`/api/v1/plant-this-month?location=${encodeURIComponent(loc)}`);
                 if (!r.ok) return;
                 const data = await r.json();
+                _calendarCache = data.plants || [];
                 document.getElementById('calendarSeason').textContent = `${data.season} season — ${data.current_month}`;
                 document.getElementById('calendarGrid').innerHTML = data.plants.slice(0, 8).map(p => {
                     const colors = { vegetable: '#10b981', herb: '#8b5cf6', spice: '#f59e0b', pulse: '#3b82f6', flower: '#ec4899' };
                     const c = colors[p.category] || '#64748b';
                     return `<div style="padding:12px;border-radius:8px;background:var(--bg);border-left:3px solid ${c};">
-                        <div style="font-weight:600;font-size:14px;">${escapeHtml(p.plant_name)}</div>
+                        <div style="font-weight:600;font-size:14px;">${plantLink(p.plant_name)}</div>
                         <div style="font-size:11px;color:var(--muted);margin:2px 0;">${escapeHtml(p.days_to_harvest)} to harvest</div>
                         <div style="font-size:11px;color:${c};font-weight:500;">${p.suitability.toFixed(0)}% match</div>
                     </div>`;
@@ -446,7 +461,66 @@
         }
 
         let _lastReport = null;
+        let _calendarCache = [];
         function refreshDisplay() { if (_lastReport) displayReport(_lastReport); }
+
+        function wikiUrl(name, sci) {
+            const t = ((sci || name) || '').trim().replace(/\s+/g, '_');
+            return 'https://en.wikipedia.org/wiki/' + encodeURIComponent(t);
+        }
+
+        function plantLink(name) {
+            const safe = String(name).replace(/'/g, "\\'");
+            return `<a href="#" class="plant-link" onclick="plantDetail('${safe}');return false;" title="View ${escapeHtml(getPlantName(name))} details">${escapeHtml(getPlantName(name))}</a>`;
+        }
+
+        function plantDetail(name) {
+            const rep = _lastReport;
+            const rec = rep && rep.recommendations ? rep.recommendations.find(r => r.plant_name === name) : null;
+            const rej = rep && rep.rejected_plants ? rep.rejected_plants.find(r => r.plant_name === name) : null;
+            const cal = _calendarCache.find(p => p.plant_name === name);
+            const title = getPlantName(name);
+            let body = '';
+            if (rec) {
+                const bd = rec.score_breakdown || {};
+                const bars = ['climate', 'ph', 'sunlight', 'water', 'soil'].map(k => {
+                    const v = bd[k] || 0;
+                    return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;margin:2px 0;">
+                        <span style="width:65px;color:var(--muted);text-transform:capitalize;">${escapeHtml(k)}</span>
+                        <div style="flex:1;" class="score-bar"><div class="score-bar-fill" style="width:${v}%;background:${v >= 80 ? 'var(--accent)' : v >= 60 ? 'var(--warning)' : 'var(--error)'};"></div></div>
+                        <span style="width:30px;text-align:right;font-weight:500;">${v.toFixed(0)}</span></div>`;
+                }).join('');
+                body = `
+                    <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px;">${escapeHtml(rec.scientific_name || '')}</p>
+                    <div style="font-size:26px;font-weight:700;margin-bottom:8px;">${rec.suitability_score.toFixed(0)}% <span style="font-size:12px;font-weight:400;color:var(--muted);">suitability for ${escapeHtml((rep && rep.location) || '')}</span></div>
+                    ${bars}
+                    <div style="margin-top:10px;font-size:12px;color:var(--muted);">💧 ${escapeHtml(rec.water_requirement || '?')} (≈${rec.estimated_water_l_per_week ?? '?'} L/wk) &nbsp; ☀️ ${escapeHtml(rec.sun_requirement || '?')} &nbsp; 🌱 ${escapeHtml(rec.growth_duration || '?')} &nbsp; 📅 ${escapeHtml(rec.planting_season || '?')}</div>
+                    ${(rec.tags && rec.tags.length) ? `<div style="margin-top:8px;">${rec.tags.map(t => `<span class="photo-feature">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+                    <div style="margin-top:10px;font-size:13px;color:var(--muted);">${escapeHtml(rec.care_guide || '')}</div>
+                    <div style="margin-top:10px;font-size:13px;color:var(--muted);white-space:pre-line;">${escapeHtml(rec.reasoning || '')}</div>`;
+            } else if (rej) {
+                body = `
+                    <div style="font-size:22px;font-weight:700;margin-bottom:8px;">${rej.suitability.toFixed(0)}% <span style="font-size:12px;font-weight:400;color:var(--muted);">suitability</span></div>
+                    <div style="font-size:13px;color:var(--muted);">Why not a top pick:</div>
+                    <div style="font-size:13px;margin-top:4px;">${escapeHtml(rej.reasons.join(' — '))}</div>`;
+            } else if (cal) {
+                body = `
+                    <p style="font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px;">${escapeHtml(cal.scientific_name || '')}</p>
+                    <div style="font-size:13px;">Best window: ${escapeHtml(cal.best_planting_window || '')}</div>
+                    <div style="font-size:13px;">Harvest in: ${escapeHtml(cal.days_to_harvest || '')}</div>
+                    <div style="font-size:13px;">Seasonal match: ${cal.suitability.toFixed(0)}%</div>`;
+            } else {
+                body = `<div style="font-size:13px;color:var(--muted);">Full growing guide on Wikipedia:</div>`;
+            }
+            const sci = rec ? rec.scientific_name : (cal ? cal.scientific_name : null);
+            body += `<div style="margin-top:12px;"><a href="${wikiUrl(name, sci)}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;font-size:14px;">📖 Detailed description on Wikipedia →</a></div>`;
+            document.getElementById('plantModalTitle').textContent = title;
+            document.getElementById('plantModalBody').innerHTML = body;
+            document.getElementById('plantModal').classList.remove('hidden');
+        }
+
+        function closePlantModal() { document.getElementById('plantModal').classList.add('hidden'); }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePlantModal(); });
 
         function displayReport(report) {
             _lastReport = report;
@@ -539,7 +613,7 @@
                 const cats = report.categories;
                 const labels = { best_overall: 'Best Overall', best_low_water: 'Best Low-Water', fastest_harvest: 'Fastest Harvest', best_flower: 'Best Flower', best_herb: 'Best Herb' };
                 document.getElementById('categoriesGrid').innerHTML = Object.entries(cats).map(([k, v]) =>
-                    `<div class="category-badge"><strong>${escapeHtml(labels[k] || k)}:</strong> ${escapeHtml(v)}</div>`
+                    `<div class="category-badge"><strong>${escapeHtml(labels[k] || k)}:</strong> ${plantLink(v)}</div>`
                 ).join('');
             }
 
@@ -548,7 +622,7 @@
                 document.getElementById('bedCard').classList.remove('hidden');
                 document.getElementById('bedTitle').textContent = bed.title || 'Your garden bed';
                 document.getElementById('bedPlants').innerHTML = bed.plants.map(p =>
-                    `<span class="photo-feature">${escapeHtml(getPlantName(p))}</span>`).join('');
+                    `<span class="photo-feature">${plantLink(p)}</span>`).join('');
                 document.getElementById('bedStats').textContent =
                     `Est. water ≈ ${bed.estimated_water_l_per_week} L/week · Est. CO₂ ≈ ${bed.estimated_co2_kg_per_year} kg/yr (${escapeHtml(bed.estimates_disclaimer || 'rough estimates')})`;
                 document.getElementById('bedTip').textContent = bed.tip || '';
@@ -570,7 +644,7 @@
                 <div class="confidence-${cls} animate-fade-in-up" style="padding:16px;border-radius:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:start;">
                         <div>
-                            <h4 style="font-weight:600;font-size:16px;">${idx + 1}. ${escapeHtml(getPlantName(rec.plant_name))}</h4>
+                            <h4 style="font-weight:600;font-size:16px;">${idx + 1}. ${plantLink(rec.plant_name)}</h4>
                             <p style="font-size:12px;color:var(--muted);font-style:italic;">${escapeHtml(rec.scientific_name || '')}</p>
                         </div>
                         <div style="text-align:right;">
@@ -599,7 +673,7 @@
                 document.getElementById('compTable').innerHTML = `
                     <thead><tr><th>Plant</th><th>Suitability</th><th>Water</th><th>Sun</th><th>Growth</th></tr></thead>
                     <tbody>${ct.map((r, i) => `<tr style="${i === 0 ? 'font-weight:600;' : ''}">
-                        <td>${i + 1}. ${escapeHtml(getPlantName(r.name))}</td>
+                        <td>${i + 1}. ${plantLink(r.name)}</td>
                         <td>${r.suitability.toFixed(0)}%</td>
                         <td>${escapeHtml(r.water)}</td>
                         <td>${escapeHtml(r.sun)}</td>
@@ -610,7 +684,7 @@
                 document.getElementById('rejectedList').innerHTML = report.rejected_plants.map(r => `
                     <div style="padding:10px;border-radius:6px;background:var(--bg);border-left:3px solid var(--border);">
                         <div style="display:flex;justify-content:space-between;">
-                            <strong>${escapeHtml(getPlantName(r.plant_name))}</strong>
+                            <strong>${plantLink(r.plant_name)}</strong>
                             <span style="color:var(--muted);font-size:13px;">${r.suitability.toFixed(0)}% suitability</span>
                         </div>
                         <div style="font-size:12px;color:var(--muted);margin-top:4px;">
@@ -690,6 +764,7 @@
                         <div style="margin-top:6px;font-size:11px;color:#666;">
                             Water: ${rec.water_requirement||'?'} | Sun: ${rec.sun_requirement||'?'} | Growth: ${rec.growth_duration||'?'} | Season: ${rec.planting_season||'?'}
                         </div>
+                        <div style="margin-top:4px;font-size:11px;color:#666;">More info: https://en.wikipedia.org/wiki/${encodeURIComponent((rec.scientific_name||rec.plant_name||'').trim().replace(/\s+/g,'_'))}</div>
                         <div style="margin-top:6px;font-size:12px;color:#444;border-top:1px solid #e2e8f0;padding-top:6px;">${rec.care_guide||''}</div>
                     </div>`;
                 }).join('');

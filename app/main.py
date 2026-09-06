@@ -1286,11 +1286,22 @@ def _ics_escape(s: str) -> str:
     return (s or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
 
 
+# Representative sowing month per Indian planting season
+SEASON_SOW_MONTH = {"kharif": 6, "monsoon": 6, "rabi": 10, "year-round": None}
+
+
+def _season_event_date(season: str, today: date) -> date:
+    month = SEASON_SOW_MONTH.get((season or "").lower(), None) or today.month
+    year = today.year if month >= today.month else today.year + 1
+    return date(year, month, 1)
+
+
 @app.get("/api/v1/reports/{report_id}/calendar.ics")
 @limiter.limit("60/minute")
 async def report_calendar_ics(request: Request, report_id: str):
     """ICS download: one 'Plant {name}' event per top recommendation,
-    dated today, with care guide + suitability in the description."""
+    dated to the next occurrence of that plant's sowing season
+    (Kharif/Monsoon -> June, Rabi -> October, Year-round -> this month)."""
     report = load_report_from_db(report_id)
     if report is None:
         raise HTTPException(status_code=404, detail="Report not found")
@@ -1299,15 +1310,18 @@ async def report_calendar_ics(request: Request, report_id: str):
     lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//GreenScope//Planting Reminders//EN"]
     for i, r in enumerate(report.get("recommendations", [])[:8]):
         uid = f"{report_id}-{i}@greenscope"
-        summary = f"Plant {r.get('plant_name', 'crop')} ({report.get('location', '')})"
-        desc = (f"Suitability {r.get('suitability_score', '?')}%. "
+        season = r.get("planting_season", "Year-round")
+        event_date = _season_event_date(season, today)
+        summary = f"Plant {r.get('plant_name', 'crop')} ({season} season)"
+        desc = (f"Sow at the start of {season} season in {report.get('location', '')}. "
+                f"Suitability {r.get('suitability_score', '?')}%. "
                 f"{r.get('care_guide', '')} "
                 f"Water: {r.get('water_requirement', '?')}, Sun: {r.get('sun_requirement', '?')}.")
         lines += [
             "BEGIN:VEVENT",
             f"UID:{uid}",
             f"DTSTAMP:{stamp}T000000Z",
-            f"DTSTART;VALUE=DATE:{(today + timedelta(days=i)).strftime('%Y%m%d')}",
+            f"DTSTART;VALUE=DATE:{event_date.strftime('%Y%m%d')}",
             f"SUMMARY:{_ics_escape(summary)}",
             f"DESCRIPTION:{_ics_escape(desc)}",
             "END:VEVENT",

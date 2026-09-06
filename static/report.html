@@ -68,6 +68,15 @@
             return div.innerHTML;
         }
 
+        function wikiUrl(name, sci) {
+            const t = ((sci || name) || '').trim().replace(/\s+/g, '_');
+            return 'https://en.wikipedia.org/wiki/' + encodeURIComponent(t);
+        }
+
+        function wikiLink(name, sci) {
+            return `<a href="${wikiUrl(name, sci)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;text-underline-offset:3px;" title="Detailed description on Wikipedia">${escapeHtml(name)}</a>`;
+        }
+
         async function loadReport() {
             const path = window.location.pathname;
             const reportId = path.split('/report/')[1];
@@ -155,7 +164,7 @@
                         return `<div class="confidence-${cls}" style="padding:16px;border-radius:8px;">
                             <div style="display:flex;justify-content:space-between;align-items:start;">
                                 <div>
-                                    <h4 style="font-weight:600;font-size:16px;">${idx + 1}. ${escapeHtml(rec.plant_name)}</h4>
+                                    <h4 style="font-weight:600;font-size:16px;">${idx + 1}. ${wikiLink(rec.plant_name, rec.scientific_name)}</h4>
                                     <p style="font-size:12px;color:var(--muted);font-style:italic;">${escapeHtml(rec.scientific_name || '')}</p>
                                 </div>
                                 <div style="text-align:right;">
@@ -182,7 +191,7 @@
                         <table class="comp-table">
                             <thead><tr><th>Plant</th><th>Suitability</th><th>Water</th><th>Sun</th><th>Growth</th></tr></thead>
                             <tbody>${report.comparison_table.map((r, i) => `<tr style="${i === 0 ? 'font-weight:600;' : ''}">
-                                <td>${i + 1}. ${escapeHtml(r.name)}</td>
+                                <td>${i + 1}. ${wikiLink(r.name, null)}</td>
                                 <td>${r.suitability.toFixed(0)}%</td>
                                 <td>${escapeHtml(r.water)}</td>
                                 <td>${escapeHtml(r.sun)}</td>
@@ -198,7 +207,7 @@
                     <div style="display:flex;flex-direction:column;gap:12px;">
                         ${report.rejected_plants.map(r => `<div style="padding:10px;border-radius:6px;background:var(--bg);border-left:3px solid var(--border);">
                             <div style="display:flex;justify-content:space-between;">
-                                <strong>${escapeHtml(r.plant_name)}</strong>
+                                <strong>${wikiLink(r.plant_name, null)}</strong>
                                 <span style="color:var(--muted);font-size:13px;">${r.suitability.toFixed(0)}% suitability</span>
                             </div>
                             <div style="font-size:12px;color:var(--muted);margin-top:4px;">

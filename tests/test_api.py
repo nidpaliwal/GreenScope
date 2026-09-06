@@ -350,6 +350,20 @@ def test_report_page_has_fetch_script(client):
     assert "api/v1/reports/" in r.text
 
 
+def test_homepage_has_plant_detail_links(client):
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "plantDetail(" in r.text
+    assert "plantModal" in r.text
+    assert "wikipedia.org/wiki" in r.text
+
+
+def test_report_page_has_plant_links(client):
+    r = client.get("/report/test-id")
+    assert "wikiLink(" in r.text
+    assert "wikipedia.org/wiki" in r.text
+
+
 # --- Scoring Weights ---
 
 def test_scoring_weights_sum_to_one():
@@ -467,6 +481,12 @@ def test_ics_download(client):
     assert "END:VCALENDAR" in body
     assert body.count("BEGIN:VEVENT") >= 3
     assert client.get("/api/v1/reports/nope/calendar.ics").status_code == 404
+    # Events are dated to sowing seasons, not sequential placeholder days
+    import re
+    from datetime import date
+    months = {m.group(1)[4:6] for m in re.finditer(r"DTSTART;VALUE=DATE:(\d{8})", body)}
+    assert months <= {"06", "10", f"{date.today().month:02d}"}
+    assert "season" in body.lower()
 
 
 # --- Rate Limiter Wired ---
