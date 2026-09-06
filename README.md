@@ -28,7 +28,7 @@ Plant Database (50 Indian plants with growing requirements)
 Scoring Engine (climate 25%, pH 20%, sunlight 15%, water 15%, soil 15%, photo 10%)
       |
       v
-Top 4 Candidates with suitability scores + breakdown
+Top 15 Candidates with suitability scores + breakdown
       |
       v
 Categories | Garden Risk | Comparison Table | Why Not?
@@ -47,6 +47,30 @@ Categories | Garden Risk | Comparison Table | Why Not?
 - **Best For You Categories**: Best Overall, Low-Water, Fastest Harvest, Flower, Herb
 - **Comparison Table**: Side-by-side plant comparison
 - **Why Not?**: Explains why rejected plants scored lower
+- **Interactive Map**: Leaflet map showing geocoded location
+- **Dark Mode**: Toggle for dark/light theme
+- **Seasonal Calendar**: What to plant this month for your location
+- **Open Report Link**: Shareable public report page
+- **HTML Download**: Downloadable styled report (print to PDF)
+- **Custom Locations**: Type any location name, not limited to dropdown
+- **Input Validation**: Size limits, error handling, graceful fallbacks
+
+## Demo Script (30 seconds)
+
+**Lead with "Why Not?"** — that's the most differentiated feature.
+
+1. "Type Udaipur, Rajasthan" → Show arid climate (24°C, 580mm rainfall, sandy soil)
+2. "Now try Kolkata, West Bengal" → Show humid climate (26°C, 1600mm, alluvial soil)
+3. Point at the same plant (e.g., Turmeric): "In Kolkata it scores 85% because it loves moisture. In Udaipur it drops to 60% because it needs more water."
+4. "The score breakdown shows exactly why — climate, pH, sunlight, water, soil — each weighted and scored."
+5. "We chose deterministic, explainable scoring over a black-box model because gardeners need to trust WHY a plant was recommended."
+
+**Key talking points:**
+- Real APIs: Nominatim geocoding (any location in India) + Open-Meteo climate data
+- 50 Indian plants including religious/health species (Tulsi, Neem, Ashwagandha, Brahmi)
+- Explainable scoring with per-factor breakdown — not a black box
+- Garden risk assessment with actionable warnings
+- Shareable report pages with map pins
 - **Custom Locations**: Type any location name (not limited to dropdown)
 
 ## API Endpoints
