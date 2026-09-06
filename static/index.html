@@ -13,6 +13,16 @@
             --card: #ffffff; --border: #e2e8f0;
             --warning: #f59e0b; --error: #ef4444;
         }
+        .dark {
+            --bg: #0f172a; --fg: #f1f5f9; --muted: #94a3b8;
+            --card: #1e293b; --border: #334155;
+        }
+        .dark .input-field { background: #1e293b; color: #f1f5f9; border-color: #334155; }
+        .dark .btn-primary:disabled { background: #334155; }
+        .dark #photoBtn { background: #1e293b; border-color: #334155; color: #94a3b8; }
+        .dark .env-stat { background: #0f172a; }
+        .dark .risk-item { background: #0f172a; }
+        .dark .category-badge { background: #0f172a; }
         * { box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; margin: 0; }
         .btn-primary { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; width: 100%; }
@@ -45,17 +55,20 @@
         .photo-feature { font-size: 12px; padding: 4px 10px; border-radius: 12px; background: rgba(16, 185, 129, 0.1); color: var(--accent); display: inline-block; margin: 2px; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
-        .delay-1 { animation-delay: 0.1s; } .delay-2 { animation-delay: 0.2s; } .delay-3 { animation-delay: 0.3s; }
+        .delay-1 { animation-delay: 0.1s; } .delay-2 { animation-delay: 0.2s; } .delay-3 { animation-delay: 0.3s; } .delay-4 { animation-delay: 0.4s; }
     </style>
 </head>
 <body>
     <nav class="border-b border-border/50">
         <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <span class="text-xl font-bold" style="color:var(--fg);">GreenScope</span>
+                <span class="text-xl font-bold" style="color:var(--fg);">🌿 GreenScope</span>
                 <span class="text-sm" style="color:var(--muted);">AI Gardening Intelligence</span>
             </div>
-            <span class="text-xs" style="color:var(--muted);">v0.0.3</span>
+            <div class="flex items-center gap-4">
+                <button id="darkToggle" onclick="document.documentElement.classList.toggle('dark');localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--fg);">🌙</button>
+                <span class="text-xs" style="color:var(--muted);">v0.1.0</span>
+            </div>
         </div>
     </nav>
 
@@ -73,14 +86,30 @@
                     <div class="grid grid-cols-1 gap-4 mb-6">
                         <div>
                             <label class="block text-sm font-medium mb-2" for="location-select">Location <span class="text-red-500">*</span></label>
-                            <select id="location-select" class="input-field" required>
+                            <select id="location-select" class="input-field">
                                 <option value="" disabled selected>Select a location...</option>
-                                <option value="San Francisco, CA">San Francisco, CA</option>
-                                <option value="New York, NY">New York, NY</option>
-                                <option value="Austin, TX">Austin, TX</option>
-                                <option value="Seattle, WA">Seattle, WA</option>
-                                <option value="Denver, CO">Denver, CO</option>
+                                <option value="Mumbai, Maharashtra">Mumbai, Maharashtra</option>
+                                <option value="Delhi, NCR">Delhi, NCR</option>
+                                <option value="Bengaluru, Karnataka">Bengaluru, Karnataka</option>
+                                <option value="Chennai, Tamil Nadu">Chennai, Tamil Nadu</option>
+                                <option value="Kolkata, West Bengal">Kolkata, West Bengal</option>
+                                <option value="Hyderabad, Telangana">Hyderabad, Telangana</option>
+                                <option value="Pune, Maharashtra">Pune, Maharashtra</option>
+                                <option value="Jaipur, Rajasthan">Jaipur, Rajasthan</option>
+                                <option value="Ahmedabad, Gujarat">Ahmedabad, Gujarat</option>
+                                <option value="Lucknow, Uttar Pradesh">Lucknow, Uttar Pradesh</option>
+                                <option value="Bhopal, Madhya Pradesh">Bhopal, Madhya Pradesh</option>
+                                <option value="Patna, Bihar">Patna, Bihar</option>
+                                <option value="Shimla, Himachal Pradesh">Shimla, Himachal Pradesh</option>
+                                <option value="Srinagar, Jammu & Kashmir">Srinagar, Jammu & Kashmir</option>
+                                <option value="Thiruvananthapuram, Kerala">Thiruvananthapuram, Kerala</option>
+                                <option value="Udaipur, Rajasthan">Udaipur, Rajasthan</option>
+                                <option value="__custom__">Other (type below)...</option>
                             </select>
+                        </div>
+                        <div id="customLocationDiv" class="hidden">
+                            <label class="block text-sm font-medium mb-2" for="custom-location">Enter your location</label>
+                            <input type="text" id="custom-location" class="input-field" placeholder="e.g. Varanasi, Uttar Pradesh">
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2" for="photo">Garden Photo (Optional)</label>
@@ -92,11 +121,22 @@
                             </button>
                         </div>
                     </div>
+                    <div id="errorBox" class="hidden mb-4" style="padding:12px;border-radius:6px;background:rgba(239,68,68,0.1);color:#991b1b;font-size:14px;"></div>
                     <button type="submit" class="btn-primary py-3" disabled id="submitBtn">
                         <span id="btnText">Analyze My Garden</span>
                         <span id="btnLoading" class="hidden">Analyzing...</span>
                     </button>
                 </form>
+            </div>
+        </section>
+
+        <section id="calendarSection" class="hidden mb-8">
+            <div class="card animate-fade-in-up delay-2">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-lg font-bold">What to Plant This Month</h2>
+                    <span id="calendarSeason" class="status-badge status-waiting"></span>
+                </div>
+                <div id="calendarGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
             </div>
         </section>
 
@@ -145,13 +185,23 @@
             </div>
 
             <div class="card animate-fade-in-up delay-4">
-                <button id="pdfBtn" class="btn-primary w-full mb-3" disabled>Download as PDF</button>
-                <button id="shareBtn" class="btn-primary w-full" disabled>Share Report</button>
+                <a id="openReportBtn" href="#" target="_blank" class="block w-full text-center mb-3 py-3 rounded-md font-medium text-white bg-blue-600 hover:bg-blue-700 transition" style="text-decoration:none;pointer-events:none;opacity:0.5;" disabled>Open Full Report Page</a>
+                <button id="pdfBtn" class="btn-primary w-full mb-3" disabled>Download Report</button>
+                <button id="shareBtn" class="btn-primary w-full" disabled>Copy Share Link</button>
+                <div id="toast" class="hidden fixed bottom-4 right-4 bg-green-700 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity"></div>
             </div>
         </section>
     </main>
 
     <script>
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('darkToggle').textContent = '☀️';
+        }
+        document.getElementById('darkToggle').addEventListener('click', function() {
+            this.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+        });
+
         const API = { report: '/api/v1/generate-report', reports: '/api/v1/reports/' };
         let currentReportId = null;
 
@@ -174,24 +224,94 @@
         const reportStatus = document.getElementById('reportStatus');
         const photoInput = document.getElementById('photo');
         const photoLabel = document.getElementById('photoLabel');
+        const openReportBtn = document.getElementById('openReportBtn');
 
         const COORDS = {
-            'San Francisco, CA': { lat: 37.7749, lng: -122.4194 },
-            'New York, NY': { lat: 40.7128, lng: -74.0060 },
-            'Austin, TX': { lat: 30.2672, lng: -97.7431 },
-            'Seattle, WA': { lat: 47.6062, lng: -122.3321 },
-            'Denver, CO': { lat: 39.7392, lng: -104.9903 },
+            'Mumbai, Maharashtra': { lat: 19.0760, lng: 72.8777 },
+            'Delhi, NCR': { lat: 28.6139, lng: 77.2090 },
+            'Bengaluru, Karnataka': { lat: 12.9716, lng: 77.5946 },
+            'Chennai, Tamil Nadu': { lat: 13.0827, lng: 80.2707 },
+            'Kolkata, West Bengal': { lat: 22.5726, lng: 88.3639 },
+            'Hyderabad, Telangana': { lat: 17.3850, lng: 78.4867 },
+            'Pune, Maharashtra': { lat: 18.5204, lng: 73.8567 },
+            'Jaipur, Rajasthan': { lat: 26.9124, lng: 75.7873 },
+            'Ahmedabad, Gujarat': { lat: 23.0225, lng: 72.5714 },
+            'Lucknow, Uttar Pradesh': { lat: 26.8467, lng: 80.9462 },
+            'Bhopal, Madhya Pradesh': { lat: 23.2599, lng: 77.4126 },
+            'Patna, Bihar': { lat: 25.6093, lng: 85.1376 },
+            'Shimla, Himachal Pradesh': { lat: 31.1048, lng: 77.1734 },
+            'Srinagar, Jammu & Kashmir': { lat: 34.0837, lng: 74.7973 },
+            'Thiruvananthapuram, Kerala': { lat: 8.5241, lng: 76.9366 },
+            'Udaipur, Rajasthan': { lat: 24.5854, lng: 73.7125 },
         };
 
-        locationInput.addEventListener('change', () => { submitBtn.disabled = !locationInput.value; });
+        const customLocationDiv = document.getElementById('customLocationDiv');
+        const customLocationInput = document.getElementById('custom-location');
+        const errorBox = document.getElementById('errorBox');
+
+        function showError(msg) {
+            errorBox.textContent = msg;
+            errorBox.classList.remove('hidden');
+        }
+        function hideError() { errorBox.classList.add('hidden'); }
+
+        locationInput.addEventListener('change', () => {
+            if (locationInput.value === '__custom__') {
+                customLocationDiv.classList.remove('hidden');
+                customLocationInput.focus();
+                submitBtn.disabled = !customLocationInput.value.trim();
+            } else {
+                customLocationDiv.classList.add('hidden');
+                submitBtn.disabled = !locationInput.value;
+                loadCalendar(locationInput.value);
+            }
+            hideError();
+        });
+        customLocationInput.addEventListener('input', () => {
+            submitBtn.disabled = !customLocationInput.value.trim();
+            hideError();
+        });
+        customLocationInput.addEventListener('blur', () => {
+            if (customLocationInput.value.trim()) loadCalendar(customLocationInput.value.trim());
+        });
         photoInput.addEventListener('change', () => {
             photoLabel.textContent = photoInput.files.length ? photoInput.files[0].name : 'Upload Photo';
         });
 
+        async function loadCalendar(loc) {
+            try {
+                const r = await fetch(`/api/v1/plant-this-month?location=${encodeURIComponent(loc)}`);
+                if (!r.ok) return;
+                const data = await r.json();
+                document.getElementById('calendarSeason').textContent = `${data.season} season — ${data.current_month}`;
+                document.getElementById('calendarGrid').innerHTML = data.plants.slice(0, 8).map(p => {
+                    const colors = { vegetable: '#10b981', herb: '#8b5cf6', spice: '#f59e0b', pulse: '#3b82f6', flower: '#ec4899' };
+                    const c = colors[p.category] || '#64748b';
+                    return `<div style="padding:12px;border-radius:8px;background:var(--bg);border-left:3px solid ${c};">
+                        <div style="font-weight:600;font-size:14px;">${escapeHtml(p.plant_name)}</div>
+                        <div style="font-size:11px;color:var(--muted);margin:2px 0;">${escapeHtml(p.days_to_harvest)} to harvest</div>
+                        <div style="font-size:11px;color:${c};font-weight:500;">${p.suitability.toFixed(0)}% match</div>
+                    </div>`;
+                }).join('');
+                document.getElementById('calendarSection').classList.remove('hidden');
+            } catch {}
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const location = locationInput.value;
-            if (!location) return alert('Please select a location');
+            hideError();
+            let location = locationInput.value;
+            if (location === '__custom__') {
+                location = customLocationInput.value.trim();
+                if (!location) {
+                    showError('Please enter a location name');
+                    return;
+                }
+            }
+            if (!location) {
+                showError('Please select a location');
+                return;
+            }
             let photoData = null;
             const file = photoInput.files[0];
             if (file) {
@@ -210,18 +330,31 @@
             submitBtn.disabled = true;
             btnText.classList.add('hidden');
             btnLoading.classList.remove('hidden');
-            const c = COORDS[location] || { lat: 37.7749, lng: -122.4194 };
+            hideError();
+            const c = COORDS[location] || null;
+            const locPayload = c
+                ? { location, latitude: c.lat, longitude: c.lng }
+                : { location };
             try {
                 const r = await fetch(API.report, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ location: { location, latitude: c.lat, longitude: c.lng }, photo, num_recommendations: 4 })
+                    body: JSON.stringify({ location: locPayload, photo, num_recommendations: 15 })
                 });
-                if (!r.ok) throw new Error((await r.json()).detail || 'Failed');
+                if (!r.ok) {
+                    const errData = await r.json().catch(() => ({}));
+                    throw new Error(errData.detail || `Server error (${r.status})`);
+                }
                 const data = await r.json();
                 currentReportId = data.report_id;
                 displayReport(data);
-            } catch (err) { alert('Error: ' + err.message); }
+            } catch (err) {
+                if (err.name === 'TypeError' && err.message.includes('fetch')) {
+                    showError('Cannot connect to server. Please make sure the server is running on port 8000.');
+                } else {
+                    showError('Error: ' + err.message);
+                }
+            }
             finally { submitBtn.disabled = false; btnText.classList.remove('hidden'); btnLoading.classList.add('hidden'); }
         }
 
@@ -230,7 +363,7 @@
             reportStatus.textContent = 'Report ready';
 
             const env = report.environment || {};
-            document.getElementById('envLocation').innerHTML = `<strong>${escapeHtml(report.location)}</strong> — USDA Zone ${escapeHtml(env.usda_zone || 'N/A')}`;
+            document.getElementById('envLocation').innerHTML = `<strong>${escapeHtml(report.location)}</strong> — Agro Zone: ${escapeHtml(env.agro_zone || 'N/A')}`;
             document.getElementById('envGrid').innerHTML = [
                 { icon: '🌡', label: 'Avg Temp', value: `${env.avg_temp_c || '?'}°C` },
                 { icon: '💧', label: 'Rainfall', value: `${env.rainfall_mm || '?'}mm/yr` },
@@ -333,32 +466,114 @@
             pdfBtn.disabled = false;
             shareBtn.disabled = false;
             currentReportId = report.report_id;
+            openReportBtn.href = `/report/${report.report_id}`;
+            openReportBtn.style.pointerEvents = 'auto';
+            openReportBtn.style.opacity = '1';
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
         }
 
         pdfBtn.addEventListener('click', async () => {
             if (!currentReportId) return;
+            pdfBtn.disabled = true;
+            pdfBtn.textContent = 'Generating...';
             try {
                 const r = await fetch(`/api/v1/reports/${currentReportId}`);
-                if (!r.ok) throw new Error('Failed');
+                if (!r.ok) throw new Error('Failed to fetch report');
                 const report = await r.json();
-                const { jsPDF } = await import('https://cdn.skypack.dev/jspdf');
-                const doc = new jsPDF();
-                doc.setFontSize(18); doc.text('GreenScope Report', 20, 20);
-                doc.setFontSize(12); doc.text(`Location: ${report.location}`, 20, 35);
-                let y = 50;
-                report.recommendations.forEach((rec, i) => {
-                    if (y > 270) { doc.addPage(); y = 20; }
-                    doc.setFontSize(11); doc.text(`${i + 1}. ${rec.plant_name} - ${rec.suitability_score.toFixed(0)}%`, 20, y); y += 8;
-                    doc.setFontSize(9); doc.text(`   ${rec.care_guide.substring(0, 80)}`, 20, y); y += 10;
-                });
-                doc.save(`GreenScope-${currentReportId}.pdf`);
-            } catch { const t = document.getElementById('recommendations').innerText; navigator.clipboard.writeText(t); alert('Copied to clipboard!'); }
+                const env = report.environment || {};
+                const recs = report.recommendations || [];
+                const cats = report.categories || {};
+                const risk = report.garden_risk || {};
+
+                let recsHtml = recs.map((rec, i) => {
+                    const bd = rec.score_breakdown || {};
+                    const bars = ['climate','ph','sunlight','water','soil'].map(k => {
+                        const v = bd[k] || 0;
+                        return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;margin:2px 0;">
+                            <span style="width:60px;color:#666;text-transform:capitalize;">${k}</span>
+                            <div style="flex:1;height:6px;border-radius:3px;background:#e2e8f0;overflow:hidden;">
+                                <div style="height:100%;width:${v}%;background:${v>=80?'#10b981':v>=60?'#f59e0b':'#ef4444'};border-radius:3px;"></div>
+                            </div>
+                            <span style="width:30px;text-align:right;font-weight:500;">${v.toFixed(0)}</span>
+                        </div>`;
+                    }).join('');
+                    return `<div style="padding:12px;border-radius:6px;border-left:3px solid ${rec.suitability_score>=80?'#10b981':rec.suitability_score>=60?'#f59e0b':'#ef4444'};background:${rec.suitability_score>=80?'rgba(16,185,129,0.05)':'#fff'};margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:start;">
+                            <div><strong>${i+1}. ${rec.plant_name}</strong> <span style="color:#666;font-style:italic;font-size:12px;">${rec.scientific_name||''}</span></div>
+                            <span style="font-size:20px;font-weight:700;color:${rec.suitability_score>=80?'#10b981':rec.suitability_score>=60?'#f59e0b':'#ef4444'};">${rec.suitability_score.toFixed(0)}%</span>
+                        </div>
+                        <div style="margin-top:6px;">${bars}</div>
+                        <div style="margin-top:6px;font-size:11px;color:#666;">
+                            Water: ${rec.water_requirement||'?'} | Sun: ${rec.sun_requirement||'?'} | Growth: ${rec.growth_duration||'?'} | Season: ${rec.planting_season||'?'}
+                        </div>
+                        <div style="margin-top:6px;font-size:12px;color:#444;border-top:1px solid #e2e8f0;padding-top:6px;">${rec.care_guide||''}</div>
+                    </div>`;
+                }).join('');
+
+                let catsHtml = '';
+                if (Object.keys(cats).length) {
+                    const labels = {best_overall:'Best Overall',best_low_water:'Best Low-Water',fastest_harvest:'Fastest Harvest',best_flower:'Best Flower',best_herb:'Best Herb'};
+                    catsHtml = `<div style="margin:16px 0;padding:12px;background:#f0fdf4;border-radius:6px;"><strong>Best For You:</strong> ${Object.entries(cats).map(([k,v])=>`${labels[k]||k}: <strong>${v}</strong>`).join(' &nbsp;|&nbsp; ')}</div>`;
+                }
+
+                let riskHtml = '';
+                if (risk.warnings && risk.warnings.length) {
+                    riskHtml = `<div style="margin:16px 0;padding:12px;background:#fffbeb;border-left:3px solid #f59e0b;border-radius:6px;font-size:13px;"><strong>Warnings:</strong> ${risk.warnings.join('; ')}</div>`;
+                }
+
+                const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>GreenScope Report - ${report.location}</title>
+                <style>body{font-family:Inter,-apple-system,sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#0f172a;}
+                @media print{body{padding:0;}}</style></head><body>
+                <div style="background:#228b22;color:white;padding:20px;border-radius:8px;margin-bottom:20px;">
+                    <h1 style="margin:0;font-size:22px;">GreenScope Report</h1>
+                    <p style="margin:4px 0 0;opacity:0.9;font-size:13px;">AI Gardening Intelligence for India</p>
+                </div>
+                <h2 style="font-size:16px;margin-bottom:8px;">${report.location}</h2>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+                    <div style="padding:10px;background:#f8fafc;border-radius:6px;text-align:center;"><div style="font-size:10px;color:#666;text-transform:uppercase;">Avg Temp</div><div style="font-size:16px;font-weight:600;">${env.avg_temp_c||'?'}°C</div></div>
+                    <div style="padding:10px;background:#f8fafc;border-radius:6px;text-align:center;"><div style="font-size:10px;color:#666;text-transform:uppercase;">Rainfall</div><div style="font-size:16px;font-weight:600;">${env.rainfall_mm||'?'}mm/yr</div></div>
+                    <div style="padding:10px;background:#f8fafc;border-radius:6px;text-align:center;"><div style="font-size:10px;color:#666;text-transform:uppercase;">Sunlight</div><div style="font-size:16px;font-weight:600;">${env.sunlight_hours||'?'}h/day</div></div>
+                    <div style="padding:10px;background:#f8fafc;border-radius:6px;text-align:center;"><div style="font-size:10px;color:#666;text-transform:uppercase;">Soil pH</div><div style="font-size:16px;font-weight:600;">${env.ph||'?'}</div></div>
+                    <div style="padding:10px;background:#f8fafc;border-radius:6px;text-align:center;"><div style="font-size:10px;color:#666;text-transform:uppercase;">Soil Type</div><div style="font-size:16px;font-weight:600;">${env.soil_type||'?'}</div></div>
+                    <div style="padding:10px;background:#f8fafc;border-radius:6px;text-align:center;"><div style="font-size:10px;color:#666;text-transform:uppercase;">Frost Risk</div><div style="font-size:16px;font-weight:600;">${env.frost_risk||'?'}</div></div>
+                </div>
+                ${catsHtml}${riskHtml}
+                <h3 style="font-size:16px;border-bottom:2px solid #e2e8f0;padding-bottom:8px;margin-top:24px;">Plant Recommendations (${recs.length})</h3>
+                ${recsHtml}
+                <div style="margin-top:24px;padding:12px;background:#f8fafc;border-radius:6px;font-size:11px;color:#666;text-align:center;">
+                    Generated by GreenScope | ${new Date().toLocaleDateString('en-IN')} | Suitability scores from climate, soil, sunlight, water & photo data
+                </div>
+                </body></html>`;
+
+                const blob = new Blob([html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `GreenScope-${report.location.replace(/[^a-zA-Z0-9]/g,'_')}-${currentReportId.substring(0,8)}.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('Report downloaded! Open in browser and press Ctrl+P to save as PDF.');
+            } catch (err) {
+                console.error('Download failed:', err);
+                showToast('Download failed: ' + err.message);
+            } finally {
+                pdfBtn.disabled = false;
+                pdfBtn.textContent = 'Download Report';
+            }
         });
 
         shareBtn.addEventListener('click', () => {
             if (!currentReportId) return;
             const shareUrl = window.location.origin + `/report/${currentReportId}`;
-            navigator.clipboard.writeText(shareUrl).then(() => alert('Report link copied!'));
+            navigator.clipboard.writeText(shareUrl).then(() => showToast('Report link copied!')).catch(() => showToast('Copy failed'));
         });
 
         document.getElementById('location-select').focus();

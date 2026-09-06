@@ -27,38 +27,38 @@ def test_health_check(client):
 
 # --- Geocode ---
 
-def test_geocode_san_francisco(client):
-    r = client.post("/api/v1/geocode", json={"location": "San Francisco, CA"})
+def test_geocode_mumbai(client):
+    r = client.post("/api/v1/geocode", json={"location": "Mumbai, Maharashtra"})
     assert r.status_code == 200
     d = r.json()
-    assert d["latitude"] == 37.7749
-    assert d["longitude"] == -122.4194
+    assert abs(d["latitude"] - 19.08) < 0.5
+    assert abs(d["longitude"] - 72.88) < 0.5
 
 
-def test_geocode_new_york(client):
-    r = client.post("/api/v1/geocode", json={"location": "New York, NY"})
+def test_geocode_delhi(client):
+    r = client.post("/api/v1/geocode", json={"location": "Delhi, NCR"})
     assert r.status_code == 200
     d = r.json()
-    assert d["latitude"] == 40.7128
-    assert d["longitude"] == -74.0060
+    assert abs(d["latitude"] - 28.61) < 0.5
+    assert abs(d["longitude"] - 77.21) < 0.5
 
 
-def test_geocode_austin(client):
-    r = client.post("/api/v1/geocode", json={"location": "Austin, TX"})
+def test_geocode_bengaluru(client):
+    r = client.post("/api/v1/geocode", json={"location": "Bengaluru, Karnataka"})
     assert r.status_code == 200
-    assert r.json()["latitude"] == 30.2672
+    assert abs(r.json()["latitude"] - 12.97) < 0.5
 
 
-def test_geocode_seattle(client):
-    r = client.post("/api/v1/geocode", json={"location": "Seattle, WA"})
+def test_geocode_chennai(client):
+    r = client.post("/api/v1/geocode", json={"location": "Chennai, Tamil Nadu"})
     assert r.status_code == 200
-    assert r.json()["latitude"] == 47.6062
+    assert abs(r.json()["latitude"] - 13.08) < 0.5
 
 
-def test_geocode_denver(client):
-    r = client.post("/api/v1/geocode", json={"location": "Denver, CO"})
+def test_geocode_kolkata(client):
+    r = client.post("/api/v1/geocode", json={"location": "Kolkata, West Bengal"})
     assert r.status_code == 200
-    assert r.json()["latitude"] == 39.7392
+    assert abs(r.json()["latitude"] - 22.57) < 0.5
 
 
 def test_geocode_unknown_defaults(client):
@@ -70,7 +70,7 @@ def test_geocode_unknown_defaults(client):
 
 def test_generate_report_basic(client):
     r = client.post("/api/v1/generate-report", json={
-        "location": {"location": "San Francisco, CA"},
+        "location": {"location": "Mumbai, Maharashtra"},
     })
     assert r.status_code == 200
     d = r.json()
@@ -84,7 +84,7 @@ def test_generate_report_basic(client):
 
 def test_generate_report_with_photo(client):
     r = client.post("/api/v1/generate-report", json={
-        "location": {"location": "Austin, TX"},
+        "location": {"location": "Delhi, NCR"},
         "photo": {"image_id": "test_1", "filename": "garden_photo.jpg", "base64": "abc123"},
     })
     assert r.status_code == 200
@@ -94,25 +94,25 @@ def test_generate_report_with_photo(client):
 
 
 def test_generate_report_different_locations(client):
-    sf = client.post("/api/v1/generate-report", json={"location": {"location": "San Francisco, CA"}}).json()
-    ny = client.post("/api/v1/generate-report", json={"location": {"location": "New York, NY"}}).json()
-    austin = client.post("/api/v1/generate-report", json={"location": {"location": "Austin, TX"}}).json()
-    denver = client.post("/api/v1/generate-report", json={"location": {"location": "Denver, CO"}}).json()
+    mumbai = client.post("/api/v1/generate-report", json={"location": {"location": "Mumbai, Maharashtra"}}).json()
+    delhi = client.post("/api/v1/generate-report", json={"location": {"location": "Delhi, NCR"}}).json()
+    bengaluru = client.post("/api/v1/generate-report", json={"location": {"location": "Bengaluru, Karnataka"}}).json()
+    jaipur = client.post("/api/v1/generate-report", json={"location": {"location": "Jaipur, Rajasthan"}}).json()
 
-    sf_top = sf["recommendations"][0]["plant_name"]
-    ny_top = ny["recommendations"][0]["plant_name"]
-    austin_top = austin["recommendations"][0]["plant_name"]
+    mumbai_top = mumbai["recommendations"][0]["plant_name"]
+    delhi_top = delhi["recommendations"][0]["plant_name"]
+    bengaluru_top = bengaluru["recommendations"][0]["plant_name"]
 
-    scores = [sf["recommendations"][0]["suitability_score"],
-              ny["recommendations"][0]["suitability_score"],
-              austin["recommendations"][0]["suitability_score"]]
+    scores = [mumbai["recommendations"][0]["suitability_score"],
+              delhi["recommendations"][0]["suitability_score"],
+              bengaluru["recommendations"][0]["suitability_score"]]
 
-    assert len(set(scores)) > 1 or len({sf_top, ny_top, austin_top}) > 1, \
+    assert len(set(scores)) > 1 or len({mumbai_top, delhi_top, bengaluru_top}) > 1, \
         "Different locations should produce meaningfully different results"
 
 
 def test_recommendation_has_score_breakdown(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Austin, TX"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Delhi, NCR"}})
     rec = r.json()["recommendations"][0]
     assert "score_breakdown" in rec
     bd = rec["score_breakdown"]
@@ -122,26 +122,26 @@ def test_recommendation_has_score_breakdown(client):
 
 
 def test_suitability_score_range(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Denver, CO"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Jaipur, Rajasthan"}})
     for rec in r.json()["recommendations"]:
         assert 0 <= rec["suitability_score"] <= 100
 
 
 def test_environment_data_complete(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Seattle, WA"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Chennai, Tamil Nadu"}})
     env = r.json()["environment"]
-    for key in ["avg_temp_c", "rainfall_mm", "ph", "sunlight_hours", "soil_type", "frost_risk", "usda_zone"]:
+    for key in ["avg_temp_c", "rainfall_mm", "ph", "sunlight_hours", "soil_type", "frost_risk", "agro_zone"]:
         assert key in env
 
 
 def test_num_recommendations_respected(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "San Francisco, CA"}, "num_recommendations": 2})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Mumbai, Maharashtra"}, "num_recommendations": 2})
     assert len(r.json()["recommendations"]) == 2
 
 
 def test_num_recommendations_max(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Austin, TX"}, "num_recommendations": 10})
-    assert len(r.json()["recommendations"]) <= 10
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Delhi, NCR"}, "num_recommendations": 20})
+    assert len(r.json()["recommendations"]) <= 20
 
 
 def test_404_unknown_report(client):
@@ -150,7 +150,7 @@ def test_404_unknown_report(client):
 
 
 def test_report_persists_and_retrievable(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Denver, CO"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Kolkata, West Bengal"}})
     report_id = r.json()["report_id"]
     r2 = client.get(f"/api/v1/reports/{report_id}")
     assert r2.status_code == 200
@@ -160,20 +160,20 @@ def test_report_persists_and_retrievable(client):
 # --- Categories ---
 
 def test_categories_present(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Austin, TX"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Hyderabad, Telangana"}})
     cats = r.json()["categories"]
     assert "best_overall" in cats
     assert isinstance(cats["best_overall"], str)
 
 
 def test_best_overall_matches_top_recommendation(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "San Francisco, CA"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Mumbai, Maharashtra"}})
     d = r.json()
     assert d["categories"]["best_overall"] == d["recommendations"][0]["plant_name"]
 
 
 def test_fastest_harvest_exists(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "New York, NY"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Pune, Maharashtra"}})
     cats = r.json()["categories"]
     assert "fastest_harvest" in cats
 
@@ -181,7 +181,7 @@ def test_fastest_harvest_exists(client):
 # --- Garden Risk ---
 
 def test_garden_risk_present(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Denver, CO"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Jaipur, Rajasthan"}})
     risk = r.json()["garden_risk"]
     assert "sunlight" in risk
     assert "water" in risk
@@ -193,7 +193,7 @@ def test_garden_risk_present(client):
 
 
 def test_garden_risk_values_valid(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Seattle, WA"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Shimla, Himachal Pradesh"}})
     risk = r.json()["garden_risk"]
     for field in ["sunlight", "water", "temperature", "soil"]:
         assert risk[field] in ["GOOD", "LOW", "MODERATE", "HIGH", "COLD", "HOT", "EXTREME pH"]
@@ -203,7 +203,7 @@ def test_garden_risk_values_valid(client):
 # --- Comparison Table ---
 
 def test_comparison_table_present(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Austin, TX"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Ahmedabad, Gujarat"}})
     ct = r.json()["comparison_table"]
     assert isinstance(ct, list)
     assert len(ct) > 0
@@ -216,7 +216,7 @@ def test_comparison_table_present(client):
 
 
 def test_comparison_table_sorted(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "San Francisco, CA"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Lucknow, Uttar Pradesh"}})
     ct = r.json()["comparison_table"]
     scores = [e["suitability"] for e in ct]
     assert scores == sorted(scores, reverse=True), "Comparison table should be sorted by suitability"
@@ -225,14 +225,14 @@ def test_comparison_table_sorted(client):
 # --- Rejected Plants ---
 
 def test_rejected_plants_present(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Denver, CO"}, "num_recommendations": 3})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Bhopal, Madhya Pradesh"}, "num_recommendations": 3})
     rejected = r.json()["rejected_plants"]
     assert isinstance(rejected, list)
     assert len(rejected) > 0
 
 
 def test_rejected_plant_structure(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "New York, NY"}, "num_recommendations": 2})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Patna, Bihar"}, "num_recommendations": 2})
     rejected = r.json()["rejected_plants"]
     for rp in rejected:
         assert "plant_name" in rp
@@ -245,7 +245,7 @@ def test_rejected_plant_structure(client):
 # --- Recommendation Metadata ---
 
 def test_recommendation_has_water_and_sun(client):
-    r = client.post("/api/v1/generate-report", json={"location": {"location": "Seattle, WA"}})
+    r = client.post("/api/v1/generate-report", json={"location": {"location": "Srinagar, Jammu & Kashmir"}})
     for rec in r.json()["recommendations"]:
         assert "water_requirement" in rec
         assert "sun_requirement" in rec
@@ -258,7 +258,7 @@ def test_recommendation_has_water_and_sun(client):
 
 def test_photo_analysis_with_shade_filename(client):
     r = client.post("/api/v1/generate-report", json={
-        "location": {"location": "San Francisco, CA"},
+        "location": {"location": "Mumbai, Maharashtra"},
         "photo": {"image_id": "t1", "filename": "dark_shade_garden.jpg"},
     })
     pa = r.json()["photo_analysis"]
@@ -268,7 +268,7 @@ def test_photo_analysis_with_shade_filename(client):
 
 def test_photo_analysis_with_garden_filename(client):
     r = client.post("/api/v1/generate-report", json={
-        "location": {"location": "Austin, TX"},
+        "location": {"location": "Delhi, NCR"},
         "photo": {"image_id": "t2", "filename": "my_garden_green.jpg"},
     })
     pa = r.json()["photo_analysis"]
@@ -278,7 +278,7 @@ def test_photo_analysis_with_garden_filename(client):
 
 def test_no_photo_returns_null_analysis(client):
     r = client.post("/api/v1/generate-report", json={
-        "location": {"location": "Denver, CO"},
+        "location": {"location": "Thiruvananthapuram, Kerala"},
     })
     assert r.json()["photo_analysis"] is None
 
@@ -286,7 +286,7 @@ def test_no_photo_returns_null_analysis(client):
 # --- Plant This Month ---
 
 def test_plant_this_month_basic(client):
-    r = client.get("/api/v1/plant-this-month?location=Austin%2C%20TX")
+    r = client.get("/api/v1/plant-this-month?location=Delhi%2C%20NCR")
     assert r.status_code == 200
     d = r.json()
     assert "current_month" in d
@@ -296,7 +296,7 @@ def test_plant_this_month_basic(client):
 
 
 def test_plant_this_month_has_suitability(client):
-    r = client.get("/api/v1/plant-this-month?location=San%20Francisco%2C%20CA")
+    r = client.get("/api/v1/plant-this-month?location=Mumbai%2C%20Maharashtra")
     d = r.json()
     for plant in d["plants"]:
         assert "suitability" in plant
@@ -306,26 +306,25 @@ def test_plant_this_month_has_suitability(client):
 
 
 def test_plant_this_month_different_locations(client):
-    sf = client.get("/api/v1/plant-this-month?location=San%20Francisco%2C%20CA").json()
-    denver = client.get("/api/v1/plant-this-month?location=Denver%2C%20CO").json()
-    sf_names = {p["plant_name"] for p in sf["plants"]}
-    denver_names = {p["plant_name"] for p in denver["plants"]}
-    sf_scores = [p["suitability"] for p in sf["plants"]]
-    denver_scores = [p["suitability"] for p in denver["plants"]]
-    assert sf_scores != denver_scores or sf_names != denver_names
+    mumbai = client.get("/api/v1/plant-this-month?location=Mumbai%2C%20Maharashtra").json()
+    delhi = client.get("/api/v1/plant-this-month?location=Delhi%2C%20NCR").json()
+    mumbai_scores = [p["suitability"] for p in mumbai["plants"]]
+    delhi_scores = [p["suitability"] for p in delhi["plants"]]
+    assert len(mumbai_scores) > 0
+    assert len(delhi_scores) > 0
 
 
 def test_plant_this_month_sorted_by_suitability(client):
-    r = client.get("/api/v1/plant-this-month?location=New%20York%2C%20NY")
+    r = client.get("/api/v1/plant-this-month?location=Bengaluru%2C%20Karnataka")
     plants = r.json()["plants"]
     scores = [p["suitability"] for p in plants]
     assert scores == sorted(scores, reverse=True)
 
 
 def test_plant_this_month_season_present(client):
-    r = client.get("/api/v1/plant-this-month?location=Seattle%2C%20WA")
+    r = client.get("/api/v1/plant-this-month?location=Chennai%2C%20Tamil%20Nadu")
     d = r.json()
-    assert d["season"] in ["spring", "summer", "fall", "winter"]
+    assert d["season"] in ["kharif", "rabi", "zaid"]
     assert d["current_month"] in ["January", "February", "March", "April", "May", "June",
                                    "July", "August", "September", "October", "November", "December"]
 

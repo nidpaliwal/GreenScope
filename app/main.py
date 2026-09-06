@@ -9,6 +9,7 @@ import time
 import json
 import os
 import sqlite3
+import httpx
 
 
 # --- Plant Knowledge Base ---
@@ -97,56 +98,171 @@ def load_report_from_db(report_id):
     }
 
 
-# --- Location Environmental Data ---
+# --- Location Environmental Data (Indian Cities - IMD Climate Normals) ---
 
 LOCATION_ENV = {
-    "san francisco, ca": {
-        "avg_temp_c": 14, "rainfall_mm": 500, "humidity": 70,
-        "sunlight_hours": 7, "soil_type": "sandy loam", "ph": 6.5,
-        "frost_risk": "low", "usda_zone": "10a",
+    "mumbai, maharashtra": {
+        "avg_temp_c": 27, "rainfall_mm": 2200, "humidity": 73,
+        "sunlight_hours": 7, "soil_type": "alluvial", "ph": 6.5,
+        "frost_risk": "none", "agro_zone": "Western Coast",
     },
-    "new york, ny": {
-        "avg_temp_c": 13, "rainfall_mm": 1200, "humidity": 65,
-        "sunlight_hours": 6.5, "soil_type": "loam", "ph": 6.5,
-        "frost_risk": "moderate", "usda_zone": "7b",
+    "delhi, ncr": {
+        "avg_temp_c": 25, "rainfall_mm": 800, "humidity": 55,
+        "sunlight_hours": 7.5, "soil_type": "alluvial", "ph": 7.0,
+        "frost_risk": "low", "agro_zone": "Indo-Gangetic Plains",
     },
-    "austin, tx": {
-        "avg_temp_c": 20, "rainfall_mm": 850, "humidity": 55,
-        "sunlight_hours": 7.5, "soil_type": "clay loam", "ph": 7.0,
-        "frost_risk": "low", "usda_zone": "8b",
+    "bengaluru, karnataka": {
+        "avg_temp_c": 24, "rainfall_mm": 970, "humidity": 65,
+        "sunlight_hours": 6, "soil_type": "red laterite", "ph": 6.0,
+        "frost_risk": "none", "agro_zone": "Deccan Plateau",
     },
-    "seattle, wa": {
-        "avg_temp_c": 11, "rainfall_mm": 950, "humidity": 75,
-        "sunlight_hours": 5.5, "soil_type": "sandy loam", "ph": 6.0,
-        "frost_risk": "moderate", "usda_zone": "8b",
+    "chennai, tamil nadu": {
+        "avg_temp_c": 29, "rainfall_mm": 1400, "humidity": 70,
+        "sunlight_hours": 6.5, "soil_type": "coastal alluvial", "ph": 6.5,
+        "frost_risk": "none", "agro_zone": "Coromandel Coast",
     },
-    "denver, co": {
-        "avg_temp_c": 10, "rainfall_mm": 400, "humidity": 50,
+    "kolkata, west bengal": {
+        "avg_temp_c": 26, "rainfall_mm": 1600, "humidity": 72,
+        "sunlight_hours": 6, "soil_type": "alluvial", "ph": 6.5,
+        "frost_risk": "none", "agro_zone": "Gangetic Delta",
+    },
+    "hyderabad, telangana": {
+        "avg_temp_c": 27, "rainfall_mm": 810, "humidity": 58,
+        "sunlight_hours": 7, "soil_type": "black cotton", "ph": 7.5,
+        "frost_risk": "none", "agro_zone": "Deccan Plateau",
+    },
+    "pune, maharashtra": {
+        "avg_temp_c": 26, "rainfall_mm": 720, "humidity": 55,
+        "sunlight_hours": 7, "soil_type": "black cotton", "ph": 7.0,
+        "frost_risk": "none", "agro_zone": "Western Deccan",
+    },
+    "jaipur, rajasthan": {
+        "avg_temp_c": 26, "rainfall_mm": 650, "humidity": 45,
         "sunlight_hours": 8, "soil_type": "sandy loam", "ph": 7.5,
-        "frost_risk": "high", "usda_zone": "5b",
+        "frost_risk": "low", "agro_zone": "Thar Desert Fringe",
+    },
+    "ahmedabad, gujarat": {
+        "avg_temp_c": 28, "rainfall_mm": 800, "humidity": 40,
+        "sunlight_hours": 8.5, "soil_type": "alluvial", "ph": 7.5,
+        "frost_risk": "none", "agro_zone": "Semi-Arid Western",
+    },
+    "lucknow, uttar pradesh": {
+        "avg_temp_c": 25, "rainfall_mm": 900, "humidity": 60,
+        "sunlight_hours": 7, "soil_type": "alluvial", "ph": 7.0,
+        "frost_risk": "low", "agro_zone": "Indo-Gangetic Plains",
+    },
+    "bhopal, madhya pradesh": {
+        "avg_temp_c": 25, "rainfall_mm": 1100, "humidity": 55,
+        "sunlight_hours": 7, "soil_type": "black cotton", "ph": 7.0,
+        "frost_risk": "none", "agro_zone": "Central Highlands",
+    },
+    "patna, bihar": {
+        "avg_temp_c": 26, "rainfall_mm": 1200, "humidity": 65,
+        "sunlight_hours": 6.5, "soil_type": "alluvial", "ph": 6.5,
+        "frost_risk": "low", "agro_zone": "Indo-Gangetic Plains",
+    },
+    "shimla, himachal pradesh": {
+        "avg_temp_c": 13, "rainfall_mm": 1575, "humidity": 65,
+        "sunlight_hours": 6, "soil_type": "mountain", "ph": 5.5,
+        "frost_risk": "high", "agro_zone": "Western Himalayas",
+    },
+    "srinagar, jammu & kashmir": {
+        "avg_temp_c": 13, "rainfall_mm": 730, "humidity": 60,
+        "sunlight_hours": 7, "soil_type": "alluvial", "ph": 6.5,
+        "frost_risk": "high", "agro_zone": "Kashmir Valley",
+    },
+    "thiruvananthapuram, kerala": {
+        "avg_temp_c": 27, "rainfall_mm": 1800, "humidity": 78,
+        "sunlight_hours": 5.5, "soil_type": "coastal laterite", "ph": 5.5,
+        "frost_risk": "none", "agro_zone": "Malabar Coast",
+    },
+    "udaipur, rajasthan": {
+        "avg_temp_c": 24, "rainfall_mm": 580, "humidity": 42,
+        "sunlight_hours": 8.5, "soil_type": "sandy loam", "ph": 7.5,
+        "frost_risk": "low", "agro_zone": "Arid Western",
     },
 }
 
 DEFAULT_ENV = {
-    "avg_temp_c": 15, "rainfall_mm": 700, "humidity": 60,
+    "avg_temp_c": 25, "rainfall_mm": 900, "humidity": 60,
     "sunlight_hours": 6.5, "soil_type": "loam", "ph": 6.5,
-    "frost_risk": "moderate", "usda_zone": "7b",
+    "frost_risk": "none", "agro_zone": "General",
 }
 
 
 def get_env_for_location(lat: float, lng: float, location_str: str) -> dict:
+    # Try Open-Meteo Climate API first
+    try:
+        import httpx
+        with httpx.Client(timeout=5.0) as client:
+            r = client.get(
+                "https://climate-api.open-meteo.com/v1/climate",
+                params={
+                    "latitude": lat,
+                    "longitude": lng,
+                    "start_date": "2020-01-01",
+                    "end_date": "2020-12-31",
+                    "models": "EC_Earth3P_HR",
+                    "daily": "temperature_2m_mean,precipitation_sum",
+                    "timezone": "Asia/Kolkata",
+                }
+            )
+            if r.status_code == 200:
+                data = r.json().get("daily", {})
+                temps = [t for t in data.get("temperature_2m_mean", []) if t is not None]
+                rains = [r for r in data.get("precipitation_sum", []) if r is not None]
+                if temps and rains:
+                    avg_temp = round(sum(temps) / len(temps), 1)
+                    total_rain = round(sum(rains))
+
+                    # Determine soil type based on region
+                    soil = "loam"
+                    ph = 6.5
+                    humidity = 60
+                    sunlight = 7.0
+                    frost = "none"
+
+                    if lat < 15:
+                        humidity = 75
+                        soil = "red laterite"
+                        ph = 5.5
+                    elif lat > 28:
+                        humidity = 50
+                        frost = "low"
+                    if total_rain > 1500:
+                        humidity = min(85, humidity + 15)
+                    elif total_rain < 500:
+                        humidity = max(30, humidity - 15)
+                        soil = "sandy loam"
+
+                    return {
+                        "avg_temp_c": avg_temp,
+                        "rainfall_mm": total_rain,
+                        "humidity": humidity,
+                        "sunlight_hours": sunlight,
+                        "soil_type": soil,
+                        "ph": ph,
+                        "frost_risk": frost,
+                        "agro_zone": f"Lat {lat:.1f}, Lng {lng:.1f}",
+                    }
+    except Exception:
+        pass
+
+    # Fallback to hardcoded Indian cities
     loc_key = location_str.lower().strip()
     for key, env in LOCATION_ENV.items():
         if key in loc_key:
             return env.copy()
     env = DEFAULT_ENV.copy()
-    if lat < 25:
-        env["avg_temp_c"] = 25
-        env["humidity"] = 80
+    if lat < 12:
+        env["avg_temp_c"] = 28
+        env["humidity"] = 75
+        env["rainfall_mm"] = 1800
+        env["frost_risk"] = "none"
+    elif lat > 28:
+        env["avg_temp_c"] = 18
+        env["frost_risk"] = "low"
         env["rainfall_mm"] = 1200
-    elif lat > 45:
-        env["avg_temp_c"] = 8
-        env["frost_risk"] = "high"
     return env
 
 
@@ -216,11 +332,11 @@ def score_plant(plant: dict, env: dict, photo_obs: dict) -> dict:
     water_req = plant["water"]
     rainfall = env["rainfall_mm"]
     if water_req == "low":
-        if rainfall < 500:
+        if rainfall < 600:
             scores["water"] = 90
             reasons.append({"category": "Water", "score": scores["water"],
                             "detail": "Low water needs match dry climate"})
-        elif rainfall < 800:
+        elif rainfall < 1000:
             scores["water"] = 70
             reasons.append({"category": "Water", "score": scores["water"],
                             "detail": "Moderate rainfall; occasional watering needed"})
@@ -229,21 +345,21 @@ def score_plant(plant: dict, env: dict, photo_obs: dict) -> dict:
             reasons.append({"category": "Water", "score": scores["water"],
                             "detail": "High rainfall may cause overwatering"})
     elif water_req == "medium":
-        if 500 <= rainfall <= 1000:
+        if 600 <= rainfall <= 1500:
             scores["water"] = 90
             reasons.append({"category": "Water", "score": scores["water"],
                             "detail": "Moderate rainfall matches water needs"})
         else:
-            scores["water"] = max(40, 90 - abs(rainfall - 750) * 0.05)
+            scores["water"] = max(40, 90 - abs(rainfall - 1000) * 0.03)
             reasons.append({"category": "Water", "score": scores["water"],
                             "detail": f"Rainfall {rainfall}mm; some adjustment needed"})
     else:
-        if rainfall > 800:
+        if rainfall > 1000:
             scores["water"] = 90
             reasons.append({"category": "Water", "score": scores["water"],
                             "detail": "High rainfall suits water-intensive plants"})
         else:
-            scores["water"] = max(30, 90 - (800 - rainfall) * 0.08)
+            scores["water"] = max(30, 90 - (1000 - rainfall) * 0.06)
             reasons.append({"category": "Water", "score": scores["water"],
                             "detail": f"Needs more water than {rainfall}mm provides"})
 
@@ -259,7 +375,7 @@ def score_plant(plant: dict, env: dict, photo_obs: dict) -> dict:
         reasons.append({"category": "Soil", "score": scores["soil"],
                         "detail": f"Soil type '{soil}' may need amendment"})
 
-    # Photo observation bonus (5%)
+    # Photo observation bonus (10%)
     photo_score = 50
     if photo_obs:
         if photo_obs.get("has_sunlight"):
@@ -278,11 +394,58 @@ def score_plant(plant: dict, env: dict, photo_obs: dict) -> dict:
     return {"total": total, "breakdown": scores, "reasons": reasons}
 
 
-# --- Photo Analysis (rule-based from file size/name heuristics) ---
+# --- Photo Analysis (Pillow-based with filename fallback) ---
 
 def analyze_photo(photo) -> dict:
     if not photo:
         return {}
+
+    # Try Pillow-based analysis first
+    if photo.base64:
+        try:
+            import base64
+            from io import BytesIO
+            from PIL import Image
+
+            img_data = base64.b64decode(photo.base64.split(",")[1] if "," in photo.base64 else photo.base64)
+            img = Image.open(BytesIO(img_data)).convert("RGB")
+            pixels = list(img.getdata())
+            total_pixels = len(pixels)
+
+            avg_brightness = sum(sum(p) / 3 for p in pixels) / total_pixels
+            avg_green = sum(p[1] for p in pixels) / total_pixels
+            avg_red = sum(p[0] for p in pixels) / total_pixels
+            green_ratio = avg_green / (avg_red + 1)
+
+            has_sunlight = avg_brightness > 100
+            shade_level = "full" if avg_brightness < 60 else "partial" if avg_brightness < 120 else "none"
+            has_vegetation = green_ratio > 1.1
+
+            soil_pixels = sum(1 for p in pixels if 80 < p[0] < 180 and 50 < p[1] < 130 and p[2] < 80)
+            soil_ratio = soil_pixels / total_pixels
+            soil_visible = soil_ratio > 0.05
+
+            features = []
+            if has_sunlight:
+                features.append("Good sunlight detected")
+            else:
+                features.append("Low light conditions detected")
+            if has_vegetation:
+                features.append("Green vegetation present")
+            if soil_visible:
+                features.append("Exposed soil visible")
+
+            return {
+                "has_sunlight": has_sunlight,
+                "soil_visible": soil_visible,
+                "has_vegetation": has_vegetation,
+                "shade_level": shade_level,
+                "detected_features": features or ["Open growing area", "Moderate sunlight", "Visible soil"],
+            }
+        except Exception:
+            pass
+
+    # Fallback: filename-based heuristics
     obs = {"has_sunlight": True, "soil_visible": True, "has_vegetation": True,
            "shade_level": "partial", "detected_features": []}
     if photo.filename:
@@ -312,7 +475,7 @@ def photo_obs_to_str(photo_obs: dict) -> str:
 
 # --- FastAPI App ---
 
-app = FastAPI(title="GreenScope API", version="0.0.6")
+app = FastAPI(title="GreenScope API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -344,7 +507,7 @@ class PhotoUpload(BaseModel):
 class ReportGenerateRequest(BaseModel):
     location: LocationInput
     photo: Optional[PhotoUpload] = Field(None, description="Optional uploaded garden photo")
-    num_recommendations: int = Field(3, ge=1, le=10, description="Number of plant recommendations")
+    num_recommendations: int = Field(15, ge=1, le=20, description="Number of plant recommendations")
 
 
 class ReportRecommendation(BaseModel):
@@ -406,18 +569,47 @@ async def health_check():
 
 @app.post("/api/v1/geocode", response_model=dict)
 async def geocode_location(location: LocationInput):
+    # Try Nominatim (OpenStreetMap) geocoding first
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": location.location, "format": "json", "limit": 1},
+                headers={"User-Agent": "GreenScope/0.1.0"}
+            )
+            if r.status_code == 200:
+                data = r.json()
+                if data:
+                    lat = float(data[0]["lat"])
+                    lng = float(data[0]["lon"])
+                    display = data[0].get("display_name", location.location)
+                    return {"latitude": lat, "longitude": lng, "formatted": display.split(",")[0]}
+    except Exception:
+        pass
+
+    # Fallback to hardcoded Indian cities
     mock_geocodes = {
-        "san francisco, ca": (37.7749, -122.4194),
-        "new york, ny": (40.7128, -74.0060),
-        "austin, tx": (30.2672, -97.7431),
-        "seattle, wa": (47.6062, -122.3321),
-        "denver, co": (39.7392, -104.9903),
+        "mumbai, maharashtra": (19.0760, 72.8777),
+        "delhi, ncr": (28.6139, 77.2090),
+        "bengaluru, karnataka": (12.9716, 77.5946),
+        "chennai, tamil nadu": (13.0827, 80.2707),
+        "kolkata, west bengal": (22.5726, 88.3639),
+        "hyderabad, telangana": (17.3850, 78.4867),
+        "pune, maharashtra": (18.5204, 73.8567),
+        "jaipur, rajasthan": (26.9124, 75.7873),
+        "ahmedabad, gujarat": (23.0225, 72.5714),
+        "lucknow, uttar pradesh": (26.8467, 80.9462),
+        "bhopal, madhya pradesh": (23.2599, 77.4126),
+        "patna, bihar": (25.6093, 85.1376),
+        "shimla, himachal pradesh": (31.1048, 77.1734),
+        "srinagar, jammu & kashmir": (34.0837, 74.7973),
+        "thiruvananthapuram, kerala": (8.5241, 76.9366),
+        "udaipur, rajasthan": (24.5854, 73.7125),
     }
     loc_key = location.location.lower()
     for key, (lat, lng) in mock_geocodes.items():
         if key in loc_key:
             return {"latitude": lat, "longitude": lng, "formatted": location.location}
-    # Instead of silently falling back to SF, return an error
     raise HTTPException(status_code=400, detail="Location not supported. Please select a supported location or provide coordinates.")
 
 
@@ -488,7 +680,7 @@ async def generate_report(request: ReportGenerateRequest):
             score_breakdown=score_result["breakdown"],
             water_requirement=plant.get("water"),
             sun_requirement=plant.get("sun"),
-            planting_season=plant.get("planting_season", "Spring"),
+            planting_season=plant.get("planting_season", "Kharif"),
         ))
 
     # Categories
@@ -537,18 +729,18 @@ async def generate_report(request: ReportGenerateRequest):
         risk_warnings.append("Intense sunlight may cause heat stress without adequate watering")
 
     water_status = "MODERATE"
-    if env["rainfall_mm"] < 400:
+    if env["rainfall_mm"] < 500:
         water_status = "LOW"
         risk_warnings.append("Low rainfall requires regular irrigation")
-    elif env["rainfall_mm"] > 1000:
+    elif env["rainfall_mm"] > 1500:
         water_status = "HIGH"
         risk_warnings.append("High rainfall may cause waterlogging or fungal issues")
 
     temp_status = "GOOD"
-    if env["avg_temp_c"] < 8:
+    if env["avg_temp_c"] < 10:
         temp_status = "COLD"
         risk_warnings.append("Cold temperatures limit tropical and warm-season plants")
-    elif env["avg_temp_c"] > 25:
+    elif env["avg_temp_c"] > 28:
         temp_status = "HOT"
         risk_warnings.append("Heat may stress cool-season plants")
 
@@ -636,30 +828,23 @@ def _parse_days(growth_str: str) -> int:
     return int(growth_str.split()[0])
 
 
-# --- Seasonal Planting Calendar ---
+# --- Seasonal Planting Calendar (Indian Kharif/Rabi/Zaid) ---
 
 PLANTING_CALENDAR = {
-    "spring": ["Tomato", "Basil", "Peppers", "Marigold", "Sunflower", "Zucchini", "Strawberry", "Lettuce", "Thyme", "Mint"],
-    "summer": ["Peppers", "Basil", "Tomato", "Marigold", "Sunflower", "Zucchini", "Citrus"],
-    "fall": ["Spinach", "Kale", "Lettuce", "Lavender", "Rosemary", "Mint", "Thyme", "Strawberry"],
-    "winter": ["Spinach", "Kale", "Lettuce"],
+    "kharif": ["Tomato", "Okra", "Brinjal", "Chili", "Ridge Gourd", "Bottle Gourd", "Moong", "Cowpea", "Banana", "Turmeric", "Mango"],
+    "rabi": ["Spinach", "Fenugreek", "Coriander", "Brinjal", "Chili", "Tomato", "Marigold"],
+    "zaid": ["Cucumber", "Bottle Gourd", "Ridge Gourd", "Moong"],
+    "year-round": ["Tulsi", "Neem", "Curry Leaf", "Aloe Vera", "Lemongrass", "Ashwagandha", "Brahmi", "Giloy", "Moringa"],
 }
 
 MONTH_TO_SEASON = {
-    1: "winter", 2: "winter", 3: "spring", 4: "spring", 5: "spring",
-    6: "summer", 7: "summer", 8: "summer", 9: "fall", 10: "fall", 11: "fall", 12: "winter",
+    1: "rabi", 2: "rabi", 3: "zaid", 4: "zaid", 5: "zaid",
+    6: "kharif", 7: "kharif", 8: "kharif", 9: "kharif", 10: "rabi", 11: "rabi", 12: "rabi",
 }
 
 
 def get_season_for_location(lat: float, month: int) -> str:
-    base = MONTH_TO_SEASON[month]
-    if lat < 25:
-        offsets = {"spring": "summer", "winter": "spring", "fall": "winter", "summer": "summer"}
-        return offsets.get(base, base)
-    elif lat > 45:
-        offsets = {"spring": "winter", "summer": "spring", "fall": "fall", "winter": "winter"}
-        return offsets.get(base, base)
-    return base
+    return MONTH_TO_SEASON[month]
 
 
 class SeasonalPlanting(BaseModel):
@@ -681,19 +866,19 @@ class PlantThisMonthResponse(BaseModel):
 
 
 @app.get("/api/v1/plant-this-month", response_model=PlantThisMonthResponse)
-async def plant_this_month(location: str = "San Francisco, CA", latitude: float = None, longitude: float = None):
+async def plant_this_month(location: str = "Delhi, NCR", latitude: float = None, longitude: float = None):
     now = time.localtime()
     month = now.tm_mon
     month_names = ["", "January", "February", "March", "April", "May", "June",
                    "July", "August", "September", "October", "November", "December"]
     month_name = month_names[month]
 
-    lat = latitude or 37.7749
-    lng = longitude or -122.4194
+    lat = latitude or 28.6139
+    lng = longitude or 77.2090
     env = get_env_for_location(lat, lng, location)
 
     season = get_season_for_location(lat, month)
-    seasonal_plants = PLANTING_CALENDAR.get(season, PLANTING_CALENDAR["spring"])
+    seasonal_plants = PLANTING_CALENDAR.get(season, []) + PLANTING_CALENDAR.get("year-round", [])
 
     plant_map = {p["name"]: p for p in PLANTS}
     scored = []
