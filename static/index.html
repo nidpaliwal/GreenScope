@@ -83,6 +83,7 @@
             </div>
             <div class="flex items-center gap-4">
                 <button id="darkToggle" onclick="document.documentElement.classList.toggle('dark');localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--fg);">🌙</button>
+                <button id="langToggle" onclick="toggleLang()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--fg);">हिंदी</button>
                 <span class="text-xs" style="color:var(--muted);">v0.1.0</span>
             </div>
         </div>
@@ -171,9 +172,21 @@
                 <div id="envGrid" class="env-grid"></div>
             </div>
 
+            <div id="climateAlert" class="hidden animate-fade-in-up delay-1" style="padding:12px 16px;border-radius:8px;border-left:4px solid #f59e0b;background:rgba(245,158,11,0.08);">
+                <div class="flex items-center gap-2 mb-1">
+                    <span style="font-size:18px;" id="climateAlertIcon"></span>
+                    <strong style="font-size:14px;" id="climateAlertTitle"></strong>
+                </div>
+                <div id="climateAlertMsg" style="font-size:13px;color:var(--muted);"></div>
+            </div>
+
             <div id="photoCard" class="card hidden animate-fade-in-up delay-2">
-                <h2 class="text-lg font-bold mb-2">Garden Analysis</h2>
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-lg font-bold">Garden Analysis</h2>
+                    <span id="photoConfidence" class="data-badge" style="font-size:10px;"></span>
+                </div>
                 <div id="photoFeatures"></div>
+                <div id="photoDisclaimer" class="hidden" style="margin-top:8px;padding:8px;border-radius:6px;background:rgba(245,158,11,0.08);font-size:11px;color:var(--muted);"></div>
             </div>
 
             <div id="riskCard" class="card animate-fade-in-up delay-2">
@@ -227,6 +240,35 @@
 
         const API = { report: '/api/v1/generate-report', reports: '/api/v1/reports/' };
         let currentReportId = null;
+        let currentLang = localStorage.getItem('lang') || 'en';
+
+        const HINDI_NAMES = {
+            'Tulsi': 'तुलसी', 'Neem': 'नीम', 'Ashwagandha': 'अश्वगंधा', 'Brahmi': 'ब्राह्मी',
+            'Amla': 'आंवला', 'Giloy': 'गिलोय', 'Curry Leaf': 'करी पत्ता', 'Aloe Vera': 'एलोवेरा',
+            'Lemongrass': 'लेमनग्रास', 'Moringa': 'मोरिंगा', 'Turmeric': 'हल्दी', 'Coriander': 'धनिया',
+            'Fenugreek': 'मेथी', 'Marigold': 'गेंदा', 'Okra': 'भिंडी', 'Chili': 'मिर्च',
+            'Moong': 'मूंग', 'Brinjal': 'बैंगन', 'Tomato': 'टमाटर', 'Potato': 'आलू',
+            'Onion': 'प्याज', 'Garlic': 'लहसुन', 'Ginger': 'अदरक', 'Rice': 'चावल',
+            'Wheat': 'गेहूं', 'Banana': 'केला', 'Mango': 'आम', 'Coconut': 'नारियल',
+            'Sunflower': 'सूरजमुखी', 'Rose': 'गुलाब', 'Jasmine': 'चमेली', 'Hibiscus': 'गुड़हल',
+            'Lavender': 'लैवेंडर', 'Mint': 'पुदीना', 'Spinach': 'पालक', 'Cabbage': 'पत्ता गोभी',
+            'Cauliflower': 'फूल गोभी', 'Peas': 'मटर', 'Carrot': 'गाजर', 'Radish': 'मूली',
+            'Beetroot': 'चुकंदर', 'Cucumber': 'खीरा', 'Pumpkin': 'कद्दू', 'Bottle Gourd': 'लौकी',
+            'Bitter Gourd': 'करेला', 'Sweet Potato': 'शकरकंद', 'Yam': 'जिमीकंद', 'Sesame': 'तिल',
+            'Mustard': 'सरसों', 'Groundnut': 'मूंगफली', 'Sugarcane': 'गन्ना'
+        };
+
+        function getPlantName(name) {
+            if (currentLang === 'hi' && HINDI_NAMES[name]) return HINDI_NAMES[name];
+            return name;
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === 'en' ? 'hi' : 'en';
+            localStorage.setItem('lang', currentLang);
+            document.getElementById('langToggle').textContent = currentLang === 'en' ? 'हिंदी' : 'EN';
+            if (currentReportId) refreshDisplay();
+        }
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -394,7 +436,11 @@
             finally { submitBtn.disabled = false; btnText.classList.remove('hidden'); btnLoading.classList.add('hidden'); }
         }
 
+        let _lastReport = null;
+        function refreshDisplay() { if (_lastReport) displayReport(_lastReport); }
+
         function displayReport(report) {
+            _lastReport = report;
             reportStatus.className = 'status-badge status-ready';
             reportStatus.textContent = 'Report ready';
 
@@ -427,9 +473,38 @@
                 setTimeout(() => window._map.invalidateSize(), 100);
             }
 
+            // Climate alerts
+            const alerts = env.climate_alerts || [];
+            if (alerts.length > 0 || env.frost_risk !== 'none' || env.heat_risk === 'high') {
+                const alertEl = document.getElementById('climateAlert');
+                alertEl.classList.remove('hidden');
+                const icon = env.frost_risk !== 'none' ? '🥶' : env.heat_risk === 'high' ? '🔥' : '⚠️';
+                const title = env.frost_risk !== 'none' ? 'Frost Risk Warning' : env.heat_risk === 'high' ? 'Extreme Heat Warning' : 'Climate Advisory';
+                document.getElementById('climateAlertIcon').textContent = icon;
+                document.getElementById('climateAlertTitle').textContent = title;
+                document.getElementById('climateAlertMsg').innerHTML = alerts.map(a => `• ${escapeHtml(a)}`).join('<br>');
+            }
+
             if (report.photo_analysis) {
                 document.getElementById('photoCard').classList.remove('hidden');
-                document.getElementById('photoFeatures').innerHTML = report.photo_analysis.features.map(f => `<span class="photo-feature">✓ ${escapeHtml(f)}</span>`).join('');
+                const pa = report.photo_analysis;
+                const features = pa.features || [];
+                document.getElementById('photoFeatures').innerHTML = features.map(f => {
+                    const text = typeof f === 'string' ? f : f.text || f;
+                    const conf = typeof f === 'object' && f.confidence ? f.confidence : null;
+                    const confBadge = conf !== null ? `<span style="font-size:10px;color:var(--muted);margin-left:6px;">${(conf * 100).toFixed(0)}% conf.</span>` : '';
+                    return `<div style="padding:4px 0;font-size:13px;">✓ ${escapeHtml(text)}${confBadge}</div>`;
+                }).join('');
+                const badge = document.getElementById('photoConfidence');
+                if (pa.overall_confidence) {
+                    const pct = (pa.overall_confidence * 100).toFixed(0);
+                    badge.textContent = `${pct}% confidence`;
+                    badge.className = `data-badge ${pa.overall_confidence >= 0.7 ? 'live' : 'fallback'}`;
+                }
+                if (pa.disclaimer) {
+                    document.getElementById('photoDisclaimer').classList.remove('hidden');
+                    document.getElementById('photoDisclaimer').textContent = pa.disclaimer;
+                }
             }
 
             if (report.garden_risk) {
@@ -473,7 +548,7 @@
                 <div class="confidence-${cls} animate-fade-in-up" style="padding:16px;border-radius:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:start;">
                         <div>
-                            <h4 style="font-weight:600;font-size:16px;">${idx + 1}. ${escapeHtml(rec.plant_name)}</h4>
+                            <h4 style="font-weight:600;font-size:16px;">${idx + 1}. ${escapeHtml(getPlantName(rec.plant_name))}</h4>
                             <p style="font-size:12px;color:var(--muted);font-style:italic;">${escapeHtml(rec.scientific_name || '')}</p>
                         </div>
                         <div style="text-align:right;">
@@ -496,7 +571,7 @@
                 document.getElementById('compTable').innerHTML = `
                     <thead><tr><th>Plant</th><th>Suitability</th><th>Water</th><th>Sun</th><th>Growth</th></tr></thead>
                     <tbody>${ct.map((r, i) => `<tr style="${i === 0 ? 'font-weight:600;' : ''}">
-                        <td>${i + 1}. ${escapeHtml(r.name)}</td>
+                        <td>${i + 1}. ${escapeHtml(getPlantName(r.name))}</td>
                         <td>${r.suitability.toFixed(0)}%</td>
                         <td>${escapeHtml(r.water)}</td>
                         <td>${escapeHtml(r.sun)}</td>
@@ -507,7 +582,7 @@
                 document.getElementById('rejectedList').innerHTML = report.rejected_plants.map(r => `
                     <div style="padding:10px;border-radius:6px;background:var(--bg);border-left:3px solid var(--border);">
                         <div style="display:flex;justify-content:space-between;">
-                            <strong>${escapeHtml(r.plant_name)}</strong>
+                            <strong>${escapeHtml(getPlantName(r.plant_name))}</strong>
                             <span style="color:var(--muted);font-size:13px;">${r.suitability.toFixed(0)}% suitability</span>
                         </div>
                         <div style="font-size:12px;color:var(--muted);margin-top:4px;">
@@ -559,7 +634,7 @@
                     }).join('');
                     return `<div style="padding:12px;border-radius:6px;border-left:3px solid ${rec.suitability_score>=80?'#10b981':rec.suitability_score>=60?'#f59e0b':'#ef4444'};background:${rec.suitability_score>=80?'rgba(16,185,129,0.05)':'#fff'};margin-bottom:12px;">
                         <div style="display:flex;justify-content:space-between;align-items:start;">
-                            <div><strong>${i+1}. ${rec.plant_name}</strong> <span style="color:#666;font-style:italic;font-size:12px;">${rec.scientific_name||''}</span></div>
+                            <div><strong>${i+1}. ${escapeHtml(getPlantName(rec.plant_name))}</strong> <span style="color:#666;font-style:italic;font-size:12px;">${rec.scientific_name||''}</span></div>
                             <span style="font-size:20px;font-weight:700;color:${rec.suitability_score>=80?'#10b981':rec.suitability_score>=60?'#f59e0b':'#ef4444'};">${rec.suitability_score.toFixed(0)}%</span>
                         </div>
                         <div style="margin-top:6px;">${bars}</div>

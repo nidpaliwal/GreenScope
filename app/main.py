@@ -227,6 +227,7 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
                     humidity = 60
                     sunlight = 7.0
                     frost = "none"
+                    heat_risk = "none"
 
                     if lat < 15:
                         humidity = 75
@@ -241,6 +242,21 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
                         humidity = max(30, humidity - 15)
                         soil = "sandy loam"
 
+                    # Heat risk based on average temperature
+                    if avg_temp > 32:
+                        heat_risk = "high"
+                    elif avg_temp > 28:
+                        heat_risk = "moderate"
+
+                    # Climate alerts
+                    alerts = []
+                    if frost != "none":
+                        alerts.append(f"Frost risk: {frost}. Protect frost-sensitive plants during winter months.")
+                    if heat_risk == "high":
+                        alerts.append("Extreme heat: Provide shade cloth for heat-sensitive crops. Water deeply in early morning.")
+                    elif heat_risk == "moderate":
+                        alerts.append("Moderate heat: Mulch heavily to retain soil moisture. Avoid midday watering.")
+
                     return {
                         "avg_temp_c": avg_temp,
                         "rainfall_mm": total_rain,
@@ -249,6 +265,8 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
                         "soil_type": soil,
                         "ph": ph,
                         "frost_risk": frost,
+                        "heat_risk": heat_risk,
+                        "climate_alerts": alerts,
                         "agro_zone": f"Lat {lat:.1f}, Lng {lng:.1f}",
                     }, "live_api"
     except Exception:
@@ -258,7 +276,10 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
     loc_key = location_str.lower().strip()
     for key, env in LOCATION_ENV.items():
         if key in loc_key:
-            return env.copy(), "fallback"
+            env = env.copy()
+            env.setdefault("heat_risk", "none")
+            env.setdefault("climate_alerts", [])
+            return env, "fallback"
     env = DEFAULT_ENV.copy()
     if lat < 12:
         env["avg_temp_c"] = 28
@@ -269,6 +290,8 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
         env["avg_temp_c"] = 18
         env["frost_risk"] = "low"
         env["rainfall_mm"] = 1200
+    env.setdefault("heat_risk", "none")
+    env.setdefault("climate_alerts", [])
     return env, "fallback"
 
 
@@ -404,7 +427,7 @@ def score_plant(plant: dict, env: dict, photo_obs: dict) -> dict:
 
 def analyze_photo(photo) -> dict:
     if not photo:
-        return {}
+        return None
 
     # Try Pillow-based analysis first
     if photo.base64:
@@ -431,52 +454,74 @@ def analyze_photo(photo) -> dict:
             soil_ratio = soil_pixels / total_pixels
             soil_visible = soil_ratio > 0.05
 
+            # Calculate overall confidence based on image quality and consistency
+            confidence = 0.7  # Base confidence for pixel analysis
+            if total_pixels > 100000:
+                confidence += 0.1  # Higher resolution = more reliable
+            if 0.3 < green_ratio < 3.0:
+                confidence += 0.1  # Consistent color ratios
+            confidence = min(confidence, 0.95)
+
             features = []
             if has_sunlight:
-                features.append("Good sunlight detected")
+                features.append({"text": "Estimated good sunlight exposure", "confidence": round(confidence, 2)})
             else:
-                features.append("Low light conditions detected")
+                features.append({"text": "Estimated low light conditions", "confidence": round(confidence, 2)})
             if has_vegetation:
-                features.append("Green vegetation present")
+                features.append({"text": "Green vegetation detected", "confidence": round(confidence * 0.9, 2)})
             if soil_visible:
-                features.append("Exposed soil visible")
+                features.append({"text": "Exposed soil visible", "confidence": round(confidence * 0.85, 2)})
 
             return {
                 "has_sunlight": has_sunlight,
                 "soil_visible": soil_visible,
                 "has_vegetation": has_vegetation,
                 "shade_level": shade_level,
-                "detected_features": features or ["Open growing area", "Moderate sunlight", "Visible soil"],
+                "features": features,
+                "analysis_method": "pixel_analysis",
+                "overall_confidence": round(confidence, 2),
+                "disclaimer": "Analysis based on pixel-level image heuristics. For accurate assessment, consult local gardening expertise.",
             }
         except Exception:
             pass
 
-    # Fallback: filename-based heuristics
-    obs = {"has_sunlight": True, "soil_visible": True, "has_vegetation": True,
-           "shade_level": "partial", "detected_features": []}
+    # Fallback: filename-based heuristics (lower confidence)
+    features = []
+    confidence = 0.4
     if photo.filename:
         name_lower = photo.filename.lower()
         if "shade" in name_lower or "dark" in name_lower:
-            obs["has_sunlight"] = False
-            obs["shade_level"] = "full"
-            obs["detected_features"].append("Low light conditions detected")
+            features.append({"text": "Estimated low light (filename hint)", "confidence": 0.5})
         if "soil" in name_lower or "ground" in name_lower:
-            obs["detected_features"].append("Exposed soil visible")
+            features.append({"text": "Soil visible (filename hint)", "confidence": 0.5})
         if "plant" in name_lower or "garden" in name_lower or "green" in name_lower:
-            obs["detected_features"].append("Existing vegetation detected")
-    if not obs["detected_features"]:
-        obs["detected_features"] = [
-            "Open growing area", "Green vegetation", "Moderate sunlight",
-            "Visible soil", "No obvious standing water"
+            features.append({"text": "Vegetation likely present (filename hint)", "confidence": 0.5})
+    if not features:
+        features = [
+            {"text": "Open growing area estimated", "confidence": 0.4},
+            {"text": "Moderate sunlight estimated", "confidence": 0.4},
         ]
-    return obs
+
+    return {
+        "has_sunlight": True,
+        "soil_visible": True,
+        "has_vegetation": True,
+        "shade_level": "partial",
+        "features": features,
+        "analysis_method": "filename_heuristic",
+        "overall_confidence": round(confidence, 2),
+        "disclaimer": "Analysis based on filename heuristics only. Upload a clear garden photo for better estimates.",
+    }
 
 
 def photo_obs_to_str(photo_obs: dict) -> str:
     if not photo_obs:
         return "No photo analysis available"
-    lines = photo_obs.get("detected_features", [])
-    return "; ".join(lines) if lines else "Photo analyzed"
+    features = photo_obs.get("features", [])
+    if not features:
+        return "Photo analyzed"
+    lines = [f["text"] if isinstance(f, dict) else f for f in features]
+    return "; ".join(lines)
 
 
 # --- FastAPI App ---
@@ -828,8 +873,11 @@ async def generate_report(request: ReportGenerateRequest):
     photo_analysis = None
     if photo_obs:
         photo_analysis = {
-            "features": photo_obs.get("detected_features", []),
+            "features": photo_obs.get("features", photo_obs.get("detected_features", [])),
             "shade_level": photo_obs.get("shade_level", "unknown"),
+            "analysis_method": photo_obs.get("analysis_method", "unknown"),
+            "overall_confidence": photo_obs.get("overall_confidence", 0.5),
+            "disclaimer": photo_obs.get("disclaimer", ""),
         }
 
     response = ReportGenerateResponse(
