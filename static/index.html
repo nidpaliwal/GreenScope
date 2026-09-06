@@ -130,19 +130,19 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-2" for="photo">Garden Photo (Optional)</label>
-                            <input type="file" id="photo" class="hidden" accept="image/jpeg, image/png">
-                            <button type="button" id="photoBtn"
+                            <input type="file" id="photo" class="hidden" accept="image/jpeg, image/png" aria-label="Upload a garden photo for analysis">
+                            <button type="button" id="photoBtn" aria-label="Upload a garden photo for analysis"
                                 style="width:100%;padding:12px 16px;border:2px dashed var(--border);border-radius:6px;background:white;cursor:pointer;color:var(--muted);"
                                 onclick="document.getElementById('photo').click()">
                                 <span id="photoLabel">Upload Photo</span>
                             </button>
                         </div>
                     </div>
-                    <div id="errorBox" class="hidden mb-4" style="padding:12px;border-radius:6px;background:rgba(239,68,68,0.1);color:#991b1b;font-size:14px;"></div>
-                    <button type="submit" class="btn-primary py-3" disabled id="submitBtn">
+                    <div id="errorBox" role="alert" aria-live="assertive" class="hidden mb-4" style="padding:12px;border-radius:6px;background:rgba(239,68,68,0.1);color:#991b1b;font-size:14px;"></div>
+                    <button type="submit" class="btn-primary py-3" disabled id="submitBtn" aria-label="Analyze my garden and generate plant recommendations">
                         <span id="btnText">Analyze My Garden</span>
-                        <span id="btnLoading" class="hidden flex items-center justify-center gap-2">
-                            <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                        <span id="btnLoading" role="status" aria-label="Loading report" class="hidden flex items-center justify-center gap-2">
+                            <svg class="animate-spin h-4 w-4" aria-hidden="true" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                             Fetching real climate data...
                         </span>
                     </button>
@@ -168,7 +168,8 @@
                     <span id="dataSourceBadge" class="data-badge live"></span>
                 </div>
                 <div id="envLocation" class="text-sm mb-3" style="color:var(--muted);"></div>
-                <div id="map" style="height:180px;border-radius:8px;margin-bottom:12px;z-index:0;"></div>
+                <div id="map" role="img" aria-label="Map showing the geocoded report location" style="height:180px;border-radius:8px;margin-bottom:6px;z-index:0;"></div>
+                <div class="text-xs mb-3" style="color:var(--muted);">Scroll to zoom &bull; drag to pan</div>
                 <div id="envGrid" class="env-grid"></div>
             </div>
 
@@ -200,6 +201,13 @@
                 <div id="categoriesGrid" class="flex flex-wrap gap-2"></div>
             </div>
 
+            <div id="bedCard" class="card hidden animate-fade-in-up delay-2" style="border-left:4px solid var(--accent);">
+                <h2 class="text-lg font-bold mb-1" id="bedTitle">Your garden bed</h2>
+                <div id="bedPlants" class="flex flex-wrap gap-2 mb-2"></div>
+                <div id="bedStats" style="font-size:12px;color:var(--muted);"></div>
+                <div id="bedTip" style="font-size:13px;margin-top:6px;"></div>
+            </div>
+
             <div class="card animate-fade-in-up delay-3">
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-bold">Plant Recommendations</h2>
@@ -222,6 +230,7 @@
 
             <div class="card animate-fade-in-up delay-4">
                 <a id="openReportBtn" href="#" target="_blank" class="block w-full text-center mb-3 py-3 rounded-md font-medium text-white bg-blue-600 hover:bg-blue-700 transition" style="text-decoration:none;pointer-events:none;opacity:0.5;" disabled>Open Full Report Page</a>
+                <a id="icsBtn" href="#" class="block w-full text-center mb-3 py-3 rounded-md font-medium transition" style="text-decoration:none;pointer-events:none;opacity:0.5;border:2px solid var(--accent);color:var(--accent);">Add Planting Reminders (.ics)</a>
                 <button id="pdfBtn" class="btn-primary w-full mb-3" disabled>Download Report</button>
                 <button id="shareBtn" class="btn-primary w-full" disabled>Copy Share Link</button>
                 <div id="toast" class="hidden fixed bottom-4 right-4 bg-green-700 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity"></div>
@@ -469,7 +478,9 @@
                 if (window._map) { window._map.remove(); }
                 window._map = L.map('map').setView([report.latitude, report.longitude], 10);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(window._map);
-                L.marker([report.latitude, report.longitude]).addTo(window._map).bindPopup(`<strong>${escapeHtml(report.location)}</strong>`).openPopup();
+                const popup = `<strong>${escapeHtml(report.location)}</strong><br>` +
+                    `<span style="font-size:12px;">${env.avg_temp_c || '?'}&deg;C &bull; ${env.rainfall_mm || '?'}mm rain &bull; ${escapeHtml(env.soil_type || '?')} soil</span>`;
+                L.marker([report.latitude, report.longitude]).addTo(window._map).bindPopup(popup).openPopup();
                 setTimeout(() => window._map.invalidateSize(), 100);
             }
 
@@ -532,6 +543,17 @@
                 ).join('');
             }
 
+            if (report.garden_bed && report.garden_bed.plants && report.garden_bed.plants.length) {
+                const bed = report.garden_bed;
+                document.getElementById('bedCard').classList.remove('hidden');
+                document.getElementById('bedTitle').textContent = bed.title || 'Your garden bed';
+                document.getElementById('bedPlants').innerHTML = bed.plants.map(p =>
+                    `<span class="photo-feature">${escapeHtml(getPlantName(p))}</span>`).join('');
+                document.getElementById('bedStats').textContent =
+                    `Est. water ≈ ${bed.estimated_water_l_per_week} L/week · Est. CO₂ ≈ ${bed.estimated_co2_kg_per_year} kg/yr (${escapeHtml(bed.estimates_disclaimer || 'rough estimates')})`;
+                document.getElementById('bedTip').textContent = bed.tip || '';
+            }
+
             const recs = report.recommendations;
             recommendationsDiv.innerHTML = recs.map((rec, idx) => {
                 const cls = rec.suitability_score >= 80 ? 'high' : rec.suitability_score >= 60 ? 'medium' : 'low';
@@ -558,10 +580,16 @@
                     </div>
                     <div style="margin-top:10px;">${bars}</div>
                     <div style="margin-top:10px;font-size:12px;color:var(--muted);">
-                        💧 ${escapeHtml(rec.water_requirement || '?')} water &nbsp; ☀️ ${escapeHtml(rec.sun_requirement || '?')} sun &nbsp; 🌱 ${escapeHtml(rec.growth_duration || '?')} &nbsp; 📅 ${escapeHtml(rec.planting_season || '?')}
+                        💧 ${escapeHtml(rec.water_requirement || '?')} water (≈${rec.estimated_water_l_per_week ?? '?'} L/wk) &nbsp; ☀️ ${escapeHtml(rec.sun_requirement || '?')} sun &nbsp; 🌱 ${escapeHtml(rec.growth_duration || '?')} &nbsp; 📅 ${escapeHtml(rec.planting_season || '?')}
                     </div>
+                    ${(rec.tags && rec.tags.length) ? `<div style="margin-top:8px;">${rec.tags.map(t => `<span class="photo-feature">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
                     <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);">
                         ${escapeHtml(rec.care_guide)}
+                    </div>
+                    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+                        <span style="font-size:12px;color:var(--muted);">Was this helpful?</span>
+                        <button aria-label="Mark ${escapeHtml(rec.plant_name)} recommendation as helpful" onclick="votePlant('${escapeHtml(rec.plant_name)}','up',this)" style="border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;background:none;">👍</button>
+                        <button aria-label="Mark ${escapeHtml(rec.plant_name)} recommendation as not helpful" onclick="votePlant('${escapeHtml(rec.plant_name)}','down',this)" style="border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;background:none;">👎</button>
                     </div>
                 </div>`;
             }).join('');
@@ -598,6 +626,27 @@
             openReportBtn.href = `/report/${report.report_id}`;
             openReportBtn.style.pointerEvents = 'auto';
             openReportBtn.style.opacity = '1';
+            const icsBtn = document.getElementById('icsBtn');
+            icsBtn.href = `/api/v1/reports/${report.report_id}/calendar.ics`;
+            icsBtn.style.pointerEvents = 'auto';
+            icsBtn.style.opacity = '1';
+        }
+
+        async function votePlant(plantName, vote, btn) {
+            if (!currentReportId) return;
+            try {
+                const r = await fetch('/api/v1/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ report_id: currentReportId, plant_name: plantName, vote })
+                });
+                if (!r.ok) throw new Error('vote failed');
+                showToast('Thanks for your feedback!');
+                if (btn && btn.parentElement) {
+                    btn.parentElement.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
+                    btn.style.opacity = '1';
+                }
+            } catch { showToast('Could not save feedback'); }
         }
 
         function showToast(msg) {

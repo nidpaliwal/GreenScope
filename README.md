@@ -137,11 +137,11 @@ Plus free-text input for any other location (Varanasi, Kochi, Indore, etc.)
 
 ## Tech Stack
 
-- **Backend:** FastAPI, Pydantic v2, Python 3.10+, Pillow, httpx
-- **Frontend:** HTML5, Tailwind CSS (CDN), Vanilla JS
-- **APIs:** Nominatim (geocoding), Open-Meteo (climate)
-- **Data:** JSON plant database, SQLite persistence (`reports.db`)
-- **Tests:** pytest (38 tests passing)
+- **Backend:** FastAPI, Pydantic v2, Python 3.10+, Pillow, httpx, slowapi (rate limits)
+- **Frontend:** HTML5, Tailwind CSS (CDN), Leaflet maps, Vanilla JS
+- **APIs:** Nominatim (geocoding, cached), Open-Meteo (climate)
+- **Data:** JSON plant database, SQLite persistence (`reports.db`, ephemeral on free tiers)
+- **Tests:** pytest (47 tests passing)
 
 ## Tests
 
@@ -160,11 +160,56 @@ GreenScope/
     index.html        # Frontend with custom location input
     report.html       # Shareable report page
   tests/
-    test_api.py       # API tests (38 cases)
+    test_api.py       # API tests (47 cases)
   requirements.txt
+  render.yaml         # One-click Render deploy config
   .gitignore
+  LICENSE             # MIT
   README.md
 ```
+
+## Architecture
+
+```mermaid
+flowchart LR
+    UI[Browser: index.html] -->|POST location + photo| API[FastAPI: app/main.py]
+    API -->|geocode + cache| NOM[Nominatim / OpenStreetMap]
+    API -->|climate normals| OM[Open-Meteo Climate API]
+    API -->|requirements| DB[(plant_db.json: 50 plants)]
+    API -->|weighted scoring| ENG[Scoring engine: 6 factors]
+    ENG -->|report + garden bed| SQLITE[(SQLite: reports + feedback)]
+    SQLITE -->|share link / .ics| SHARE[report.html / calendar.ics]
+```
+
+## Deploy (Render)
+
+1. Dashboard → **New** → **Web Service** → connect this repo.
+2. Build: `pip install -r requirements.txt`
+3. Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+4. Note: free-tier disk is **ephemeral** — `reports.db` (share links, feedback
+   votes) survives until the next deploy or ~15 min idle spin-down. For a live
+   demo session this is a non-issue; for persistent reports use a hosted
+   Postgres and set `DATABASE_URL`.
+
+## Demo Video (60–90s shot list for pre-screening)
+
+> Record a screen capture following this script; upload unlisted to YouTube
+> and paste the link here.
+
+1. **0:00–0:10** — Homepage. "GreenScope tells Indian gardeners what to grow,
+   and *why*. Type any location — watch the map pin drop on real geocoded
+   coordinates."
+2. **0:10–0:25** — Generate a report for Udaipur. Point at the LIVE DATA badge:
+   "Real climate data, not mocks." Scroll the environment card + frost/heat banner.
+3. **0:25–0:50** — **Lead with Why Not.** Open the score breakdown bars, then
+   "Why Not These Plants?": "Every rejection has a reason. No black box —
+   gardeners can trust this."
+4. **0:50–1:05** — Udaipur vs Kolkata side-by-side: "Same plant, different
+   score, clear reason why. The engine reasons."
+5. **1:05–1:20** — Garden bed card, Hindi toggle, .ics download:
+   "One bed that grows well together, in your language, with reminders."
+6. **1:20–1:30** — "Deterministic, explainable scoring over a black-box model —
+   because gardeners need to trust *why*."
 
 ---
 

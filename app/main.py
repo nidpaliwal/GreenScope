@@ -1,16 +1,23 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
+from fastapi.responses import FileResponse, PlainTextResponse
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from functools import lru_cache
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from fastapi.responses import JSONResponse
 import uuid
 import time
 import json
 import os
 import sqlite3
+import base64
 import httpx
+from datetime import date, timedelta
 
 
 # --- Plant Knowledge Base ---
@@ -22,6 +29,96 @@ def load_plant_db():
 
 
 PLANTS = load_plant_db()
+
+# --- Scoring weights (single source of truth; must sum to 1.0) ---
+SCORING_WEIGHTS = {
+    "climate": 0.25,
+    "ph": 0.20,
+    "sunlight": 0.15,
+    "water": 0.15,
+    "soil": 0.15,
+    "photo": 0.10,
+}
+
+# --- Static plant metadata (no new data source needed) ---
+# NASA Clean Air Study / well-documented air-purifying houseplants in our DB
+AIR_PURIFYING_PLANTS = {
+    "Aloe Vera", "Neem", "Tulsi", "Money Plant", "Areca Palm", "Snake Plant",
+    "Spider Plant", "Peace Lily", "Gerbera Daisy", "Marigold", "Mint",
+}
+# Flowering / nectar plants known to attract pollinators
+POLLINATOR_PLANTS = {
+    "Marigold", "Sunflower", "Hibiscus", "Jasmine", "Rose", "Lavender",
+    "Mustard", "Coriander", "Tulsi", "Lemongrass", "Lotus",
+}
+# Well-documented companion pairs (tomato+marigold etc.)
+COMPANIONS = {
+    "Tomato": (["Marigold", "Tulsi", "Garlic"], ["Potato"]),
+    "Marigold": (["Tomato", "Brinjal", "Chili"], []),
+    "Tulsi": (["Tomato", "Chili", "Brinjal"], []),
+    "Garlic": (["Tomato", "Carrot", "Rose"], ["Peas"]),
+    "Onion": (["Carrot", "Beetroot"], ["Peas"]),
+    "Carrot": (["Onion", "Garlic", "Tomato"], []),
+    "Mint": (["Brinjal", "Cabbage"], []),
+    "Coriander": (["Spinach", "Onion"], []),
+    "Mustard": (["Peas", "Black Gram"], []),
+    "Lemongrass": (["Tomato", "Brinjal"], []),
+}
+# Qualitative water need -> estimated liters/plant/week (approx, labeled as estimate)
+WATER_L_PER_WEEK = {"low": 3.0, "medium": 8.0, "high": 18.0}
+# Category -> rough CO2 sequestration kg/plant/year (order-of-magnitude estimate)
+CO2_KG_PER_YEAR = {
+    "fruit": 12.0, "vegetable": 1.0, "herb": 0.5,
+    "spice": 0.8, "pulse": 0.8, "flower": 0.5,
+}
+
+
+def plant_tags(plant_name: str) -> List[str]:
+    tags = []
+    if plant_name in AIR_PURIFYING_PLANTS:
+        tags.append("air-purifying")
+    if plant_name in POLLINATOR_PLANTS:
+        tags.append("pollinator-friendly")
+    if plant_name in COMPANIONS:
+        grows_with, _ = COMPANIONS[plant_name]
+        tags.append("companion: " + ", ".join(grows_with[:2]))
+    return tags
+
+
+def build_garden_bed(recommendations: list) -> dict:
+    """Reframe top picks as one garden bed that grows well together.
+
+    Picks the top 5 recommendations sharing the majority sun requirement,
+    sums estimated water footprint, and surfaces one companion tip.
+    All numbers are labeled estimates, not measurements.
+    """
+    if not recommendations:
+        return {"title": "Your garden bed", "plants": [], "tip": ""}
+    suns = [r.sun_requirement or "full" for r in recommendations[:8]]
+    majority_sun = max(set(suns), key=suns.count)
+    bed = [r for r in recommendations if (r.sun_requirement or "full") == majority_sun][:5]
+    if len(bed) < 3:
+        bed = recommendations[:5]
+    total_water = round(sum(r.estimated_water_l_per_week or 0 for r in bed), 1)
+    total_co2 = round(sum(r.estimated_co2_kg_per_year or 0 for r in bed), 1)
+    tip = ""
+    for r in bed:
+        grows_with, avoid = COMPANIONS.get(r.plant_name, ([], []))
+        bed_names = {b.plant_name for b in bed}
+        together = [c for c in grows_with if c in bed_names]
+        if together:
+            tip = f"{r.plant_name} grows well with {', '.join(together)} in this bed."
+            break
+    if not tip:
+        tip = f"These {len(bed)} plants share {majority_sun}-sun needs and suit this spot's climate."
+    return {
+        "title": f"Your {majority_sun}-sun garden bed",
+        "plants": [r.plant_name for r in bed],
+        "estimated_water_l_per_week": total_water,
+        "estimated_co2_kg_per_year": total_co2,
+        "estimates_disclaimer": "Water and CO2 figures are rough estimates from plant categories, not measurements.",
+        "tip": tip,
+    }
 
 # --- SQLite Database for Report Persistence ---
 # On Render free tier, disk is ephemeral — reports survive until next deploy/spin-down.
@@ -42,7 +139,29 @@ def get_db():
             photo_analysis TEXT,
             recommendations TEXT,
             generated_at REAL,
-            processing_time_ms REAL
+            processing_time_ms REAL,
+            rejected_plants TEXT,
+            categories TEXT,
+            garden_risk TEXT,
+            comparison_table TEXT,
+            garden_bed TEXT,
+            data_source TEXT
+        )"""
+    )
+    # Migrate older DBs that lack the newer columns
+    for col in ("rejected_plants", "categories", "garden_risk",
+                "comparison_table", "garden_bed", "data_source"):
+        try:
+            conn.execute(f"ALTER TABLE reports ADD COLUMN {col} TEXT")
+        except sqlite3.OperationalError:
+            pass
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_id TEXT,
+            plant_name TEXT,
+            vote TEXT CHECK(vote IN ('up', 'down')),
+            created_at REAL
         )"""
     )
     conn.commit()
@@ -52,9 +171,10 @@ def get_db():
 def save_report_to_db(report):
     conn = get_db()
     conn.execute(
-        """INSERT OR REPLACE INTO reports 
-        (report_id, location, latitude, longitude, environment, photo_analysis, recommendations, generated_at, processing_time_ms)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        """INSERT OR REPLACE INTO reports
+        (report_id, location, latitude, longitude, environment, photo_analysis, recommendations, generated_at, processing_time_ms,
+         rejected_plants, categories, garden_risk, comparison_table, garden_bed, data_source)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             report.report_id,
             report.location,
@@ -73,9 +193,18 @@ def save_report_to_db(report):
                 "water_requirement": r.water_requirement,
                 "sun_requirement": r.sun_requirement,
                 "planting_season": r.planting_season,
+                "tags": r.tags,
+                "estimated_water_l_per_week": r.estimated_water_l_per_week,
+                "estimated_co2_kg_per_year": r.estimated_co2_kg_per_year,
             } for r in report.recommendations]),
             report.generated_at,
             report.processing_time_ms,
+            json.dumps(report.rejected_plants) if report.rejected_plants else None,
+            json.dumps(report.categories) if report.categories else None,
+            report.garden_risk.model_dump_json() if report.garden_risk else None,
+            json.dumps(report.comparison_table) if report.comparison_table else None,
+            json.dumps(report.garden_bed) if report.garden_bed else None,
+            report.data_source,
         ),
     )
     conn.commit()
@@ -85,7 +214,9 @@ def save_report_to_db(report):
 def load_report_from_db(report_id):
     conn = get_db()
     row = conn.execute(
-        "SELECT location, latitude, longitude, environment, photo_analysis, recommendations, generated_at, processing_time_ms FROM reports WHERE report_id = ?",
+        "SELECT location, latitude, longitude, environment, photo_analysis, recommendations, generated_at, processing_time_ms,"
+        " rejected_plants, categories, garden_risk, comparison_table, garden_bed, data_source"
+        " FROM reports WHERE report_id = ?",
         (report_id,),
     ).fetchone()
     conn.close()
@@ -100,6 +231,12 @@ def load_report_from_db(report_id):
         "recommendations": json.loads(row[5]),
         "generated_at": row[6],
         "processing_time_ms": row[7],
+        "rejected_plants": json.loads(row[8]) if len(row) > 8 and row[8] else None,
+        "categories": json.loads(row[9]) if len(row) > 9 and row[9] else None,
+        "garden_risk": json.loads(row[10]) if len(row) > 10 and row[10] else None,
+        "comparison_table": json.loads(row[11]) if len(row) > 11 and row[11] else None,
+        "garden_bed": json.loads(row[12]) if len(row) > 12 and row[12] else None,
+        "data_source": row[13] if len(row) > 13 else "fallback",
     }
 
 
@@ -416,8 +553,7 @@ def score_plant(plant: dict, env: dict, photo_obs: dict) -> dict:
     scores["photo"] = min(100, photo_score)
 
     # Weighted total
-    weights = {"climate": 0.25, "ph": 0.20, "sunlight": 0.15, "water": 0.15, "soil": 0.15, "photo": 0.10}
-    total = sum(scores[k] * weights[k] for k in weights)
+    total = sum(scores[k] * SCORING_WEIGHTS[k] for k in SCORING_WEIGHTS)
     total = round(min(100, max(0, total)), 1)
 
     return {"total": total, "breakdown": scores, "reasons": reasons}
@@ -437,7 +573,16 @@ def analyze_photo(photo) -> dict:
             from PIL import Image
 
             img_data = base64.b64decode(photo.base64.split(",")[1] if "," in photo.base64 else photo.base64)
-            img = Image.open(BytesIO(img_data)).convert("RGB")
+            img = Image.open(BytesIO(img_data))
+            # Explicit format check: reject non-image / exotic payloads instead
+            # of silently falling back to filename heuristics on corrupt uploads.
+            if img.format not in ("JPEG", "PNG", "WEBP", "GIF", "BMP"):
+                raise ValueError(f"Unsupported image format: {img.format}")
+            img = img.convert("RGB")
+            # Downscale guard: pixel-by-pixel analysis over a huge image is
+            # slow and unguarded, so cap at ~1MP before reading pixels.
+            if img.width * img.height > 1_000_000:
+                img.thumbnail((1000, 1000))
             pixels = list(img.getdata())
             total_pixels = len(pixels)
 
@@ -528,9 +673,28 @@ def photo_obs_to_str(photo_obs: dict) -> str:
 
 app = FastAPI(title="GreenScope API", version="0.1.0")
 
+# Rate limiting: cheap insurance so one abusive client can't get our
+# server IP banned by Nominatim (their usage policy is strict: ~1 req/s).
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please wait a moment and try again."},
+    )
+
+# CORS: wide open for hackathon demo (frontend + API served from same
+# origin in prod; "*" lets judges hit the API from any client/notebook).
+# To lock down: set ALLOWED_ORIGINS env var to a comma-separated list.
+_allowed = os.environ.get("ALLOWED_ORIGINS", "*")
+_origins = ["*"] if _allowed.strip() == "*" else [o.strip() for o in _allowed.split(",")]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -549,10 +713,27 @@ class PhotoUpload(BaseModel):
     image_id: str = Field(..., description="Uploaded image identifier")
     filename: str = Field(..., description="Original filename", max_length=255)
     base64: Optional[str] = Field(
-        None, 
+        None,
         description="Base64 encoded image data",
-        max_length=10_000_000  # ~10MB max
+        max_length=8_000_000  # ~8MB string cap; decoded bytes checked below
     )
+
+    @field_validator("base64")
+    @classmethod
+    def check_decoded_size(cls, v):
+        # Server-side size guard: client-side JS blocks >5MB, but that is
+        # trivially bypassable (curl/Postman). Reject oversized payloads
+        # here so a huge image can't spike memory/CPU in pixel analysis.
+        if v is None:
+            return v
+        payload = v.split(",", 1)[1] if "," in v else v
+        try:
+            raw = base64.b64decode(payload, validate=True)
+        except Exception:
+            raise ValueError("Invalid base64 image data")
+        if len(raw) > 5 * 1024 * 1024:
+            raise ValueError("Decoded image exceeds 5MB limit")
+        return v
 
 
 class ReportGenerateRequest(BaseModel):
@@ -573,6 +754,9 @@ class ReportRecommendation(BaseModel):
     water_requirement: Optional[str] = None
     sun_requirement: Optional[str] = None
     planting_season: Optional[str] = None
+    tags: List[str] = Field(default_factory=list, description="Badges: air-purifying, pollinator-friendly, companion hints")
+    estimated_water_l_per_week: Optional[float] = Field(None, description="Estimated liters/plant/week (approx)")
+    estimated_co2_kg_per_year: Optional[float] = Field(None, description="Estimated CO2 kg/plant/year (approx)")
 
 
 class GardenRisk(BaseModel):
@@ -596,6 +780,10 @@ class ReportGenerateResponse(BaseModel):
     categories: Optional[dict] = None
     garden_risk: Optional[GardenRisk] = None
     comparison_table: Optional[List[dict]] = None
+    garden_bed: Optional[dict] = Field(
+        default=None,
+        description="Top picks reframed as one garden bed that grows well together"
+    )
     generated_at: float
     processing_time_ms: float
     data_source: Optional[str] = Field(
@@ -685,32 +873,34 @@ async def geocode_location(location: LocationInput):
 
 
 @app.post("/api/v1/geocode", response_model=dict)
-async def geocode_endpoint(location: LocationInput):
+@limiter.limit("120/minute")
+async def geocode_endpoint(request: Request, location: LocationInput):
     return await geocode_location(location)
 
 
 @app.post("/api/v1/generate-report", response_model=ReportGenerateResponse)
-async def generate_report(request: ReportGenerateRequest):
+@limiter.limit("90/minute")
+async def generate_report(request: Request, body: ReportGenerateRequest):
     start_time = time.time()
     report_id = str(uuid.uuid4())
 
     # Validate location string is not blank
-    if not request.location.location or not request.location.location.strip():
+    if not body.location.location or not body.location.location.strip():
         raise HTTPException(status_code=400, detail="Location cannot be empty")
 
     # Resolve location to coordinates using geocode function
-    if request.location.latitude is None or request.location.longitude is None:
-        geocoded = await geocode_location(request.location)
+    if body.location.latitude is None or body.location.longitude is None:
+        geocoded = await geocode_location(body.location)
         lat = geocoded["latitude"]
         lng = geocoded["longitude"]
         location_str = geocoded["formatted"]
     else:
-        lat = request.location.latitude
-        lng = request.location.longitude
-        location_str = request.location.location or "Unknown location"
+        lat = body.location.latitude
+        lng = body.location.longitude
+        location_str = body.location.location or "Unknown location"
 
     env, data_source = get_env_for_location(lat, lng, location_str)
-    photo_obs = analyze_photo(request.photo)
+    photo_obs = analyze_photo(body.photo)
 
     scored = []
     for plant in PLANTS:
@@ -719,8 +909,8 @@ async def generate_report(request: ReportGenerateRequest):
 
     scored.sort(key=lambda x: x[1]["total"], reverse=True)
 
-    top = scored[:request.num_recommendations]
-    rejected = scored[request.num_recommendations:]
+    top = scored[:body.num_recommendations]
+    rejected = scored[body.num_recommendations:]
 
     recommendations = []
     for plant, score_result in top:
@@ -761,6 +951,9 @@ async def generate_report(request: ReportGenerateRequest):
             water_requirement=plant.get("water"),
             sun_requirement=plant.get("sun"),
             planting_season=plant.get("planting_season", "Kharif"),
+            tags=plant_tags(plant["name"]),
+            estimated_water_l_per_week=WATER_L_PER_WEEK.get(plant.get("water", "medium"), 8.0),
+            estimated_co2_kg_per_year=CO2_KG_PER_YEAR.get(plant.get("category", "vegetable"), 1.0),
         ))
 
     # Categories
@@ -870,6 +1063,8 @@ async def generate_report(request: ReportGenerateRequest):
 
     processing_time_ms = (time.time() - start_time) * 1000
 
+    garden_bed = build_garden_bed(recommendations)
+
     photo_analysis = None
     if photo_obs:
         photo_analysis = {
@@ -892,6 +1087,7 @@ async def generate_report(request: ReportGenerateRequest):
         categories=categories,
         garden_risk=garden_risk,
         comparison_table=comparison,
+        garden_bed=garden_bed,
         generated_at=time.time(),
         processing_time_ms=round(processing_time_ms, 2),
         data_source=data_source,
@@ -950,7 +1146,8 @@ class PlantThisMonthResponse(BaseModel):
 
 
 @app.get("/api/v1/plant-this-month", response_model=PlantThisMonthResponse)
-async def plant_this_month(location: str = "Delhi, NCR", latitude: float = None, longitude: float = None):
+@limiter.limit("120/minute")
+async def plant_this_month(request: Request, location: str = "Delhi, NCR", latitude: float = None, longitude: float = None):
     now = time.localtime()
     month = now.tm_mon
     month_names = ["", "January", "February", "March", "April", "May", "June",
@@ -1014,8 +1211,12 @@ async def get_report(report_id: str):
             water_requirement=r.get('water_requirement'),
             sun_requirement=r.get('sun_requirement'),
             planting_season=r.get('planting_season'),
+            tags=r.get('tags', []),
+            estimated_water_l_per_week=r.get('estimated_water_l_per_week'),
+            estimated_co2_kg_per_year=r.get('estimated_co2_kg_per_year'),
         )
         recs.append(rec)
+    gr = report.get('garden_risk')
     return ReportGenerateResponse(
         report_id=report_id,
         location=report.get('location', ''),
@@ -1024,8 +1225,14 @@ async def get_report(report_id: str):
         environment=report.get('environment', {}),
         photo_analysis=report.get('photo_analysis'),
         recommendations=recs,
+        rejected_plants=report.get('rejected_plants'),
+        categories=report.get('categories'),
+        garden_risk=GardenRisk(**gr) if gr else None,
+        comparison_table=report.get('comparison_table'),
+        garden_bed=report.get('garden_bed'),
         generated_at=report.get('generated_at', time.time()),
         processing_time_ms=report.get('processing_time_ms', 0.0),
+        data_source=report.get('data_source', 'fallback'),
         disclaimer=ReportGenerateResponse.model_fields['disclaimer'].default,
     )
 
@@ -1034,6 +1241,83 @@ async def get_report(report_id: str):
 async def serve_report_page(report_id: str):
     report_path = os.path.join(os.path.dirname(__file__), "..", "static", "report.html")
     return FileResponse(report_path)
+
+
+class FeedbackVote(BaseModel):
+    report_id: str = Field(..., min_length=1, max_length=64)
+    plant_name: str = Field(..., min_length=1, max_length=100)
+    vote: str = Field(..., pattern="^(up|down)$")
+
+
+@app.post("/api/v1/feedback", response_model=dict)
+@limiter.limit("60/minute")
+async def submit_feedback(request: Request, vote: FeedbackVote):
+    """Thumbs up/down per plant suggestion. Answers 'how would this improve
+    over time' — votes accumulate per plant and are readable via summary."""
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO feedback (report_id, plant_name, vote, created_at) VALUES (?, ?, ?, ?)",
+        (vote.report_id, vote.plant_name, vote.vote, time.time()),
+    )
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+@app.get("/api/v1/feedback/summary", response_model=dict)
+@limiter.limit("60/minute")
+async def feedback_summary(request: Request):
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT plant_name,"
+        " SUM(CASE WHEN vote='up' THEN 1 ELSE 0 END) AS up,"
+        " SUM(CASE WHEN vote='down' THEN 1 ELSE 0 END) AS down,"
+        " COUNT(*) AS total FROM feedback GROUP BY plant_name"
+    ).fetchall()
+    conn.close()
+    return {
+        r[0]: {"up": r[1], "down": r[2], "total": r[3],
+               "helpful_pct": round(100 * r[1] / r[3], 1) if r[3] else 0}
+        for r in rows
+    }
+
+
+def _ics_escape(s: str) -> str:
+    return (s or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+@app.get("/api/v1/reports/{report_id}/calendar.ics")
+@limiter.limit("60/minute")
+async def report_calendar_ics(request: Request, report_id: str):
+    """ICS download: one 'Plant {name}' event per top recommendation,
+    dated today, with care guide + suitability in the description."""
+    report = load_report_from_db(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    today = date.today()
+    stamp = today.strftime("%Y%m%d")
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//GreenScope//Planting Reminders//EN"]
+    for i, r in enumerate(report.get("recommendations", [])[:8]):
+        uid = f"{report_id}-{i}@greenscope"
+        summary = f"Plant {r.get('plant_name', 'crop')} ({report.get('location', '')})"
+        desc = (f"Suitability {r.get('suitability_score', '?')}%. "
+                f"{r.get('care_guide', '')} "
+                f"Water: {r.get('water_requirement', '?')}, Sun: {r.get('sun_requirement', '?')}.")
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{stamp}T000000Z",
+            f"DTSTART;VALUE=DATE:{(today + timedelta(days=i)).strftime('%Y%m%d')}",
+            f"SUMMARY:{_ics_escape(summary)}",
+            f"DESCRIPTION:{_ics_escape(desc)}",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    return PlainTextResponse(
+        "\r\n".join(lines),
+        media_type="text/calendar",
+        headers={"Content-Disposition": f'attachment; filename="greenscope-{report_id[:8]}.ics"'},
+    )
 
 
 # --- Mount static files (after API routes) ---

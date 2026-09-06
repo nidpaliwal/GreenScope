@@ -88,7 +88,7 @@ def test_generate_report_basic(client):
 def test_generate_report_with_photo(client):
     r = client.post("/api/v1/generate-report", json={
         "location": {"location": "Delhi, NCR"},
-        "photo": {"image_id": "test_1", "filename": "garden_photo.jpg", "base64": "abc123"},
+        "photo": {"image_id": "test_1", "filename": "garden_photo.jpg", "base64": "aGVsbG8="},
     })
     assert r.status_code == 200
     d = r.json()
@@ -348,3 +348,129 @@ def test_report_page_has_fetch_script(client):
     r = client.get("/report/test-id")
     assert "loadReport" in r.text
     assert "api/v1/reports/" in r.text
+
+
+# --- Scoring Weights ---
+
+def test_scoring_weights_sum_to_one():
+    from app.main import SCORING_WEIGHTS
+    assert set(SCORING_WEIGHTS) == {"climate", "ph", "sunlight", "water", "soil", "photo"}
+    assert abs(sum(SCORING_WEIGHTS.values()) - 1.0) < 1e-9
+
+
+# --- Edge Cases ---
+
+def test_ocean_coordinates_report(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Atlantic Ocean", "latitude": 0.0, "longitude": -20.0},
+        "num_recommendations": 3,
+    })
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["recommendations"]) == 3
+    assert all(0 <= x["suitability_score"] <= 100 for x in d["recommendations"])
+
+
+def _solid_png_b64(rgb):
+    import base64
+    from io import BytesIO
+    from PIL import Image
+    img = Image.new("RGB", (10, 10), rgb)
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+def test_pure_black_photo(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Delhi, NCR"},
+        "photo": {"image_id": "black", "filename": "black.png", "base64": _solid_png_b64((0, 0, 0))},
+    })
+    assert r.status_code == 200
+    pa = r.json()["photo_analysis"]
+    assert pa is not None
+    assert pa["shade_level"] == "full"
+
+
+def test_pure_white_photo(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Delhi, NCR"},
+        "photo": {"image_id": "white", "filename": "white.png", "base64": _solid_png_b64((255, 255, 255))},
+    })
+    assert r.status_code == 200
+    pa = r.json()["photo_analysis"]
+    assert pa is not None
+    texts = [f["text"] if isinstance(f, dict) else f for f in pa["features"]]
+    assert any("sunlight" in t.lower() for t in texts)
+    assert not any("vegetation" in t.lower() for t in texts)
+
+
+def test_oversized_photo_rejected(client):
+    import base64
+    big = base64.b64encode(b"\x00" * int(5.5 * 1024 * 1024)).decode()
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Delhi, NCR"},
+        "photo": {"image_id": "big", "filename": "big.jpg", "base64": big},
+    })
+    assert r.status_code == 422
+
+
+# --- Garden Bed, Tags, Estimates ---
+
+def test_garden_bed_present(client):
+    d = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Mumbai, Maharashtra"}, "num_recommendations": 10,
+    }).json()
+    bed = d["garden_bed"]
+    assert bed is not None
+    assert len(bed["plants"]) >= 3
+    assert bed["estimated_water_l_per_week"] > 0
+    assert bed["estimated_co2_kg_per_year"] > 0
+    assert bed["tip"]
+    assert "estimate" in bed["estimates_disclaimer"].lower()
+    for rec in d["recommendations"]:
+        assert isinstance(rec["tags"], list)
+        assert rec["estimated_water_l_per_week"] is not None
+        assert rec["estimated_co2_kg_per_year"] is not None
+
+
+# --- Feedback Loop ---
+
+def test_feedback_flow(client):
+    d = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Pune, Maharashtra"}, "num_recommendations": 2,
+    }).json()
+    rid, plant = d["report_id"], d["recommendations"][0]["plant_name"]
+    assert client.post("/api/v1/feedback", json={
+        "report_id": rid, "plant_name": plant, "vote": "up"}).status_code == 200
+    assert client.post("/api/v1/feedback", json={
+        "report_id": rid, "plant_name": plant, "vote": "down"}).status_code == 200
+    s = client.get("/api/v1/feedback/summary").json()
+    assert s[plant]["total"] >= 2
+    assert s[plant]["up"] >= 1 and s[plant]["down"] >= 1
+    bad = client.post("/api/v1/feedback", json={
+        "report_id": rid, "plant_name": plant, "vote": "maybe"})
+    assert bad.status_code == 422
+
+
+# --- ICS Export ---
+
+def test_ics_download(client):
+    d = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Jaipur, Rajasthan"}, "num_recommendations": 3,
+    }).json()
+    r = client.get(f"/api/v1/reports/{d['report_id']}/calendar.ics")
+    assert r.status_code == 200
+    assert "text/calendar" in r.headers["content-type"]
+    body = r.text
+    assert "BEGIN:VCALENDAR" in body
+    assert "END:VCALENDAR" in body
+    assert body.count("BEGIN:VEVENT") >= 3
+    assert client.get("/api/v1/reports/nope/calendar.ics").status_code == 404
+
+
+# --- Rate Limiter Wired ---
+
+def test_rate_limiter_registered():
+    from app.main import app as _app
+    assert hasattr(_app.state, "limiter")
