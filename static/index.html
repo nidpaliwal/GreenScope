@@ -6,6 +6,8 @@
     <title>GreenScope - AI Gardening Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --bg: #f8fafc; --fg: #0f172a; --muted: #64748b;
@@ -145,6 +147,7 @@
             <div id="envCard" class="card animate-fade-in-up delay-1">
                 <h2 class="text-lg font-bold mb-2">Location Environment</h2>
                 <div id="envLocation" class="text-sm mb-3" style="color:var(--muted);"></div>
+                <div id="map" style="height:180px;border-radius:8px;margin-bottom:12px;z-index:0;"></div>
                 <div id="envGrid" class="env-grid"></div>
             </div>
 
@@ -315,7 +318,20 @@
             let photoData = null;
             const file = photoInput.files[0];
             if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                    showError('Image too large. Maximum 5MB allowed.');
+                    submitBtn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    btnLoading.classList.add('hidden');
+                    return;
+                }
                 const reader = new FileReader();
+                reader.onerror = () => {
+                    showError('Failed to read image file.');
+                    submitBtn.disabled = false;
+                    btnText.classList.remove('hidden');
+                    btnLoading.classList.add('hidden');
+                };
                 reader.onload = async (ev) => {
                     photoData = { image_id: 'temp_' + Date.now(), filename: file.name, base64: ev.target.result };
                     await submitReport(location, photoData);
@@ -372,6 +388,15 @@
                 { icon: '🪴', label: 'Soil Type', value: env.soil_type || '?' },
                 { icon: '❄️', label: 'Frost Risk', value: env.frost_risk || '?' },
             ].map(s => `<div class="env-stat"><div class="label">${s.icon} ${escapeHtml(s.label)}</div><div class="value">${escapeHtml(String(s.value))}</div></div>`).join('');
+
+            if (report.latitude && report.longitude) {
+                const mapEl = document.getElementById('map');
+                if (window._map) { window._map.remove(); }
+                window._map = L.map('map').setView([report.latitude, report.longitude], 10);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(window._map);
+                L.marker([report.latitude, report.longitude]).addTo(window._map).bindPopup(`<strong>${escapeHtml(report.location)}</strong>`).openPopup();
+                setTimeout(() => window._map.invalidateSize(), 100);
+            }
 
             if (report.photo_analysis) {
                 document.getElementById('photoCard').classList.remove('hidden');

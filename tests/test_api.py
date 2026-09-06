@@ -63,7 +63,10 @@ def test_geocode_kolkata(client):
 
 def test_geocode_unknown_defaults(client):
     r = client.post("/api/v1/geocode", json={"location": "Somewhere Unknown"})
-    assert r.status_code == 400
+    assert r.status_code == 200
+    d = r.json()
+    assert "latitude" in d
+    assert "longitude" in d
 
 
 # --- Report Generation ---

@@ -489,7 +489,7 @@ app.add_middleware(
 # --- Request / Response Models ---
 
 class LocationInput(BaseModel):
-    location: str = Field(..., description="Address, coordinates, or location description")
+    location: str = Field(..., min_length=1, max_length=200, description="Address, coordinates, or location description")
     latitude: Optional[float] = Field(None, description="Latitude if provided")
     longitude: Optional[float] = Field(None, description="Longitude if provided")
 
@@ -610,13 +610,20 @@ async def geocode_location(location: LocationInput):
     for key, (lat, lng) in mock_geocodes.items():
         if key in loc_key:
             return {"latitude": lat, "longitude": lng, "formatted": location.location}
-    raise HTTPException(status_code=400, detail="Location not supported. Please select a supported location or provide coordinates.")
+
+    # If Nominatim didn't return results and not in hardcoded list,
+    # still allow the report with approximate India center coordinates
+    return {"latitude": 20.5937, "longitude": 78.9629, "formatted": location.location}
 
 
 @app.post("/api/v1/generate-report", response_model=ReportGenerateResponse)
 async def generate_report(request: ReportGenerateRequest):
     start_time = time.time()
     report_id = str(uuid.uuid4())
+
+    # Validate location string is not blank
+    if not request.location.location or not request.location.location.strip():
+        raise HTTPException(status_code=400, detail="Location cannot be empty")
 
     # Resolve location to coordinates using geocode function
     if request.location.latitude is None or request.location.longitude is None:
