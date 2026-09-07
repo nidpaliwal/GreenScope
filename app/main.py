@@ -394,6 +394,27 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
                     elif heat_risk == "moderate":
                         alerts.append("Moderate heat: Mulch heavily to retain soil moisture. Avoid midday watering.")
 
+                    # Merge with hardcoded fallback for known cities to preserve
+                    # accurate frost_risk, agro_zone, soil_type (elevation-aware)
+                    loc_key = location_str.lower().strip()
+                    fallback_env = None
+                    for key, env in LOCATION_ENV.items():
+                        if key in loc_key:
+                            fallback_env = env
+                            break
+
+                    if fallback_env:
+                        frost = fallback_env.get("frost_risk", frost)
+                        agro_zone = fallback_env.get("agro_zone", f"Lat {lat:.1f}, Lng {lng:.1f}")
+                        soil = fallback_env.get("soil_type", soil)
+                        ph = fallback_env.get("ph", ph)
+                        sunlight = fallback_env.get("sunlight_hours", sunlight)
+                        humidity = fallback_env.get("humidity", humidity)
+                        if frost != "none":
+                            alerts.append(f"Frost risk: {frost}. Protect frost-sensitive plants during winter months.")
+                    else:
+                        agro_zone = f"Lat {lat:.1f}, Lng {lng:.1f}"
+
                     return {
                         "avg_temp_c": avg_temp,
                         "rainfall_mm": total_rain,
@@ -404,7 +425,7 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
                         "frost_risk": frost,
                         "heat_risk": heat_risk,
                         "climate_alerts": alerts,
-                        "agro_zone": f"Lat {lat:.1f}, Lng {lng:.1f}",
+                        "agro_zone": agro_zone,
                     }, "live_api"
     except Exception:
         pass
