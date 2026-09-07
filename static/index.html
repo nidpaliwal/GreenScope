@@ -91,6 +91,7 @@
             <div class="flex items-center gap-4">
                 <button id="darkToggle" onclick="document.documentElement.classList.toggle('dark');localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--fg);">🌙</button>
                 <button id="langToggle" onclick="toggleLang()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--fg);">हिंदी</button>
+                <div id="google_translate_element" style="display:none;"></div>
                 <span class="text-xs" style="color:var(--muted);">v0.1.0</span>
             </div>
         </div>
@@ -264,6 +265,36 @@
             this.textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
         });
 
+        // Google Translate widget for full-page Hindi translation
+        function initGoogleTranslate() {
+            if (window.google && window.google.translate) return;
+            const script = document.createElement('script');
+            script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+            document.head.appendChild(script);
+            window.googleTranslateElementInit = function() {
+                new google.translate.TranslateElement({
+                    pageLanguage: 'en',
+                    includedLanguages: 'hi',
+                    layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                    autoDisplay: false
+                }, 'google_translate_element');
+            };
+        }
+        initGoogleTranslate();
+
+        function translatePage(lang) {
+            const select = document.querySelector('#google_translate_element select');
+            if (select) {
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === lang) {
+                        select.selectedIndex = i;
+                        select.dispatchEvent(new Event('change'));
+                        break;
+                    }
+                }
+            }
+        }
+
         const API = { report: '/api/v1/generate-report', reports: '/api/v1/reports/' };
         let currentReportId = null;
         let currentLang = localStorage.getItem('lang') || 'en';
@@ -293,6 +324,11 @@
             currentLang = currentLang === 'en' ? 'hi' : 'en';
             localStorage.setItem('lang', currentLang);
             document.getElementById('langToggle').textContent = currentLang === 'en' ? 'हिंदी' : 'EN';
+            if (currentLang === 'hi') {
+                translatePage('hi');
+            } else {
+                translatePage('en');
+            }
             if (currentReportId) refreshDisplay();
         }
 
