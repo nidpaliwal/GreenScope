@@ -387,8 +387,6 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
 
                     # Climate alerts
                     alerts = []
-                    if frost != "none":
-                        alerts.append(f"Frost risk: {frost}. Protect frost-sensitive plants during winter months.")
                     if heat_risk == "high":
                         alerts.append("Extreme heat: Provide shade cloth for heat-sensitive crops. Water deeply in early morning.")
                     elif heat_risk == "moderate":
@@ -414,6 +412,9 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
                             alerts.append(f"Frost risk: {frost}. Protect frost-sensitive plants during winter months.")
                     else:
                         agro_zone = f"Lat {lat:.1f}, Lng {lng:.1f}"
+                        # For unknown locations, use latitude-based frost
+                        if frost != "none":
+                            alerts.append(f"Frost risk: {frost}. Protect frost-sensitive plants during winter months.")
 
                     return {
                         "avg_temp_c": avg_temp,
