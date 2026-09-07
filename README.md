@@ -145,7 +145,7 @@ Plus free-text input for any other location (Varanasi, Kochi, Indore, etc.)
 - **Frontend:** HTML5, Tailwind CSS (CDN), Leaflet maps, Vanilla JS
 - **APIs:** Nominatim (geocoding, cached), Open-Meteo (climate)
 - **Data:** JSON plant database, SQLite persistence (`reports.db`, ephemeral on free tiers)
-- **Tests:** pytest (49 tests passing)
+- **Tests:** pytest (50 tests passing)
 
 ## Tests
 
@@ -164,7 +164,7 @@ GreenScope/
     index.html        # Frontend with custom location input
     report.html       # Shareable report page
   tests/
-    test_api.py       # API tests (49 cases)
+    test_api.py       # API tests (50 cases)
   requirements.txt
   render.yaml         # One-click Render deploy config
   .gitignore

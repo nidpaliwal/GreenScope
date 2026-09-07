@@ -445,16 +445,20 @@
                 });
                 if (!r.ok) {
                     const errData = await r.json().catch(() => ({}));
-                    throw new Error(errData.detail || `Server error (${r.status})`);
+                    const err = new Error(errData.detail || `Server error (${r.status})`);
+                    err.status = r.status;
+                    throw err;
                 }
                 const data = await r.json();
                 currentReportId = data.report_id;
                 displayReport(data);
             } catch (err) {
                 if (err.name === 'TypeError' && err.message.includes('fetch')) {
-                    showError('Cannot connect to server. Please make sure the server is running on port 8000.');
+                    showError('Cannot connect to the server. Please check your connection and try again.');
+                } else if (err.status === 429) {
+                    showError('Too many requests — please wait about a minute, then try again.');
                 } else {
-                    showError('Error: ' + err.message);
+                    showError(err.message);
                 }
             }
             finally { submitBtn.disabled = false; btnText.classList.remove('hidden'); btnLoading.classList.add('hidden'); }

@@ -494,3 +494,12 @@ def test_ics_download(client):
 def test_rate_limiter_registered():
     from app.main import app as _app
     assert hasattr(_app.state, "limiter")
+
+
+def test_rate_limit_returns_friendly_429(client):
+    last = None
+    for _ in range(65):
+        last = client.post("/api/v1/feedback", json={
+            "report_id": "loadtest", "plant_name": "Tulsi", "vote": "up"})
+    assert last.status_code == 429
+    assert "Too many requests" in last.json()["detail"]
