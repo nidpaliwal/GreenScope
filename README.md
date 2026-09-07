@@ -217,4 +217,23 @@ flowchart LR
 
 ---
 
+## Roadmap
+
+### Deferred by Design
+
+- **AI chatbot / RAG Q&A** — Intentionally not built. Our core differentiator is deterministic, explainable scoring; a black-box chat layer would work against that pitch. Revisit only with a redesigned trust/explainability framing.
+
+### Deferred for Time (Hackathon Scope)
+
+- PostgreSQL migration (replace ephemeral SQLite on free-tier hosting)
+- CSV/Excel export of recommendations
+- Harvest timeline visualization (Gantt-style sowing → harvest)
+- Container/balcony gardening mode
+- Multi-language expansion (Tamil, Bengali, Marathi, Gujarati)
+- Pest & disease alerts, soil amendment suggestions
+- Redis caching for geocode/climate API responses
+- PWA support for offline access to saved reports
+
+---
+
 **GreenScope** - Explainable garden intelligence for Indian spaces.
