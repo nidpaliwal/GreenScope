@@ -32,6 +32,9 @@ Top 15 Candidates with suitability scores + breakdown
       |
       v
 Categories | Garden Risk | Comparison Table | Why Not?
+      |
+      +---> Watering Schedule Calculator (frequency, amounts, seasonal notes)
+      +---> Pest & Disease Alerts (category-specific, environment-triggered)
 ```
 
 ## Features
@@ -54,6 +57,9 @@ Categories | Garden Risk | Comparison Table | Why Not?
 - **HTML Download**: Downloadable styled report (print to PDF)
 - **Custom Locations**: Type any location name, not limited to dropdown
 - **Input Validation**: Size limits, error handling, graceful fallbacks
+- **Watering Schedule Calculator**: Personalized watering frequency, per-session amounts, weekly schedule, seasonal notes
+- **Pest & Disease Alerts**: Category-specific alerts triggered by environmental conditions with risk level and actionable advice
+- **Deterministic Chat Assistant**: Floating chat widget using local plant database (no LLM, no API keys, works offline) — answers questions about plant care, categories, field sizes, watering, pests, seasons
 
 ## Demo Script (lead with differentiators, in this order)
 
@@ -80,14 +86,35 @@ Categories | Garden Risk | Comparison Table | Why Not?
 |--------|-------------------------------|--------------------------|
 | `GET`  | `/`                           | Serve frontend           |
 | `POST` | `/api/v1/geocode`             | Geocode location (Nominatim) |
-| `POST` | `/api/v1/generate-report`     | Generate gardening report|
+| `POST` | `/api/v1/generate-report`     | Generate gardening report |
 | `GET`  | `/api/v1/reports/{id}`        | Retrieve report data     |
 | `GET`  | `/report/{id}`                | Share report page        |
 | `GET`  | `/api/v1/plant-this-month`    | Seasonal planting calendar|
 | `GET`  | `/api/v1/reports/{id}/calendar.ics` | Season-aware planting reminders (ICS) |
 | `POST` | `/api/v1/feedback`            | Thumbs up/down per plant suggestion |
 | `GET`  | `/api/v1/feedback/summary`    | Aggregated helpfulness per plant |
+| `POST` | `/api/v1/chat`                | Deterministic chat assistant (local plant DB) |
 | `GET`  | `/api/v1/health`              | Health check             |
+
+### Generate Report Request Body
+
+```json
+{
+  "location": {"location": "Delhi, NCR"},
+  "photo": {"image_id": "img1", "filename": "garden.jpg", "base64": "..."},
+  "num_recommendations": 15,
+  "category": "herb"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| location | object | Yes | Location input with `location` string, optional `latitude`/`longitude` |
+| photo | object | No | Garden photo with `image_id`, `filename`, `base64` |
+| num_recommendations | integer | No (default 15) | Number of recommendations (1-20) |
+| category | string | No | Filter by plant category: `herb`, `fruit`, `vegetable`, `spice`, `pulse`, `flower` |
+
+**Category aliases:** `decorative` → `flower` (case-insensitive, whitespace trimmed). Invalid category returns 422.
 
 ## What's Real vs Mocked
 
@@ -219,9 +246,18 @@ flowchart LR
 
 ## Roadmap
 
+### Recently Added
+
+- **Watering Schedule Calculator** — Personalized watering frequency, amounts per session, weekly schedule, and seasonal notes based on plant water needs, rainfall, temperature, humidity, soil type, and frost risk
+- **Pest & Disease Alerts** — Category-specific alerts triggered by environmental conditions (temperature, humidity, rainfall) with risk level and actionable advice
+
+### Recently Added
+
+- **Deterministic Chat Assistant** — Floating chat widget using local plant database (no LLM, no API keys, works offline). Answers questions about plant care, categories (flowers, fruits, vegetables, herbs, spices, pulses, decorative), field sizes (large farm, balcony/container), watering, pests, and seasons.
+
 ### Deferred by Design
 
-- **AI chatbot / RAG Q&A** — Intentionally not built. Our core differentiator is deterministic, explainable scoring; a black-box chat layer would work against that pitch. Revisit only with a redesigned trust/explainability framing.
+- **AI chatbot / RAG Q&A (black-box LLM)** — Intentionally not built. Our core differentiator is deterministic, explainable scoring; a black-box chat layer would work against that pitch. The deterministic assistant above provides Q&A without sacrificing explainability.
 
 ### Deferred for Time (Hackathon Scope)
 
@@ -230,7 +266,7 @@ flowchart LR
 - Harvest timeline visualization (Gantt-style sowing → harvest)
 - Container/balcony gardening mode
 - Multi-language expansion (Tamil, Bengali, Marathi, Gujarati)
-- Pest & disease alerts, soil amendment suggestions
+- Soil amendment suggestions
 - Redis caching for geocode/climate API responses
 - PWA support for offline access to saved reports
 

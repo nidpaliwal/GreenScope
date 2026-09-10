@@ -101,7 +101,7 @@
         <section class="mb-8 animate-fade-in-up delay-1">
             <div class="card text-center">
                 <h1 class="text-3xl font-bold tracking-tight mb-2">GreenScope</h1>
-                <p class="text-lg" style="color:var(--muted);">Discover what you can grow based on your location, soil, and garden conditions</p>
+                <p class="text-lg" style="color:var(--muted);" id="heroSubtitle">Discover what you can grow based on your location, soil, and garden conditions</p>
             </div>
         </section>
 
@@ -110,9 +110,9 @@
                 <form id="generateForm" novalidate>
                     <div class="grid grid-cols-1 gap-4 mb-6">
                         <div>
-                            <label class="block text-sm font-medium mb-2" for="location-select">Location <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-medium mb-2" for="location-select"><span id="locationLabel">Location</span> <span class="text-red-500">*</span></label>
                             <select id="location-select" class="input-field">
-                                <option value="" disabled selected>Select a location...</option>
+                                <option value="" disabled selected id="selectLocationOption">Select a location...</option>
                                 <option value="Mumbai, Maharashtra">Mumbai, Maharashtra</option>
                                 <option value="Delhi, NCR">Delhi, NCR</option>
                                 <option value="Bengaluru, Karnataka">Bengaluru, Karnataka</option>
@@ -129,15 +129,15 @@
                                 <option value="Srinagar, Jammu & Kashmir">Srinagar, Jammu & Kashmir</option>
                                 <option value="Thiruvananthapuram, Kerala">Thiruvananthapuram, Kerala</option>
                                 <option value="Udaipur, Rajasthan">Udaipur, Rajasthan</option>
-                                <option value="__custom__">Other (type below)...</option>
+                                <option value="__custom__" id="otherLocationOption">Other (type below)...</option>
                             </select>
                         </div>
                         <div id="customLocationDiv" class="hidden">
-                            <label class="block text-sm font-medium mb-2" for="custom-location">Enter your location</label>
+                            <label class="block text-sm font-medium mb-2" for="custom-location" id="enterLocationLabel">Enter your location</label>
                             <input type="text" id="custom-location" class="input-field" placeholder="e.g. Varanasi, Uttar Pradesh" style="background-image:none; padding-right:16px;">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium mb-2" for="photo">Garden Photo (Optional)</label>
+                            <label class="block text-sm font-medium mb-2" for="photo" id="gardenPhotoLabel">Garden Photo (Optional)</label>
                             <input type="file" id="photo" class="hidden" accept="image/jpeg, image/png" aria-label="Upload a garden photo for analysis">
                             <button type="button" id="photoBtn" aria-label="Upload a garden photo for analysis"
                                 style="width:100%;padding:12px 16px;border:2px dashed var(--border);border-radius:6px;background:white;cursor:pointer;color:var(--muted);"
@@ -151,7 +151,7 @@
                         <span id="btnText">Analyze My Garden</span>
                         <span id="btnLoading" role="status" aria-label="Loading report" class="hidden flex items-center justify-center gap-2">
                             <svg class="animate-spin h-4 w-4" aria-hidden="true" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                            Fetching real climate data...
+                            <span id="loadingText">Fetching real climate data...</span>
                         </span>
                     </button>
                 </form>
@@ -161,7 +161,7 @@
         <section id="calendarSection" class="hidden mb-8">
             <div class="card animate-fade-in-up delay-2">
                 <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-lg font-bold">What to Plant This Month</h2>
+                    <h2 class="text-lg font-bold" id="calendarTitle">What to Plant This Month</h2>
                     <span id="calendarSeason" class="status-badge status-waiting"></span>
                 </div>
                 <div id="calendarGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
@@ -172,7 +172,7 @@
 
             <div id="envCard" class="card animate-fade-in-up delay-1">
                 <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-lg font-bold">Location Environment</h2>
+                    <h2 class="text-lg font-bold" id="envCardTitle">Location Environment</h2>
                     <span id="dataSourceBadge" class="data-badge live"></span>
                 </div>
                 <div id="envLocation" class="text-sm mb-3" style="color:var(--muted);"></div>
@@ -191,7 +191,7 @@
 
             <div id="photoCard" class="card hidden animate-fade-in-up delay-2">
                 <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-lg font-bold">Garden Analysis</h2>
+                    <h2 class="text-lg font-bold" id="photoCardTitle">Garden Analysis</h2>
                     <span id="photoConfidence" class="data-badge" style="font-size:10px;"></span>
                 </div>
                 <div id="photoFeatures"></div>
@@ -199,13 +199,13 @@
             </div>
 
             <div id="riskCard" class="card animate-fade-in-up delay-2">
-                <h2 class="text-lg font-bold mb-2">Garden Health Assessment</h2>
+                <h2 class="text-lg font-bold mb-2" id="riskCardTitle">Garden Health Assessment</h2>
                 <div id="riskGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-3"></div>
                 <div id="riskWarnings"></div>
             </div>
 
             <div id="categoriesCard" class="card animate-fade-in-up delay-2">
-                <h2 class="text-lg font-bold mb-2">Best For You</h2>
+                <h2 class="text-lg font-bold mb-2" id="categoriesTitle">Best For You</h2>
                 <div id="categoriesGrid" class="flex flex-wrap gap-2"></div>
             </div>
 
@@ -216,31 +216,36 @@
                 <div id="bedTip" style="font-size:13px;margin-top:6px;"></div>
             </div>
 
+            <div id="categoryFilter" class="card animate-fade-in-up delay-2">
+                <h2 class="text-lg font-bold mb-3" id="categoryFilterTitle">Filter by Category</h2>
+                <div id="categoryChips" class="flex flex-wrap gap-2"></div>
+            </div>
+
             <div class="card animate-fade-in-up delay-3">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold">Plant Recommendations</h2>
-                    <span id="reportStatus" class="status-badge status-waiting">Generating...</span>
+                    <h2 class="text-xl font-bold" id="recsTitle">Plant Recommendations</h2>
+                    <span id="reportStatus" class="status-badge status-waiting" id="generatingText">Generating...</span>
                 </div>
                 <div id="recommendations" class="space-y-4"></div>
             </div>
 
             <div id="comparisonCard" class="card animate-fade-in-up delay-4">
-                <h2 class="text-lg font-bold mb-3">Comparison Table</h2>
+                <h2 class="text-lg font-bold mb-3" id="comparisonTitle">Comparison Table</h2>
                 <div style="overflow-x:auto;">
                     <table class="comp-table" id="compTable"></table>
                 </div>
             </div>
 
             <div id="rejectedCard" class="card animate-fade-in-up delay-4">
-                <h2 class="text-lg font-bold mb-2">Why Not These Plants?</h2>
+                <h2 class="text-lg font-bold mb-2" id="rejectedTitle">Why Not These Plants?</h2>
                 <div id="rejectedList" class="space-y-3"></div>
             </div>
 
             <div class="card animate-fade-in-up delay-4">
-                <a id="openReportBtn" href="#" target="_blank" class="block w-full text-center mb-3 py-3 rounded-md font-medium text-white bg-blue-600 hover:bg-blue-700 transition" style="text-decoration:none;pointer-events:none;opacity:0.5;" disabled>Open Full Report Page</a>
-                <a id="icsBtn" href="#" class="block w-full text-center mb-3 py-3 rounded-md font-medium transition" style="text-decoration:none;pointer-events:none;opacity:0.5;border:2px solid var(--accent);color:var(--accent);">Add Planting Reminders (.ics)</a>
-                <button id="pdfBtn" class="btn-primary w-full mb-3" disabled>Download Report</button>
-                <button id="shareBtn" class="btn-primary w-full" disabled>Copy Share Link</button>
+                <a id="openReportBtn" href="#" target="_blank" class="block w-full text-center mb-3 py-3 rounded-md font-medium text-white bg-blue-600 hover:bg-blue-700 transition" style="text-decoration:none;pointer-events:none;opacity:0.5;" disabled><span id="openReportText">Open Full Report Page</span></a>
+                <a id="icsBtn" href="#" class="block w-full text-center mb-3 py-3 rounded-md font-medium transition" style="text-decoration:none;pointer-events:none;opacity:0.5;border:2px solid var(--accent);color:var(--accent);"><span id="icsText">Add Planting Reminders (.ics)</span></a>
+                <button id="pdfBtn" class="btn-primary w-full mb-3" disabled><span id="pdfText">Download Report</span></button>
+                <button id="shareBtn" class="btn-primary w-full" disabled><span id="shareText">Copy Share Link</span></button>
                 <div id="toast" class="hidden fixed bottom-4 right-4 bg-green-700 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity"></div>
             </div>
         </section>
@@ -253,6 +258,27 @@
                 <button onclick="closePlantModal()" aria-label="Close plant details" style="border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;background:none;color:var(--fg);">✕</button>
             </div>
             <div id="plantModalBody"></div>
+        </div>
+    </div>
+
+    <div id="chatFab" class="fixed bottom-4 right-4 z-40" onclick="toggleChat()">
+        <button aria-label="Open gardening assistant" style="width:56px;height:56px;border-radius:50%;background:var(--accent);color:white;border:none;box-shadow:0 4px 12px rgba(0,0,0,0.15);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;">💬</button>
+    </div>
+    <div id="chatPanel" class="hidden fixed bottom-4 right-4 z-40" style="width:360px;max-height:500px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);display:flex;flex-direction:column;overflow:hidden;">
+        <div class="flex items-center justify-between p-3 border-b border-border" style="background:var(--bg);">
+            <div class="flex items-center gap-2">
+                <span style="font-size:20px;">🌿</span>
+                <strong id="chatTitle">GreenScope Assistant</strong>
+            </div>
+            <button onclick="toggleChat()" aria-label="Close chat" style="border:none;background:none;font-size:18px;cursor:pointer;color:var(--muted);">✕</button>
+        </div>
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-3" style="max-height:360px;"></div>
+        <div class="p-3 border-t border-border" style="background:var(--bg);">
+            <div class="flex gap-2">
+                <input type="text" id="chatInput" placeholder="Ask about plants, care, pests..." class="flex-1 input-field" style="padding:10px 14px;font-size:14px;" onkeydown="if(event.key==='Enter')sendChat()">
+                <button onclick="sendChat()" class="btn-primary" style="width:auto;padding:10px 16px;font-size:14px;">Send</button>
+            </div>
+            <p id="chatDisclaimer" class="text-xs text-center mt-2" style="color:var(--muted);">Deterministic assistant — uses local plant database, no LLM</p>
         </div>
     </div>
 
@@ -297,6 +323,7 @@
 
         const API = { report: '/api/v1/generate-report', reports: '/api/v1/reports/' };
         let currentReportId = null;
+        let currentCategoryFilter = null;
         let currentLang = localStorage.getItem('lang') || 'en';
 
         const HINDI_NAMES = {
@@ -315,9 +342,141 @@
             'Mustard': 'सरसों', 'Groundnut': 'मूंगफली', 'Sugarcane': 'गन्ना'
         };
 
+        const HINDI_UI = {
+            'Location': 'स्थान',
+            'Garden Photo (Optional)': 'बगीचे की फोटो (वैकल्पिक)',
+            'Upload Photo': 'फोटो अपलोड करें',
+            'Analyze My Garden': 'मेरे बगीचे का विश्लेषण करें',
+            'Fetching real climate data...': 'असली जलवायु डेटा लाया जा रहा है...',
+            'Location Environment': 'स्थान का वातावरण',
+            'Avg Temp': 'औसत तापमान',
+            'Rainfall': 'वर्षा',
+            'Sunlight': 'धूप',
+            'Soil pH': 'मिट्टी का pH',
+            'Soil Type': 'मिट्टी का प्रकार',
+            'Frost Risk': 'पाला का खतरा',
+            'Agro Zone': 'कृषि क्षेत्र',
+            'Garden Analysis': 'बगीचे का विश्लेषण',
+            'Garden Health Assessment': 'बगीचे के स्वास्थ्य का आकलन',
+            'Sunlight': 'धूप',
+            'Water': 'पानी',
+            'Temperature': 'तापमान',
+            'Soil': 'मिट्टी',
+            'Overall': 'कुल मिलाकर',
+            'Warnings': 'चेतावनियाँ',
+            'Best For You': 'आपके लिए सर्वश्रेष्ठ',
+            'Best Overall': 'सर्वश्रेष्ठ समग्र',
+            'Best Low-Water': 'सर्वश्रेष्ठ कम-पानी',
+            'Fastest Harvest': 'सबसे तेज़ फसल',
+            'Best Flower': 'सर्वश्रेष्ठ फूल',
+            'Best Herb': 'सर्वश्रेष्ठ जड़ी-बूटी',
+            'Your garden bed': 'आपका बगीचा',
+            'Plant Recommendations': 'पौधों की सिफारिशें',
+            'Comparison Table': 'तुलना तालिका',
+            'Plant': 'पौधा',
+            'Suitability': 'उपयुक्तता',
+            'Growth': 'वृद्धि',
+            'Why Not These Plants?': 'ये पौधे क्यों नहीं?',
+            'Open Full Report Page': 'पूरा रिपोर्ट पेज खोलें',
+            'Add Planting Reminders (.ics)': 'रोपण अनुस्मारक जोड़ें (.ics)',
+            'Download Report': 'रिपोर्ट डाउनलोड करें',
+            'Copy Share Link': 'साझा लिंक कॉपी करें',
+            'What to Plant This Month': 'इस महीने क्या लगाएं',
+            'Loading report...': 'रिपोर्ट लोड हो रही है...',
+            'Report not found or expired.': 'रिपोर्ट नहीं मिली या समाप्त हो गई।',
+            'Create Your Own': 'अपना बनाएं',
+            'Shared Report': 'साझा रिपोर्ट',
+            'Generated': 'जनरेट किया गया',
+            'No warnings — conditions look good!': 'कोई चेतावनी नहीं — स्थिति अच्छी लग रही है!',
+            'Est. water': 'अनुमानित पानी',
+            'Est. CO₂': 'अनुमानित CO₂',
+            'rough estimates': 'मोटे अनुमान',
+            'Water': 'पानी',
+            'Sun': 'धूप',
+            'Planting Season': 'रोपण का मौसम',
+            'Scientific Name': 'वैज्ञानिक नाम',
+            'Care Guide': 'देखभाल गाइड',
+            'Suitability': 'उपयुक्तता',
+            'Climate': 'जलवायु',
+            'pH': 'pH',
+            'Soil': 'मिट्टी',
+            'Photo': 'फोटो',
+            'Good': 'अच्छा',
+            'Low': 'कम',
+            'Moderate': 'मध्यम',
+            'High': 'उच्च',
+            'Cold': 'ठंडा',
+            'Hot': 'गर्म',
+            'EXTREME pH': 'चरम pH',
+            'None': 'कोई नहीं',
+            'Year-round': 'पूरे साल',
+            'Kharif': 'खरीफ',
+            'Rabi': 'रबी',
+            'Zaid': 'जायद',
+            'Monsoon': 'मानसून',
+            'Select a location...': 'स्थान चुनें...',
+            'Other (type below)...': 'अन्य (नीचे टाइप करें)...',
+            'Enter your location': 'अपना स्थान दर्ज करें',
+            'e.g. Varanasi, Uttar Pradesh': 'उदा. वाराणसी, उत्तर प्रदेश',
+            'Generate': 'जनरेट करें',
+            'Analyze': 'विश्लेषण करें',
+            'Report': 'रिपोर्ट',
+            'Download': 'डाउनलोड',
+            'Share': 'साझा करें',
+            'Open': 'खोलें',
+            'Add': 'जोड़ें',
+            'Copy': 'कॉपी करें',
+            'Link': 'लिंक',
+            'Reminders': 'अनुस्मारक',
+            'Calendar': 'कैलेंडर',
+            'Export': 'निर्यात करें',
+            'PDF': 'पीडीएफ',
+            'Print': 'प्रिंट करें',
+            'Save': 'सेव करें',
+            'Close': 'बंद करें',
+            'Back': 'वापस',
+            'Next': 'अगला',
+            'Previous': 'पिछला',
+            'Submit': 'सबमिट करें',
+            'Cancel': 'रद्द करें',
+            'OK': 'ठीक है',
+            'Yes': 'हाँ',
+            'No': 'नहीं',
+            'Error': 'त्रुटि',
+            'Success': 'सफलता',
+            'Warning': 'चेतावनी',
+            'Info': 'जानकारी',
+            'Loading': 'लोड हो रहा है',
+            'Please wait...': 'कृपया प्रतीक्षा करें...',
+            'No data available': 'कोई डेटा उपलब्ध नहीं',
+            'Try again': 'फिर से कोशिश करें',
+            'Failed to load': 'लोड करने में विफल',
+            'Connection error': 'कनेक्शन त्रुटि',
+            'Too many requests': 'बहुत सारे अनुरोध',
+            'Please wait a moment and try again': 'कृपया एक पल प्रतीक्षा करें और फिर कोशिश करें',
+            'Watering Schedule': 'सिंचाई अनुसूची',
+            'Frequency': 'आवृत्ति',
+            'Per watering': 'प्रति सिंचाई',
+            'Weekly total': 'साप्ताहिक कुल',
+            'Seasonal notes': 'मौसमी नोट्स',
+            'Pest & Disease Alerts': 'कीट और रोग अलर्ट',
+            'Trigger': 'ट्रिगर',
+            'High': 'उच्च',
+            'Moderate': 'मध्यम',
+            'Low': 'कम',
+            'GreenScope Assistant': 'ग्रीनस्कोप सहायक',
+            'Ask about plants, care, pests...': 'पौधों, देखभाल, कीटों के बारे में पूछें...',
+            'Deterministic assistant — uses local plant database, no LLM': 'निश्चित सहायक — स्थानीय पौधा डेटाबेस का उपयोग करता है, कोई LLM नहीं'
+        };
+
         function getPlantName(name) {
             if (currentLang === 'hi' && HINDI_NAMES[name]) return HINDI_NAMES[name];
             return name;
+        }
+
+        function t(key) {
+            if (currentLang === 'hi' && HINDI_UI[key]) return HINDI_UI[key];
+            return key;
         }
 
         function toggleLang() {
@@ -477,10 +636,14 @@
                 ? { location, latitude: c.lat, longitude: c.lng }
                 : { location };
             try {
+                const body = { location: locPayload, photo, num_recommendations: 15 };
+                if (currentCategoryFilter) {
+                    body.category = currentCategoryFilter;
+                }
                 const r = await fetch(API.report, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ location: locPayload, photo, num_recommendations: 15 })
+                    body: JSON.stringify(body)
                 });
                 if (!r.ok) {
                     const errData = await r.json().catch(() => ({}));
@@ -565,8 +728,54 @@
         function closePlantModal() { document.getElementById('plantModal').classList.add('hidden'); }
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePlantModal(); });
 
+        function renderCategoryFilter() {
+            const categories = [
+                { value: null, label: 'All', icon: '🌿' },
+                { value: 'vegetable', label: 'Vegetable', icon: '🥕' },
+                { value: 'fruit', label: 'Fruit', icon: '🍎' },
+                { value: 'herb', label: 'Herb', icon: '🌿' },
+                { value: 'flower', label: 'Flower', icon: '🌸' },
+                { value: 'spice', label: 'Spice', icon: '🌶️' },
+                { value: 'pulse', label: 'Pulse', icon: '🫘' },
+                { value: 'decorative', label: 'Decorative', icon: '🌺' },
+            ];
+            const container = document.getElementById('categoryChips');
+            container.innerHTML = categories.map(cat => {
+                const isActive = currentCategoryFilter === cat.value;
+                const activeClass = isActive ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600';
+                return `<button type="button" onclick="setCategoryFilter(${cat.value === null ? 'null' : `'${cat.value}'`})"
+                    class="category-chip px-4 py-2 rounded-full text-sm font-medium border-2 transition-all ${activeClass}"
+                    style="cursor:pointer;">${cat.icon} ${cat.label}</button>`;
+            }).join('');
+        }
+
+        function setCategoryFilter(category) {
+            currentCategoryFilter = category;
+            renderCategoryFilter();
+            // Re-submit report with new category filter
+            let location = locationInput.value;
+            if (location === '__custom__') {
+                location = customLocationInput.value.trim();
+            }
+            if (location) {
+                const file = photoInput.files[0];
+                let photoData = null;
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = async (ev) => {
+                        photoData = { image_id: 'temp_' + Date.now(), filename: file.name, base64: ev.target.result };
+                        await submitReport(location, photoData);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    submitReport(location, null);
+                }
+            }
+        }
+
         function displayReport(report) {
             _lastReport = report;
+            renderCategoryFilter();
             reportStatus.className = 'status-badge status-ready';
             reportStatus.textContent = 'Report ready';
 
@@ -700,6 +909,36 @@
                         💧 ${escapeHtml(rec.water_requirement || '?')} water (≈${rec.estimated_water_l_per_week ?? '?'} L/wk) &nbsp; ☀️ ${escapeHtml(rec.sun_requirement || '?')} sun &nbsp; 🌱 ${escapeHtml(rec.growth_duration || '?')} &nbsp; 📅 ${escapeHtml(rec.planting_season || '?')}
                     </div>
                     ${(rec.tags && rec.tags.length) ? `<div style="margin-top:8px;">${rec.tags.map(t => `<span class="photo-feature">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+                    ${rec.watering_schedule ? `
+                    <div style="margin-top:12px;padding:12px;background:rgba(16,185,129,0.05);border-radius:8px;border-left:3px solid var(--accent);">
+                        <div style="font-weight:600;font-size:13px;margin-bottom:8px;">💧 Watering Schedule</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;font-size:12px;margin-bottom:8px;">
+                            <div><strong>Frequency:</strong> Every ${rec.watering_schedule.frequency_days} day(s)</div>
+                            <div><strong>Per watering:</strong> ${rec.watering_schedule.liters_per_watering} L</div>
+                            <div><strong>Weekly total:</strong> ${rec.watering_schedule.weekly_liters} L</div>
+                        </div>
+                        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">
+                            ${rec.watering_schedule.weekly_schedule.map(d => d.action === 'water' ? `💧 Day ${d.day + 1}: ${d.water_l}L` : `🔍 Day ${d.day + 1}: Check soil`).join(' · ')}
+                        </div>
+                        ${rec.watering_schedule.seasonal_notes && rec.watering_schedule.seasonal_notes.length ? `
+                        <div style="font-size:12px;color:var(--muted);">
+                            <strong>Seasonal notes:</strong> ${rec.watering_schedule.seasonal_notes.join('; ')}
+                        </div>` : ''}
+                        <div style="font-size:10px;color:var(--muted);margin-top:6px;">${escapeHtml(rec.watering_schedule.disclaimer || '')}</div>
+                    </div>` : ''}
+                    ${rec.pest_disease_alerts && rec.pest_disease_alerts.length ? `
+                    <div style="margin-top:12px;padding:12px;background:rgba(239,68,68,0.05);border-radius:8px;border-left:3px solid var(--error);">
+                        <div style="font-weight:600;font-size:13px;margin-bottom:8px;">🐛 Pest & Disease Alerts</div>
+                        ${rec.pest_disease_alerts.map(alert => `
+                        <div style="font-size:12px;margin-bottom:6px;padding:8px;background:var(--card);border-radius:6px;border:1px solid var(--border);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <strong>${escapeHtml(alert.name)}</strong>
+                                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${alert.risk_level === 'high' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)'};color:${alert.risk_level === 'high' ? 'var(--error)' : 'var(--warning)'};font-weight:600;">${alert.risk_level.toUpperCase()}</span>
+                            </div>
+                            <div style="font-size:11px;color:var(--muted);margin:4px 0;">Trigger: ${escapeHtml(alert.trigger_condition)}</div>
+                            <div style="font-size:12px;">${escapeHtml(alert.advice)}</div>
+                        </div>`).join('')}
+                    </div>` : ''}
                     <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);">
                         ${escapeHtml(rec.care_guide)}
                     </div>
@@ -873,6 +1112,60 @@
         });
 
         document.getElementById('location-select').focus();
+
+        // Chat Assistant
+        let chatOpen = false;
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+
+        function toggleChat() {
+            chatOpen = !chatOpen;
+            document.getElementById('chatPanel').classList.toggle('hidden', !chatOpen);
+            document.getElementById('chatFab').classList.toggle('hidden', chatOpen);
+            if (chatOpen) {
+                chatInput.focus();
+                if (chatMessages.children.length === 0) {
+                    addChatMessage('assistant', '🌿 **GreenScope Assistant** (deterministic, no LLM)\nI use the local plant database. Ask me:\n• "Tell me about Tulsi"\n• "Show me flowers"\n• "Plants for balcony"\n• "Large field crops"\n• "Decorative plants"\n• "Vegetable list"\n• "When to plant tomatoes"\n\nGenerate a report for location-specific watering schedules & pest alerts.');
+                }
+            }
+        }
+
+        function addChatMessage(role, content) {
+            const div = document.createElement('div');
+            div.className = role === 'user' ? 'text-right' : 'text-left';
+            const bubble = document.createElement('div');
+            bubble.style.cssText = 'display:inline-block;max-width:85%;padding:10px 14px;border-radius:18px;font-size:13px;line-height:1.5;' +
+                (role === 'user' 
+                    ? 'background:var(--accent);color:white;border-bottom-right-radius:4px;' 
+                    : 'background:var(--bg);border:1px solid var(--border);border-bottom-left-radius:4px;');
+            bubble.innerHTML = content.replace(/\n/g, '<br>');
+            div.appendChild(bubble);
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendChat() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+            chatInput.value = '';
+            addChatMessage('user', escapeHtml(text));
+            
+            try {
+                const response = await fetch('/api/v1/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [{ role: 'user', content: text }],
+                        location: document.getElementById('location-select').value || null,
+                        report_id: currentReportId
+                    })
+                });
+                const data = await response.json();
+                addChatMessage('assistant', data.response);
+            } catch (err) {
+                addChatMessage('assistant', 'Error: Could not reach assistant. ' + err.message);
+            }
+        }
     </script>
 </body>
 </html>

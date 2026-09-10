@@ -503,3 +503,145 @@ def test_rate_limit_returns_friendly_429(client):
             "report_id": "loadtest", "plant_name": "Tulsi", "vote": "up"})
     assert last.status_code == 429
     assert "Too many requests" in last.json()["detail"]
+
+
+# --- Category Filter ---
+
+def test_category_filter_herb(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Delhi, NCR"},
+        "category": "herb"
+    })
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["recommendations"]) > 0
+    for rec in d["recommendations"]:
+        # Verify all recommendations are herbs by checking plant_db
+        plant_name = rec["plant_name"]
+        # Check from the loaded plant data
+        from app.main import PLANTS
+        plant = next((p for p in PLANTS if p["name"] == plant_name), None)
+        assert plant is not None
+        assert plant.get("category") == "herb"
+
+def test_category_filter_vegetable(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Mumbai, Maharashtra"},
+        "category": "vegetable"
+    })
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["recommendations"]) > 0
+    from app.main import PLANTS
+    for rec in d["recommendations"]:
+        plant = next((p for p in PLANTS if p["name"] == rec["plant_name"]), None)
+        assert plant is not None
+        assert plant.get("category") == "vegetable"
+
+def test_category_filter_fruit(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Bengaluru, Karnataka"},
+        "category": "fruit"
+    })
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["recommendations"]) > 0
+    from app.main import PLANTS
+    for rec in d["recommendations"]:
+        plant = next((p for p in PLANTS if p["name"] == rec["plant_name"]), None)
+        assert plant is not None
+        assert plant.get("category") == "fruit"
+
+def test_category_filter_flower(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Chennai, Tamil Nadu"},
+        "category": "flower"
+    })
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["recommendations"]) > 0
+    from app.main import PLANTS
+    for rec in d["recommendations"]:
+        plant = next((p for p in PLANTS if p["name"] == rec["plant_name"]), None)
+        assert plant is not None
+        assert plant.get("category") == "flower"
+
+def test_category_filter_spice(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Kolkata, West Bengal"},
+        "category": "spice"
+    })
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["recommendations"]) > 0
+    from app.main import PLANTS
+    for rec in d["recommendations"]:
+        plant = next((p for p in PLANTS if p["name"] == rec["plant_name"]), None)
+        assert plant is not None
+        assert plant.get("category") == "spice"
+
+def test_category_filter_pulse(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Hyderabad, Telangana"},
+        "category": "pulse"
+    })
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["recommendations"]) > 0
+    from app.main import PLANTS
+    for rec in d["recommendations"]:
+        plant = next((p for p in PLANTS if p["name"] == rec["plant_name"]), None)
+        assert plant is not None
+        assert plant.get("category") == "pulse"
+
+def test_category_filter_decorative_alias(client):
+    # "decorative" should be aliased to "flower"
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Delhi, NCR"},
+        "category": "decorative"
+    })
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["recommendations"]) > 0
+    from app.main import PLANTS
+    for rec in d["recommendations"]:
+        plant = next((p for p in PLANTS if p["name"] == rec["plant_name"]), None)
+        assert plant is not None
+        assert plant.get("category") == "flower"
+
+def test_category_filter_invalid_returns_422(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Delhi, NCR"},
+        "category": "invalid_category"
+    })
+    assert r.status_code == 422
+    detail = r.json()["detail"]
+    assert "Invalid category" in str(detail)
+
+def test_category_filter_case_insensitive(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Delhi, NCR"},
+        "category": "HERB"
+    })
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["recommendations"]) > 0
+    from app.main import PLANTS
+    for rec in d["recommendations"]:
+        plant = next((p for p in PLANTS if p["name"] == rec["plant_name"]), None)
+        assert plant is not None
+        assert plant.get("category") == "herb"
+
+def test_category_filter_with_whitespace(client):
+    r = client.post("/api/v1/generate-report", json={
+        "location": {"location": "Delhi, NCR"},
+        "category": "  vegetable  "
+    })
+    assert r.status_code == 200
+    d = r.json()
+    assert len(d["recommendations"]) > 0
+    from app.main import PLANTS
+    for rec in d["recommendations"]:
+        plant = next((p for p in PLANTS if p["name"] == rec["plant_name"]), None)
+        assert plant is not None
+        assert plant.get("category") == "vegetable"

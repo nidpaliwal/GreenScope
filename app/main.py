@@ -72,6 +72,170 @@ CO2_KG_PER_YEAR = {
     "spice": 0.8, "pulse": 0.8, "flower": 0.5,
 }
 
+# Valid plant categories and aliases for filtering
+VALID_CATEGORIES = {"herb", "fruit", "vegetable", "spice", "pulse", "flower"}
+CATEGORY_ALIASES = {"decorative": "flower"}
+
+# --- Watering Schedule Calculator ---
+# Base watering frequency (days between watering) by water requirement
+WATERING_FREQUENCY_DAYS = {"low": 7, "medium": 3, "high": 1}
+# Rainfall adjustment thresholds (mm/year)
+RAINFALL_THRESHOLDS = {"low": 600, "medium": 1000, "high": 1500}
+# Evapotranspiration estimate by temperature (mm/day)
+ET_BY_TEMP = {10: 2.5, 15: 3.5, 20: 4.5, 25: 5.5, 30: 6.5, 35: 7.5}
+
+
+def calculate_watering_schedule(plant: dict, env: dict) -> dict:
+    """Calculate personalized watering schedule for a plant based on environment.
+    
+    Returns deterministic schedule with frequency, amount, and seasonal adjustments.
+    All values are estimates, not measurements.
+    """
+    water_req = plant.get("water", "medium")
+    base_freq_days = WATERING_FREQUENCY_DAYS.get(water_req, 3)
+    rainfall_mm = env.get("rainfall_mm", 900)
+    avg_temp = env.get("avg_temp_c", 25)
+    humidity = env.get("humidity", 60)
+    sunlight_hours = env.get("sunlight_hours", 6.5)
+    soil_type = env.get("soil_type", "loam").lower()
+    frost_risk = env.get("frost_risk", "none")
+    
+    # Estimate daily evapotranspiration (mm/day) by temperature interpolation
+    temps = sorted(ET_BY_TEMP.keys())
+    et = ET_BY_TEMP[temps[0]]
+    for i, t in enumerate(temps):
+        if avg_temp <= t:
+            et = ET_BY_TEMP[t]
+            break
+        et = ET_BY_TEMP[t]
+    # Adjust for humidity (high humidity reduces ET)
+    et *= max(0.5, 1 - (humidity - 50) / 100)
+    # Adjust for sunlight
+    et *= max(0.7, sunlight_hours / 7)
+    
+    # Rainfall contribution (mm/day during growing season ~6 months)
+    growing_season_days = 180
+    daily_rainfall = rainfall_mm / 365
+    effective_rainfall = daily_rainfall * 0.6  # 60% usable by plants
+    
+    # Net water need per day (mm)
+    net_need = max(0.5, et - effective_rainfall)
+    
+    # Convert to liters per plant per watering (assuming 0.25 m2 canopy per plant)
+    canopy_area = 0.25  # m2
+    liters_per_mm = canopy_area  # 1mm over 1m2 = 1 liter
+    liters_per_watering = round(net_need * base_freq_days * liters_per_mm, 1)
+    
+    # Adjust frequency based on soil type (sandy = more frequent, clay = less)
+    soil_freq_mult = 1.0
+    if "sandy" in soil_type:
+        soil_freq_mult = 0.7
+    elif "clay" in soil_type:
+        soil_freq_mult = 1.3
+    elif "black cotton" in soil_type:
+        soil_freq_mult = 1.2
+    
+    adjusted_freq = max(1, round(base_freq_days * soil_freq_mult))
+    
+    # Seasonal adjustments
+    seasonal_notes = []
+    if frost_risk == "high":
+        seasonal_notes.append("Reduce watering in winter; avoid waterlogging before frost")
+    if avg_temp > 30:
+        seasonal_notes.append("Increase frequency by 1-2 days during peak summer heat")
+    if rainfall_mm > 1500:
+        seasonal_notes.append("Monsoon: skip watering on rainy days; ensure drainage")
+    elif rainfall_mm < 500:
+        seasonal_notes.append("Arid: mulch heavily; consider drip irrigation")
+    
+    # Weekly schedule (7 days)
+    weekly_schedule = []
+    for day in range(7):
+        if day % adjusted_freq == 0:
+            weekly_schedule.append({"day": day, "water_l": liters_per_watering, "action": "water"})
+        else:
+            weekly_schedule.append({"day": day, "water_l": 0, "action": "check soil"})
+    
+    return {
+        "frequency_days": adjusted_freq,
+        "liters_per_watering": liters_per_watering,
+        "weekly_liters": round(liters_per_watering * (7 / adjusted_freq), 1),
+        "weekly_schedule": weekly_schedule,
+        "et_mm_per_day": round(et, 1),
+        "effective_rainfall_mm_per_day": round(effective_rainfall, 1),
+        "net_need_mm_per_day": round(net_need, 1),
+        "seasonal_notes": seasonal_notes,
+        "disclaimer": "Schedule based on climate averages and plant water category. Adjust for actual weather, soil moisture, and plant stage. Check soil 5cm deep before watering."
+    }
+
+# --- Pest & Disease Alerts ---
+# Common pests/diseases by plant category with trigger conditions
+PEST_DISEASE_ALERTS = {
+    "vegetable": [
+        {"name": "Aphids", "trigger": "high_temp", "threshold": 25, "advice": "Spray neem oil or introduce ladybugs. Check undersides of leaves."},
+        {"name": "Whiteflies", "trigger": "high_temp", "threshold": 28, "advice": "Yellow sticky traps. Insecticidal soap for heavy infestations."},
+        {"name": "Fungal Leaf Spot", "trigger": "high_humidity", "threshold": 75, "advice": "Improve air circulation. Avoid overhead watering. Copper fungicide if severe."},
+        {"name": "Blossom End Rot (Tomato/Pepper)", "trigger": "irregular_water", "advice": "Consistent watering. Mulch to retain moisture. Calcium spray."},
+    ],
+    "fruit": [
+        {"name": "Fruit Fly", "trigger": "high_temp", "threshold": 28, "advice": "Bag fruits early. Protein bait traps. Remove fallen fruit."},
+        {"name": "Anthracnose", "trigger": "high_humidity", "threshold": 80, "advice": "Prune for airflow. Copper-based fungicide. Avoid wet foliage."},
+        {"name": "Scale Insects", "trigger": "high_temp", "threshold": 25, "advice": "Horticultural oil in dormant season. Scrape off visible scales."},
+    ],
+    "herb": [
+        {"name": "Spider Mites", "trigger": "high_temp_low_humidity", "threshold": 30, "advice": "Increase humidity. Strong water spray. Neem oil."},
+        {"name": "Downy Mildew (Basil/Coriander)", "trigger": "high_humidity", "threshold": 80, "advice": "Space plants for airflow. Water at base. Remove affected leaves."},
+        {"name": "Leaf Miners", "trigger": "high_temp", "threshold": 25, "advice": "Remove mined leaves. Yellow sticky traps. Neem oil."},
+    ],
+    "flower": [
+        {"name": "Thrips", "trigger": "high_temp", "threshold": 28, "advice": "Blue sticky traps. Insecticidal soap. Predatory mites."},
+        {"name": "Powdery Mildew", "trigger": "high_humidity", "threshold": 75, "advice": "Baking soda spray (1 tsp/L). Improve airflow. Avoid evening watering."},
+        {"name": "Botrytis (Gray Mold)", "trigger": "high_humidity", "threshold": 80, "advice": "Remove dead flowers. Space plants. Reduce humidity."},
+    ],
+    "spice": [
+        {"name": "Rhizome Rot (Ginger/Turmeric)", "trigger": "high_humidity", "threshold": 80, "advice": "Well-drained soil. Raised beds. Remove affected rhizomes."},
+        {"name": "Shoot Borer", "trigger": "high_temp", "threshold": 28, "advice": "Pheromone traps. Remove bored shoots. Neem cake in soil."},
+    ],
+    "pulse": [
+        {"name": "Pod Borer", "trigger": "high_temp", "threshold": 28, "advice": "Pheromone traps. Spray Bacillus thuringiensis. Intercrop with marigold."},
+        {"name": "Wilt (Fusarium)", "trigger": "high_temp", "threshold": 30, "advice": "Crop rotation. Resistant varieties. Solarize soil."},
+    ],
+}
+
+
+def get_pest_disease_alerts(plant: dict, env: dict) -> list:
+    """Get relevant pest/disease alerts for a plant based on its category and environment."""
+    category = plant.get("category", "vegetable")
+    alerts_config = PEST_DISEASE_ALERTS.get(category, [])
+    env_temp = env.get("avg_temp_c", 25)
+    env_humidity = env.get("humidity", 60)
+    rainfall = env.get("rainfall_mm", 900)
+    
+    triggered_alerts = []
+    for alert in alerts_config:
+        trigger = alert.get("trigger")
+        threshold = alert.get("threshold")
+        should_trigger = False
+        
+        if trigger == "high_temp" and env_temp >= threshold:
+            should_trigger = True
+        elif trigger == "high_humidity" and env_humidity >= threshold:
+            should_trigger = True
+        elif trigger == "high_temp_low_humidity" and env_temp >= threshold and env_humidity < 50:
+            should_trigger = True
+        elif trigger == "irregular_water" and (rainfall < 400 or rainfall > 1800):
+            should_trigger = True
+        
+        if should_trigger:
+            triggered_alerts.append({
+                "name": alert["name"],
+                "risk_level": "high" if threshold and (env_temp >= threshold + 5 or env_humidity >= threshold + 10) else "moderate",
+                "advice": alert["advice"],
+                "trigger_condition": f"{trigger} (threshold: {threshold})" if threshold else trigger
+            })
+    
+    return triggered_alerts
+
 
 def plant_tags(plant_name: str) -> List[str]:
     tags = []
@@ -120,15 +284,28 @@ def build_garden_bed(recommendations: list) -> dict:
         "tip": tip,
     }
 
-# --- SQLite Database for Report Persistence ---
+# --- SQLite/Postgres Database for Report Persistence ---
 # On Render free tier, disk is ephemeral — reports survive until next deploy/spin-down.
-# For persistent reports, set DATABASE_URL env var to a persistent path.
+# For persistent reports, set SQLITE_PATH env var to a persistent SQLite file path.
+# For Postgres (production), set DATABASE_URL to a Postgres connection string.
 
 def get_db():
-    db_path = os.environ.get("DATABASE_URL", os.path.join(os.path.dirname(__file__), "reports.db"))
+    # Check for Postgres first (DATABASE_URL convention)
+    db_url = os.environ.get("DATABASE_URL")
+    if db_url and not db_url.startswith("sqlite"):
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        conn = psycopg2.connect(db_url, cursor_factory=RealDictCursor)
+        conn.autocommit = True
+        _init_postgres_schema(conn)
+        return PostgresConnectionWrapper(conn)
+
+    # SQLite path (SQLITE_PATH or default)
+    db_path = os.environ.get("SQLITE_PATH", os.path.join(os.path.dirname(__file__), "reports.db"))
     if db_path.startswith("sqlite:///"):
         db_path = db_path[len("sqlite:///"):]
     conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
     conn.execute(
         """CREATE TABLE IF NOT EXISTS reports (
             report_id TEXT PRIMARY KEY,
@@ -196,6 +373,8 @@ def save_report_to_db(report):
                 "tags": r.tags,
                 "estimated_water_l_per_week": r.estimated_water_l_per_week,
                 "estimated_co2_kg_per_year": r.estimated_co2_kg_per_year,
+                "watering_schedule": r.watering_schedule,
+                "pest_disease_alerts": r.pest_disease_alerts,
             } for r in report.recommendations]),
             report.generated_at,
             report.processing_time_ms,
@@ -762,6 +941,19 @@ class ReportGenerateRequest(BaseModel):
     location: LocationInput
     photo: Optional[PhotoUpload] = Field(None, description="Optional uploaded garden photo")
     num_recommendations: int = Field(15, ge=1, le=20, description="Number of plant recommendations")
+    category: Optional[str] = Field(None, description="Filter recommendations by plant category (herb, fruit, vegetable, spice, pulse, flower)")
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, v):
+        if v is None:
+            return v
+        normalized = v.strip().lower()
+        if normalized in CATEGORY_ALIASES:
+            normalized = CATEGORY_ALIASES[normalized]
+        if normalized not in VALID_CATEGORIES:
+            raise ValueError(f"Invalid category: '{v}'. Valid categories: {', '.join(sorted(VALID_CATEGORIES))}")
+        return normalized
 
 
 class ReportRecommendation(BaseModel):
@@ -779,6 +971,8 @@ class ReportRecommendation(BaseModel):
     tags: List[str] = Field(default_factory=list, description="Badges: air-purifying, pollinator-friendly, companion hints")
     estimated_water_l_per_week: Optional[float] = Field(None, description="Estimated liters/plant/week (approx)")
     estimated_co2_kg_per_year: Optional[float] = Field(None, description="Estimated CO2 kg/plant/year (approx)")
+    watering_schedule: Optional[dict] = Field(None, description="Personalized watering schedule with frequency, amounts, and seasonal notes")
+    pest_disease_alerts: Optional[list] = Field(None, description="Relevant pest and disease alerts for this plant in this environment")
 
 
 class GardenRisk(BaseModel):
@@ -924,8 +1118,18 @@ async def generate_report(request: Request, body: ReportGenerateRequest):
     env, data_source = get_env_for_location(lat, lng, location_str)
     photo_obs = analyze_photo(body.photo)
 
+    # Filter plants by category if specified
+    plant_pool = PLANTS
+    if body.category:
+        plant_pool = [p for p in PLANTS if p.get("category") == body.category]
+        if not plant_pool:
+            raise HTTPException(
+                status_code=400,
+                detail=f"No plants found for category '{body.category}'. Valid categories: {', '.join(sorted(VALID_CATEGORIES))}"
+            )
+
     scored = []
-    for plant in PLANTS:
+    for plant in plant_pool:
         result = score_plant(plant, env, photo_obs)
         scored.append((plant, result))
 
@@ -976,6 +1180,8 @@ async def generate_report(request: Request, body: ReportGenerateRequest):
             tags=plant_tags(plant["name"]),
             estimated_water_l_per_week=WATER_L_PER_WEEK.get(plant.get("water", "medium"), 8.0),
             estimated_co2_kg_per_year=CO2_KG_PER_YEAR.get(plant.get("category", "vegetable"), 1.0),
+            watering_schedule=calculate_watering_schedule(plant, env),
+            pest_disease_alerts=get_pest_disease_alerts(plant, env),
         ))
 
     # Categories
@@ -1236,6 +1442,8 @@ async def get_report(report_id: str):
             tags=r.get('tags', []),
             estimated_water_l_per_week=r.get('estimated_water_l_per_week'),
             estimated_co2_kg_per_year=r.get('estimated_co2_kg_per_year'),
+            watering_schedule=r.get('watering_schedule'),
+            pest_disease_alerts=r.get('pest_disease_alerts'),
         )
         recs.append(rec)
     gr = report.get('garden_risk')
@@ -1306,6 +1514,177 @@ async def feedback_summary(request: Request):
 
 def _ics_escape(s: str) -> str:
     return (s or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+# --- Deterministic Chat Assistant (no LLM, uses local plant DB) ---
+
+class ChatMessage(BaseModel):
+    role: str = Field(..., pattern="^(user|assistant)$")
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
+    location: Optional[str] = None
+    report_id: Optional[str] = None
+
+
+def find_plant_by_name(name: str) -> Optional[dict]:
+    """Find plant by name (case-insensitive, partial match)."""
+    name_lower = name.lower().strip()
+    for plant in PLANTS:
+        if name_lower in plant["name"].lower() or plant["name"].lower() in name_lower:
+            return plant
+    return None
+
+
+def find_plants_by_category(category: str) -> List[dict]:
+    """Find plants by category."""
+    cat_lower = category.lower().strip()
+    if cat_lower in CATEGORY_ALIASES:
+        cat_lower = CATEGORY_ALIASES[cat_lower]
+    if cat_lower == "decorative":
+        cat_lower = "flower"
+    if cat_lower in VALID_CATEGORIES:
+        return [p for p in PLANTS if p.get("category") == cat_lower]
+    return []
+
+
+def find_plants_by_field_size(field_size: str) -> List[dict]:
+    """Find plants suitable for field size."""
+    size_lower = field_size.lower().strip()
+    # Large field: pulses, vegetables that scale, fruits
+    # Small field: herbs, spices, compact vegetables
+    if "large" in size_lower or "farm" in size_lower or "acre" in size_lower:
+        return [p for p in PLANTS if p.get("category") in ("pulse", "vegetable", "fruit")]
+    elif "small" in size_lower or "balcony" in size_lower or "container" in size_lower or "pot" in size_lower or "kitchen" in size_lower:
+        return [p for p in PLANTS if p.get("category") in ("herb", "spice", "flower")]
+    return []
+
+
+def get_plant_care_info(plant: dict) -> str:
+    """Generate care guide for a plant."""
+    return (
+        f"{plant['name']} ({plant.get('scientific_name', '')}): "
+        f"Sun: {plant['sun']}, Water: {plant['water']}, "
+        f"pH: {plant['min_ph']}-{plant['max_ph']}, "
+        f"Temp: {plant['temperature_min']}-{plant['temperature_max']}°C, "
+        f"Soil: {', '.join(plant.get('soil', ['loam']))}, "
+        f"Growth: {plant.get('growth_days', 60)} days, "
+        f"Season: {plant.get('planting_season', 'Kharif')}"
+    )
+
+
+def generate_chat_response(user_msg: str, location: Optional[str] = None, report_id: Optional[str] = None) -> str:
+    """Generate deterministic response based on plant database and optional report context."""
+    msg_lower = user_msg.lower()
+    
+    # Check for specific plant name mentions
+    for plant in PLANTS:
+        if plant["name"].lower() in msg_lower:
+            care = get_plant_care_info(plant)
+            tags = plant_tags(plant["name"])
+            tag_str = ", ".join(tags) if tags else "none"
+            return f"**{plant['name']}** ({plant.get('scientific_name', '')})\n{care}\nTags: {tag_str}"
+    
+    # Category queries
+    if any(word in msg_lower for word in ["flower", "flowers", "bloom"]):
+        flowers = find_plants_by_category("flower")
+        names = ", ".join([p["name"] for p in flowers[:10]])
+        return f"**Flowering plants** ({len(flowers)} total): {names}{'...' if len(flowers) > 10 else ''}"
+    
+    if any(word in msg_lower for word in ["fruit", "fruits", "tree"]):
+        fruits = find_plants_by_category("fruit")
+        names = ", ".join([p["name"] for p in fruits[:10]])
+        return f"**Fruit plants** ({len(fruits)} total): {names}{'...' if len(fruits) > 10 else ''}"
+    
+    if "decorative" in msg_lower or "ornamental" in msg_lower:
+        flowers = find_plants_by_category("flower")
+        names = ", ".join([p["name"] for p in flowers[:10]])
+        return f"**Decorative/Ornamental plants** ({len(flowers)} total): {names}{'...' if len(flowers) > 10 else ''}"
+    
+    if any(word in msg_lower for word in ["vegetable", "vegetables", "veggie", "veggies"]):
+        vegs = find_plants_by_category("vegetable")
+        names = ", ".join([p["name"] for p in vegs[:10]])
+        return f"**Vegetables** ({len(vegs)} total): {names}{'...' if len(vegs) > 10 else ''}"
+    
+    if any(word in msg_lower for word in ["herb", "herbs", "medicinal"]):
+        herbs = find_plants_by_category("herb")
+        names = ", ".join([p["name"] for p in herbs[:10]])
+        return f"**Herbs** ({len(herbs)} total): {names}{'...' if len(herbs) > 10 else ''}"
+    
+    if "spice" in msg_lower or "spices" in msg_lower:
+        spices = find_plants_by_category("spice")
+        names = ", ".join([p["name"] for p in spices])
+        return f"**Spices** ({len(spices)} total): {names}"
+    
+    if "pulse" in msg_lower or "legume" in msg_lower:
+        pulses = find_plants_by_category("pulse")
+        names = ", ".join([p["name"] for p in pulses])
+        return f"**Pulses/Legumes** ({len(pulses)} total): {names}"
+    
+    # Field size queries
+    if "large field" in msg_lower or "farm" in msg_lower or "acre" in msg_lower:
+        plants = find_plants_by_field_size("large")
+        names = ", ".join([p["name"] for p in plants[:10]])
+        return f"**Large field / farm crops** ({len(plants)} suitable): {names}{'...' if len(plants) > 10 else ''}"
+    
+    if "small field" in msg_lower or "balcony" in msg_lower or "container" in msg_lower or "pot" in msg_lower or "kitchen garden" in msg_lower:
+        plants = find_plants_by_field_size("small")
+        names = ", ".join([p["name"] for p in plants[:10]])
+        return f"**Small space / container plants** ({len(plants)} suitable): {names}{'...' if len(plants) > 10 else ''}"
+    
+    # Watering queries
+    if "water" in msg_lower or "irrigat" in msg_lower:
+        return ("Watering depends on plant type and your climate. "
+                "Generate a report for your location to get personalized watering schedules "
+                "with frequency, amounts per session, and seasonal adjustments.")
+    
+    # Pest/disease queries
+    if "pest" in msg_lower or "disease" in msg_lower or "bug" in msg_lower or "insect" in msg_lower:
+        return ("Pest and disease risks depend on your climate (temperature, humidity) and plant category. "
+                "Generate a report to see specific alerts for each recommended plant with risk levels and organic treatment advice.")
+    
+    # Seasonal queries
+    if "season" in msg_lower or "when to plant" in msg_lower or "planting time" in msg_lower:
+        return ("Planting seasons in India: Kharif (Monsoon: Jun-Sep), Rabi (Winter: Oct-Mar), Zaid (Summer: Mar-Jun), Year-round. "
+                "Each plant in the database has its recommended planting season. "
+                "Use the 'What to Plant This Month' feature for current recommendations.")
+    
+    # Location-specific (if report_id provided)
+    if report_id:
+        return f"I can help with plants from your report ({report_id[:8]}...). Ask about specific plants, watering, pests, or categories."
+    
+    # Default help
+    return (
+        "**GreenScope Assistant** (deterministic, no LLM)\n"
+        "I can answer questions using the local plant database:\n"
+        "• **Plant details**: \"Tell me about Tulsi\" or \"Tomato care\"\n"
+        "• **Categories**: \"Show me flowers\", \"What fruits can I grow?\", \"List herbs\"\n"
+        "• **Field size**: \"Plants for large field\", \"Balcony garden plants\"\n"
+        "• **Decorative**: \"Decorative plants\" or \"Ornamental plants\"\n"
+        "• **Watering/Pests/Seasons**: General guidance\n\n"
+        "Generate a report first for location-specific advice (watering schedules, pest alerts, suitability scores)."
+    )
+
+
+@app.post("/api/v1/chat", response_model=dict)
+@limiter.limit("30/minute")
+async def chat_endpoint(request: Request, body: ChatRequest):
+    """Deterministic chat assistant using local plant database."""
+    if not body.messages:
+        return {"response": "No messages provided", "deterministic": True}
+    
+    last_user_msg = ""
+    for msg in reversed(body.messages):
+        if msg.role == "user":
+            last_user_msg = msg.content
+            break
+    
+    if not last_user_msg:
+        return {"response": "No user message found", "deterministic": True}
+    
+    response = generate_chat_response(last_user_msg, body.location, body.report_id)
+    return {"response": response, "deterministic": True}
 
 
 # Representative sowing month per Indian planting season
