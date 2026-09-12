@@ -17,6 +17,7 @@ import os
 import sqlite3
 import base64
 import httpx
+import math
 from datetime import date, timedelta
 
 
@@ -338,6 +339,39 @@ def get_db():
             report_id TEXT,
             plant_name TEXT,
             vote TEXT CHECK(vote IN ('up', 'down')),
+            created_at REAL
+        )"""
+    )
+    # Purchase tracking table
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS purchases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_id TEXT,
+            plant_name TEXT,
+            item_type TEXT CHECK(item_type IN ('seeds', 'saplings', 'fertilizer', 'tools', 'other')),
+            item_name TEXT,
+            quantity REAL,
+            unit TEXT,
+            cost_per_unit REAL,
+            total_cost REAL,
+            purchase_date REAL,
+            notes TEXT,
+            created_at REAL
+        )"""
+    )
+    # Sales tracking table
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS sales (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_id TEXT,
+            plant_name TEXT,
+            item_name TEXT,
+            quantity REAL,
+            unit TEXT,
+            price_per_unit REAL,
+            total_revenue REAL,
+            sale_date REAL,
+            notes TEXT,
             created_at REAL
         )"""
     )
@@ -1421,6 +1455,67 @@ async def plant_this_month(request: Request, location: str = "Delhi, NCR", latit
     )
 
 
+# --- Moon Phase / Biodynamic Calendar API ---
+
+class MoonPhaseResponse(BaseModel):
+    phase: str
+    illumination: float
+    biodynamic_category: str
+    days_to_next_phase: float
+    is_waxing: bool
+
+
+class BiodynamicAdviceResponse(BaseModel):
+    category: str
+    description: str
+    suitable_plants: List[str]
+    avoid: str
+
+
+class LunarDateResponse(BaseModel):
+    tithi: str
+    paksha: str
+    lunar_month: str
+    day: int
+
+
+class AuspiciousDate(BaseModel):
+    date: str
+    day: str
+    moon_phase: str
+    biodynamic: str
+    tithi: str
+    lunar_month: str
+
+
+class MoonCalendarResponse(BaseModel):
+    current_moon: MoonPhaseResponse
+    biodynamic_advice: BiodynamicAdviceResponse
+    lunar_date: LunarDateResponse
+    auspicious_dates: List[AuspiciousDate]
+
+
+@app.get("/api/v1/moon-calendar", response_model=MoonCalendarResponse)
+@limiter.limit("120/minute")
+async def moon_calendar(request: Request, latitude: float = None, longitude: float = None):
+    """Get current moon phase, biodynamic planting advice, and auspicious dates."""
+    now = time.time()
+    moon = calculate_moon_phase(now)
+    lunar = calculate_lunar_date(now)
+    today = date.today()
+    auspicious = get_auspicious_dates(today, 30)
+
+    # Get biodynamic advice for plants in database
+    advice = get_biodynamic_advice(moon, PLANTS)
+
+    return MoonCalendarResponse(
+        current_moon=MoonPhaseResponse(**moon),
+        biodynamic_advice=BiodynamicAdviceResponse(**advice),
+        lunar_date=LunarDateResponse(**lunar),
+        auspicious_dates=[AuspiciousDate(**d) for d in auspicious],
+    )
+
+
 @app.get("/api/v1/reports/{report_id}", response_model=ReportGenerateResponse)
 async def get_report(report_id: str):
     report = load_report_from_db(report_id)
@@ -1477,6 +1572,225 @@ class FeedbackVote(BaseModel):
     report_id: str = Field(..., min_length=1, max_length=64)
     plant_name: str = Field(..., min_length=1, max_length=100)
     vote: str = Field(..., pattern="^(up|down)$")
+
+
+class PurchaseCreate(BaseModel):
+    report_id: str = Field(..., min_length=1, max_length=64)
+    plant_name: str = Field(..., min_length=1, max_length=100)
+    item_type: str = Field(..., pattern="^(seeds|saplings|fertilizer|tools|other)$")
+    item_name: str = Field(..., min_length=1, max_length=100)
+    quantity: float = Field(..., gt=0)
+    unit: str = Field(..., min_length=1, max_length=20)
+    cost_per_unit: float = Field(..., ge=0)
+    purchase_date: Optional[float] = None
+    notes: Optional[str] = None
+
+
+class PurchaseResponse(BaseModel):
+    id: int
+    report_id: str
+    plant_name: str
+    item_type: str
+    item_name: str
+    quantity: float
+    unit: str
+    cost_per_unit: float
+    total_cost: float
+    purchase_date: float
+    notes: Optional[str]
+    created_at: float
+
+
+class SaleCreate(BaseModel):
+    report_id: str = Field(..., min_length=1, max_length=64)
+    plant_name: str = Field(..., min_length=1, max_length=100)
+    item_name: str = Field(..., min_length=1, max_length=100)
+    quantity: float = Field(..., gt=0)
+    unit: str = Field(..., min_length=1, max_length=20)
+    price_per_unit: float = Field(..., ge=0)
+    sale_date: Optional[float] = None
+    notes: Optional[str] = None
+
+
+class SaleResponse(BaseModel):
+    id: int
+    report_id: str
+    plant_name: str
+    item_name: str
+    quantity: float
+    unit: str
+    price_per_unit: float
+    total_revenue: float
+    sale_date: float
+    notes: Optional[str]
+    created_at: float
+
+
+class LedgerSummary(BaseModel):
+    report_id: str
+    total_purchases: float
+    total_sales: float
+    net_profit: float
+    by_plant: dict
+
+
+@app.post("/api/v1/purchases", response_model=PurchaseResponse)
+@limiter.limit("60/minute")
+async def create_purchase(request: Request, purchase: PurchaseCreate):
+    """Record a purchase (seeds, saplings, fertilizer, tools, etc.) for a plant."""
+    conn = get_db()
+    purchase_date = purchase.purchase_date or time.time()
+    total_cost = purchase.quantity * purchase.cost_per_unit
+    cursor = conn.execute(
+        """INSERT INTO purchases
+        (report_id, plant_name, item_type, item_name, quantity, unit, cost_per_unit, total_cost, purchase_date, notes, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (purchase.report_id, purchase.plant_name, purchase.item_type, purchase.item_name,
+         purchase.quantity, purchase.unit, purchase.cost_per_unit, total_cost,
+         purchase_date, purchase.notes, time.time())
+    )
+    conn.commit()
+    purchase_id = cursor.lastrowid
+    conn.close()
+    return PurchaseResponse(
+        id=purchase_id,
+        report_id=purchase.report_id,
+        plant_name=purchase.plant_name,
+        item_type=purchase.item_type,
+        item_name=purchase.item_name,
+        quantity=purchase.quantity,
+        unit=purchase.unit,
+        cost_per_unit=purchase.cost_per_unit,
+        total_cost=total_cost,
+        purchase_date=purchase_date,
+        notes=purchase.notes,
+        created_at=time.time()
+    )
+
+
+@app.get("/api/v1/purchases/{report_id}", response_model=List[PurchaseResponse])
+@limiter.limit("60/minute")
+async def get_purchases(request: Request, report_id: str, plant_name: Optional[str] = None):
+    """Get all purchases for a report, optionally filtered by plant."""
+    conn = get_db()
+    if plant_name:
+        rows = conn.execute(
+            "SELECT * FROM purchases WHERE report_id = ? AND plant_name = ? ORDER BY purchase_date DESC",
+            (report_id, plant_name)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM purchases WHERE report_id = ? ORDER BY purchase_date DESC",
+            (report_id,)
+        ).fetchall()
+    conn.close()
+    return [PurchaseResponse(
+        id=r["id"], report_id=r["report_id"], plant_name=r["plant_name"],
+        item_type=r["item_type"], item_name=r["item_name"],
+        quantity=r["quantity"], unit=r["unit"], cost_per_unit=r["cost_per_unit"],
+        total_cost=r["total_cost"], purchase_date=r["purchase_date"],
+        notes=r["notes"], created_at=r["created_at"]
+    ) for r in rows]
+
+
+@app.post("/api/v1/sales", response_model=SaleResponse)
+@limiter.limit("60/minute")
+async def create_sale(request: Request, sale: SaleCreate):
+    """Record a sale/harvest for a plant."""
+    conn = get_db()
+    sale_date = sale.sale_date or time.time()
+    total_revenue = sale.quantity * sale.price_per_unit
+    cursor = conn.execute(
+        """INSERT INTO sales
+        (report_id, plant_name, item_name, quantity, unit, price_per_unit, total_revenue, sale_date, notes, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (sale.report_id, sale.plant_name, sale.item_name, sale.quantity, sale.unit,
+         sale.price_per_unit, total_revenue, sale_date, sale.notes, time.time())
+    )
+    conn.commit()
+    sale_id = cursor.lastrowid
+    conn.close()
+    return SaleResponse(
+        id=sale_id,
+        report_id=sale.report_id,
+        plant_name=sale.plant_name,
+        item_name=sale.item_name,
+        quantity=sale.quantity,
+        unit=sale.unit,
+        price_per_unit=sale.price_per_unit,
+        total_revenue=total_revenue,
+        sale_date=sale_date,
+        notes=sale.notes,
+        created_at=time.time()
+    )
+
+
+@app.get("/api/v1/sales/{report_id}", response_model=List[SaleResponse])
+@limiter.limit("60/minute")
+async def get_sales(request: Request, report_id: str, plant_name: Optional[str] = None):
+    """Get all sales for a report, optionally filtered by plant."""
+    conn = get_db()
+    if plant_name:
+        rows = conn.execute(
+            "SELECT * FROM sales WHERE report_id = ? AND plant_name = ? ORDER BY sale_date DESC",
+            (report_id, plant_name)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM sales WHERE report_id = ? ORDER BY sale_date DESC",
+            (report_id,)
+        ).fetchall()
+    conn.close()
+    return [SaleResponse(
+        id=r["id"], report_id=r["report_id"], plant_name=r["plant_name"],
+        item_name=r["item_name"], quantity=r["quantity"], unit=r["unit"],
+        price_per_unit=r["price_per_unit"], total_revenue=r["total_revenue"],
+        sale_date=r["sale_date"], notes=r["notes"], created_at=r["created_at"]
+    ) for r in rows]
+
+
+@app.get("/api/v1/ledger/{report_id}", response_model=LedgerSummary)
+@limiter.limit("60/minute")
+async def get_ledger(request: Request, report_id: str):
+    """Get profit/loss ledger for a report."""
+    conn = get_db()
+    # Total purchases
+    purchase_rows = conn.execute(
+        "SELECT plant_name, SUM(total_cost) as total FROM purchases WHERE report_id = ? GROUP BY plant_name",
+        (report_id,)
+    ).fetchall()
+    # Total sales
+    sale_rows = conn.execute(
+        "SELECT plant_name, SUM(total_revenue) as total FROM sales WHERE report_id = ? GROUP BY plant_name",
+        (report_id,)
+    ).fetchall()
+    conn.close()
+
+    purchases_by_plant = {r["plant_name"]: r["total"] for r in purchase_rows}
+    sales_by_plant = {r["plant_name"]: r["total"] for r in sale_rows}
+
+    all_plants = set(purchases_by_plant.keys()) | set(sales_by_plant.keys())
+    by_plant = {}
+    total_purchases = 0
+    total_sales = 0
+    for plant in all_plants:
+        p = purchases_by_plant.get(plant, 0)
+        s = sales_by_plant.get(plant, 0)
+        by_plant[plant] = {
+            "purchases": p,
+            "sales": s,
+            "net": s - p
+        }
+        total_purchases += p
+        total_sales += s
+
+    return LedgerSummary(
+        report_id=report_id,
+        total_purchases=round(total_purchases, 2),
+        total_sales=round(total_sales, 2),
+        net_profit=round(total_sales - total_purchases, 2),
+        by_plant=by_plant
+    )
 
 
 @app.post("/api/v1/feedback", response_model=dict)
@@ -1685,6 +1999,165 @@ async def chat_endpoint(request: Request, body: ChatRequest):
     
     response = generate_chat_response(last_user_msg, body.location, body.report_id)
     return {"response": response, "deterministic": True}
+
+
+# --- Moon Phase / Biodynamic Calendar ---
+# Astronomical calculations for moon phase (simplified)
+# Based on known new moon reference: Jan 6, 2000 18:14 UTC
+MOON_SYNODIC_MONTH = 29.53058867
+MOON_REFERENCE_NEW = 946720440  # Jan 6, 2000 18:14 UTC timestamp
+
+# Biodynamic planting categories by moon phase
+# Root: New Moon to First Quarter (0-25% illumination)
+# Leaf: First Quarter to Full Moon (25-50%)
+# Fruit: Full Moon to Last Quarter (50-75%)
+# Flower: Last Quarter to New Moon (75-100%)
+BIODYNAMIC_CATEGORIES = {
+    "root": ["carrot", "radish", "beetroot", "potato", "onion", "garlic", "ginger", "turmeric", "sweet potato", "yam"],
+    "leaf": ["spinach", "coriander", "fenugreek", "mint", "cabbage", "cauliflower", "lettuce", "amaranth", "mustard greens"],
+    "fruit": ["tomato", "chili", "okra", "brinjal", "cucumber", "pumpkin", "bottle gourd", "ridge gourd", "bitter gourd", "peas", "beans", "pepper"],
+    "flower": ["marigold", "jasmine", "hibiscus", "rose", "sunflower", "chrysanthemum", "cosmos", "zinnias"]
+}
+
+# Indian lunar month names (approximate)
+LUNAR_MONTHS = [
+    "Chaitra", "Vaishakha", "Jyeshtha", "Ashadha", "Shravana", "Bhadrapada",
+    "Ashvina", "Kartika", "Margashirsha", "Pausha", "Magha", "Phalguna"
+]
+
+# Panchang tithi names (simplified)
+TITHI_NAMES = [
+    "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi",
+    "Saptami", "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi",
+    "Trayodashi", "Chaturdashi", "Purnima/Amavasya"
+]
+
+# Nakshatra names (27)
+NAKSHATRAS = [
+    "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra",
+    "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni",
+    "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
+    "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishtha",
+    "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+]
+
+
+def calculate_moon_phase(timestamp: float) -> dict:
+    """Calculate moon phase for a given timestamp."""
+    days_since_ref = (timestamp - MOON_REFERENCE_NEW) / 86400.0
+    phase = (days_since_ref % MOON_SYNODIC_MONTH) / MOON_SYNODIC_MONTH
+    illumination = (1 - math.cos(2 * math.pi * phase)) / 2
+    
+    # Phase names
+    if phase < 0.03 or phase > 0.97:
+        phase_name = "New Moon"
+        biodynamic = "root"
+    elif phase < 0.22:
+        phase_name = "Waxing Crescent"
+        biodynamic = "root"
+    elif phase < 0.28:
+        phase_name = "First Quarter"
+        biodynamic = "leaf"
+    elif phase < 0.47:
+        phase_name = "Waxing Gibbous"
+        biodynamic = "leaf"
+    elif phase < 0.53:
+        phase_name = "Full Moon"
+        biodynamic = "fruit"
+    elif phase < 0.72:
+        phase_name = "Waning Gibbous"
+        biodynamic = "fruit"
+    elif phase < 0.78:
+        phase_name = "Last Quarter"
+        biodynamic = "flower"
+    else:
+        phase_name = "Waning Crescent"
+        biodynamic = "flower"
+    
+    # Days to next phase
+    days_to_next = {
+        "New Moon": 7.4 - (phase * MOON_SYNODIC_MONTH),
+        "Waxing Crescent": 7.4 - ((phase - 0.25) * MOON_SYNODIC_MONTH) if phase >= 0.25 else 7.4 - (phase * MOON_SYNODIC_MONTH),
+        "First Quarter": 7.4 - ((phase - 0.5) * MOON_SYNODIC_MONTH) if phase >= 0.5 else 7.4 - ((phase - 0.25) * MOON_SYNODIC_MONTH),
+        "Waxing Gibbous": 7.4 - ((phase - 0.75) * MOON_SYNODIC_MONTH) if phase >= 0.75 else 7.4 - ((phase - 0.5) * MOON_SYNODIC_MONTH),
+        "Full Moon": 7.4 - ((phase - 0.75) * MOON_SYNODIC_MONTH) if phase >= 0.75 else 7.4 - ((phase - 0.5) * MOON_SYNODIC_MONTH),
+        "Waning Gibbous": 7.4 - ((phase - 0.75) * MOON_SYNODIC_MONTH) if phase >= 0.75 else 7.4 - ((phase - 0.5) * MOON_SYNODIC_MONTH),
+        "Last Quarter": 7.4 - ((phase - 1.0) * MOON_SYNODIC_MONTH) if phase >= 1.0 else 7.4 - ((phase - 0.75) * MOON_SYNODIC_MONTH),
+        "Waning Crescent": 7.4 - ((phase - 1.0) * MOON_SYNODIC_MONTH) if phase >= 1.0 else 7.4 - ((phase - 0.75) * MOON_SYNODIC_MONTH),
+    }
+    
+    return {
+        "phase": phase_name,
+        "illumination": round(illumination * 100, 1),
+        "biodynamic_category": biodynamic,
+        "days_to_next_phase": round(max(0, days_to_next.get(phase_name, 7.4)), 1),
+        "is_waxing": phase < 0.5
+    }
+
+
+def get_biodynamic_advice(phase_info: dict, plants: list) -> list:
+    """Get biodynamic planting advice for current moon phase."""
+    category = phase_info["biodynamic_category"]
+    suitable_plants = [p for p in plants if p["name"].lower() in BIODYNAMIC_CATEGORIES.get(category, [])]
+    return {
+        "category": category,
+        "description": {
+            "root": "Root crops: Plant root vegetables. Energy draws downward. Good for transplanting.",
+            "leaf": "Leaf crops: Plant leafy greens. Energy draws upward. Good for fertilizing.",
+            "fruit": "Fruit/Seed crops: Plant fruiting vegetables. Peak energy. Good for harvesting seeds.",
+            "flower": "Flower crops: Plant flowers. Energy balances. Good for pruning, weeding."
+        }.get(category, ""),
+        "suitable_plants": [p["name"] for p in suitable_plants[:8]],
+        "avoid": "Avoid planting during New Moon (2 days before/after) and Full Moon (1 day before/after)"
+    }
+
+
+def calculate_lunar_date(timestamp: float) -> dict:
+    """Calculate approximate Indian lunar date (simplified)."""
+    # This is a very simplified calculation
+    # Real Panchang requires complex astronomy
+    days_since_epoch = (timestamp - 946684800) / 86400  # Days since Jan 1, 2000
+    lunar_day = (days_since_epoch % 29.53) + 1
+    tithi_idx = int(lunar_day) % 15
+    paksha = "Shukla" if lunar_day <= 15 else "Krishna"
+    
+    # Approximate lunar month (simplified)
+    lunar_month_idx = int((days_since_epoch / 29.53) % 12)
+    
+    return {
+        "tithi": TITHI_NAMES[tithi_idx],
+        "paksha": paksha,
+        "lunar_month": LUNAR_MONTHS[lunar_month_idx],
+        "day": int(lunar_day)
+    }
+
+
+def get_auspicious_dates(start_date: date, days: int = 30) -> list:
+    """Get auspicious planting dates for next N days."""
+    auspicious = []
+    for i in range(days):
+        check_date = start_date + timedelta(days=i)
+        ts = time.mktime(check_date.timetuple())
+        moon = calculate_moon_phase(ts)
+        lunar = calculate_lunar_date(ts)
+        
+        # Auspicious if not New Moon or Full Moon
+        is_auspicious = moon["phase"] not in ["New Moon", "Full Moon"]
+        
+        # Extra auspicious on specific tithis
+        if lunar["tithi"] in ["Dwitiya", "Tritiya", "Panchami", "Saptami", "Dashami", "Ekadashi", "Trayodashi"]:
+            is_auspicious = True
+        
+        if is_auspicious:
+            auspicious.append({
+                "date": check_date.strftime("%Y-%m-%d"),
+                "day": check_date.strftime("%A"),
+                "moon_phase": moon["phase"],
+                "biodynamic": moon["biodynamic_category"],
+                "tithi": f"{lunar['paksha']} {lunar['tithi']}",
+                "lunar_month": lunar["lunar_month"]
+            })
+    return auspicious
 
 
 # Representative sowing month per Indian planting season

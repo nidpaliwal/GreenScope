@@ -95,6 +95,20 @@
                 <span class="text-xs" style="color:var(--muted);">v0.1.0</span>
             </div>
         </div>
+        <!-- Topic Navigation -->
+        <div class="max-w-4xl mx-auto px-6 pb-4 border-b border-border/50" style="background:var(--bg);">
+            <div class="flex flex-wrap gap-2" id="topicNav">
+                <a href="#generateForm" class="topic-link px-3 py-1.5 text-sm font-medium rounded-full border transition" style="border-color:var(--border);color:var(--fg);background:var(--card);" data-topic="analyze">🔍 Analyze</a>
+                <a href="#envCard" class="topic-link px-3 py-1.5 text-sm font-medium rounded-full border transition" style="border-color:var(--border);color:var(--fg);background:var(--card);" data-topic="environment">🌡 Environment</a>
+                <a href="#riskCard" class="topic-link px-3 py-1.5 text-sm font-medium rounded-full border transition" style="border-color:var(--border);color:var(--fg);background:var(--card);" data-topic="risk">⚠️ Risk</a>
+                <a href="#categoriesCard" class="topic-link px-3 py-1.5 text-sm font-medium rounded-full border transition" style="border-color:var(--border);color:var(--fg);background:var(--card);" data-topic="categories">🏆 Best For You</a>
+                <a href="#bedCard" class="topic-link px-3 py-1.5 text-sm font-medium rounded-full border transition" style="border-color:var(--border);color:var(--fg);background:var(--card);" data-topic="garden-bed">🌿 Garden Bed</a>
+                <a href="#recommendations" class="topic-link px-3 py-1.5 text-sm font-medium rounded-full border transition" style="border-color:var(--border);color:var(--fg);background:var(--card);" data-topic="recommendations">🌱 Recommendations</a>
+                <a href="#comparisonCard" class="topic-link px-3 py-1.5 text-sm font-medium rounded-full border transition" style="border-color:var(--border);color:var(--fg);background:var(--card);" data-topic="comparison">📊 Comparison</a>
+                <a href="#ledgerCard" class="topic-link px-3 py-1.5 text-sm font-medium rounded-full border transition" style="border-color:var(--border);color:var(--fg);background:var(--card);" data-topic="ledger">💰 Ledger</a>
+                <a href="#calendarSection" class="topic-link px-3 py-1.5 text-sm font-medium rounded-full border transition" style="border-color:var(--border);color:var(--fg);background:var(--card);" data-topic="calendar">📅 Calendar</a>
+            </div>
+        </div>
     </nav>
 
     <main class="max-w-4xl mx-auto px-6 py-8">
@@ -209,6 +223,14 @@
                 <div id="categoriesGrid" class="flex flex-wrap gap-2"></div>
             </div>
 
+            <div id="moonCard" class="card animate-fade-in-up delay-2">
+                <h2 class="text-lg font-bold mb-3" id="moonCardTitle">🌙 Moon Phase & Biodynamic Calendar</h2>
+                <div id="moonCurrent" class="mb-4"></div>
+                <div id="moonBiodynamic" class="mb-4"></div>
+                <div id="moonLunar" class="mb-4"></div>
+                <div id="moonAuspicious" class="mb-4"></div>
+            </div>
+
             <div id="bedCard" class="card hidden animate-fade-in-up delay-2" style="border-left:4px solid var(--accent);">
                 <h2 class="text-lg font-bold mb-1" id="bedTitle">Your garden bed</h2>
                 <div id="bedPlants" class="flex flex-wrap gap-2 mb-2"></div>
@@ -239,6 +261,12 @@
             <div id="rejectedCard" class="card animate-fade-in-up delay-4">
                 <h2 class="text-lg font-bold mb-2" id="rejectedTitle">Why Not These Plants?</h2>
                 <div id="rejectedList" class="space-y-3"></div>
+            </div>
+
+            <div id="ledgerCard" class="card animate-fade-in-up delay-4">
+                <h2 class="text-lg font-bold mb-3" id="ledgerTitle">💰 Ledger / Profit & Loss</h2>
+                <div id="ledgerSummary" class="mb-4"></div>
+                <div id="ledgerDetails" class="space-y-4"></div>
             </div>
 
             <div class="card animate-fade-in-up delay-4">
@@ -466,7 +494,35 @@
             'Low': 'कम',
             'GreenScope Assistant': 'ग्रीनस्कोप सहायक',
             'Ask about plants, care, pests...': 'पौधों, देखभाल, कीटों के बारे में पूछें...',
-            'Deterministic assistant — uses local plant database, no LLM': 'निश्चित सहायक — स्थानीय पौधा डेटाबेस का उपयोग करता है, कोई LLM नहीं'
+            'Deterministic assistant — uses local plant database, no LLM': 'निश्चित सहायक — स्थानीय पौधा डेटाबेस का उपयोग करता है, कोई LLM नहीं',
+            'Ledger / Profit & Loss': 'खाता / लाभ और हानि',
+            'Total Spent': 'कुल खर्च',
+            'Total Earned': 'कुल कमाई',
+            'Net Profit': 'शुद्ध लाभ',
+            'No purchases or sales recorded yet. Add your first entry below!': 'अभी तक कोई खरीद या बिक्री दर्ज नहीं। नीचे अपनी पहली एंट्री जोड़ें!',
+            'Add Purchase': 'खरीद जोड़ें',
+            'Add Sale': 'बिक्री जोड़ें',
+            'Purchase': 'खरीद',
+            'Sale': 'बिक्री',
+            'Item Type': 'आइटम प्रकार',
+            'Item Name': 'आइटम नाम',
+            'Quantity': 'मात्रा',
+            'Unit': 'इकाई',
+            'Cost per Unit': 'प्रति इकाई लागत',
+            'Price per Unit': 'प्रति इकाई मूल्य',
+            'Notes': 'नोट्स',
+            'Seeds': 'बीज',
+            'Saplings': 'पौधे',
+            'Fertilizer': 'उर्वरक',
+            'Tools': 'उपकरण',
+            'Other': 'अन्य',
+            'kg': 'किग्रा',
+            'pcs': 'टुकड़े',
+            'liters': 'लीटर',
+            'Add Purchase': 'खरीद जोड़ें',
+            'Add Sale': 'बिक्री जोड़ें',
+            'Cancel': 'रद्द करें',
+            'Produce Name': 'उत्पाद नाम'
         };
 
         function getPlantName(name) {
@@ -947,6 +1003,15 @@
                         <button aria-label="Mark ${escapeHtml(rec.plant_name)} recommendation as helpful" onclick="votePlant('${escapeHtml(rec.plant_name)}','up',this)" style="border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;background:none;">👍</button>
                         <button aria-label="Mark ${escapeHtml(rec.plant_name)} recommendation as not helpful" onclick="votePlant('${escapeHtml(rec.plant_name)}','down',this)" style="border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;background:none;">👎</button>
                     </div>
+                    <!-- Purchase & Sales Tracking -->
+                    <div style="margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <button onclick="openPurchaseModal('${escapeHtml(rec.plant_name)}', '${escapeHtml(rec.plant_name)}')" class="btn-primary" style="width:auto;padding:8px 12px;font-size:12px;">+ Purchase</button>
+                            <button onclick="openSaleModal('${escapeHtml(rec.plant_name)}', '${escapeHtml(rec.plant_name)}')" class="btn-primary" style="width:auto;padding:8px 12px;font-size:12px;background:var(--accent);">+ Sale</button>
+                        </div>
+                        <div id="purchaseList-${rec.plant_name.replace(/\s+/g, '-')}" class="space-y-2 text-sm" style="max-height:150px;overflow-y:auto;"></div>
+                        <div id="saleList-${rec.plant_name.replace(/\s+/g, '-')}" class="space-y-2 text-sm" style="max-height:150px;overflow-y:auto;"></div>
+                    </div>
                 </div>`;
             }).join('');
 
@@ -975,6 +1040,12 @@
                     </div>`).join('');
             }
 
+            // Load and display ledger
+            loadLedger(report.report_id);
+
+            // Load moon calendar
+            loadMoonCalendar(report.report_id);
+
             resultsSection.classList.remove('hidden');
             pdfBtn.disabled = false;
             shareBtn.disabled = false;
@@ -986,6 +1057,8 @@
             icsBtn.href = `/api/v1/reports/${report.report_id}/calendar.ics`;
             icsBtn.style.pointerEvents = 'auto';
             icsBtn.style.opacity = '1';
+            // Load purchase/sales tracking for all recommended plants
+            loadAllPlantTracking(report.recommendations);
         }
 
         async function votePlant(plantName, vote, btn) {
@@ -1165,6 +1238,398 @@
             } catch (err) {
                 addChatMessage('assistant', 'Error: Could not reach assistant. ' + err.message);
             }
+        }
+
+        // Ledger / Purchase / Sales Functions
+        async function loadLedger(reportId) {
+            try {
+                const response = await fetch(`/api/v1/ledger/${reportId}`);
+                const data = await response.json();
+                displayLedger(data);
+            } catch (err) {
+                console.error('Failed to load ledger:', err);
+            }
+        }
+
+        function displayLedger(data) {
+            const summaryEl = document.getElementById('ledgerSummary');
+            const detailsEl = document.getElementById('ledgerDetails');
+            
+            const netClass = data.net_profit >= 0 ? 'var(--accent)' : 'var(--error)';
+            summaryEl.innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+                    <div style="padding:12px;background:rgba(239,68,68,0.1);border-radius:8px;border-left:3px solid var(--error);">
+                        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Total Spent</div>
+                        <div style="font-size:20px;font-weight:700;color:var(--error);">₹${data.total_purchases.toLocaleString()}</div>
+                    </div>
+                    <div style="padding:12px;background:rgba(16,185,129,0.1);border-radius:8px;border-left:3px solid var(--accent);">
+                        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Total Earned</div>
+                        <div style="font-size:20px;font-weight:700;color:var(--accent);">₹${data.total_sales.toLocaleString()}</div>
+                    </div>
+                    <div style="padding:12px;background:${data.net_profit >= 0 ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'};border-radius:8px;border-left:3px solid ${netClass};">
+                        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;">Net Profit</div>
+                        <div style="font-size:20px;font-weight:700;color:${netClass};">₹${data.net_profit.toLocaleString()}</div>
+                    </div>
+                </div>`;
+
+            if (Object.keys(data.by_plant).length === 0) {
+                detailsEl.innerHTML = '<p style="color:var(--muted);text-align:center;">No purchases or sales recorded yet. Add your first entry below!</p>';
+                return;
+            }
+
+            detailsEl.innerHTML = Object.entries(data.by_plant).map(([plant, vals]) => {
+                const plantNetClass = vals.net >= 0 ? 'var(--accent)' : 'var(--error)';
+                return `
+                <div style="padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <strong>${plantLink(plant)}</strong>
+                        <span style="font-size:14px;font-weight:600;color:${plantNetClass};">₹${vals.net.toLocaleString()}</span>
+                    </div>
+                    <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);">
+                        <span>💸 Spent: ₹${vals.purchases.toLocaleString()}</span>
+                        <span>💰 Earned: ₹${vals.sales.toLocaleString()}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Purchase Modal
+        let currentPurchasePlant = '';
+        function openPurchaseModal(plantName, displayName) {
+            currentPurchasePlant = plantName;
+            const modal = document.createElement('div');
+            modal.id = 'purchaseModal';
+            modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50';
+            modal.onclick = (e) => { if (e.target === modal) closePurchaseModal(); };
+            modal.innerHTML = `
+                <div class="card" style="max-width:400px;width:100%;">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold">💸 Add Purchase for ${displayName}</h3>
+                        <button onclick="closePurchaseModal()" style="border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;background:none;color:var(--fg);">✕</button>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Item Type</label>
+                            <select id="purchaseItemType" class="input-field">
+                                <option value="seeds">🌱 Seeds</option>
+                                <option value="saplings">🌿 Saplings</option>
+                                <option value="fertilizer">🧪 Fertilizer</option>
+                                <option value="tools">🔧 Tools</option>
+                                <option value="other">📦 Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Item Name</label>
+                            <input type="text" id="purchaseItemName" class="input-field" placeholder="e.g. Tomato seeds, NPK fertilizer">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Quantity</label>
+                                <input type="number" id="purchaseQuantity" class="input-field" step="0.1" min="0.1" value="1">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Unit</label>
+                                <input type="text" id="purchaseUnit" class="input-field" placeholder="kg, pcs, liters" value="pcs">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Cost per Unit (₹)</label>
+                            <input type="number" id="purchaseCostPerUnit" class="input-field" step="0.01" min="0" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Notes (optional)</label>
+                            <textarea id="purchaseNotes" class="input-field" rows="2" placeholder="Any notes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="submitPurchase()" class="btn-primary flex-1">Add Purchase</button>
+                        <button onclick="closePurchaseModal()" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer;">Cancel</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        function closePurchaseModal() {
+            const modal = document.getElementById('purchaseModal');
+            if (modal) modal.remove();
+        }
+
+        async function submitPurchase() {
+            const plantName = currentPurchasePlant;
+            const itemType = document.getElementById('purchaseItemType').value;
+            const itemName = document.getElementById('purchaseItemName').value;
+            const quantity = parseFloat(document.getElementById('purchaseQuantity').value);
+            const unit = document.getElementById('purchaseUnit').value;
+            const costPerUnit = parseFloat(document.getElementById('purchaseCostPerUnit').value);
+            const notes = document.getElementById('purchaseNotes').value;
+
+            if (!itemName || isNaN(quantity) || isNaN(costPerUnit)) {
+                showToast('Please fill all required fields');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/v1/purchases', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        report_id: currentReportId,
+                        plant_name: plantName,
+                        item_type: itemType,
+                        item_name: itemName,
+                        quantity,
+                        unit,
+                        cost_per_unit: costPerUnit,
+                        notes: notes || null
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to add purchase');
+                showToast('Purchase added!');
+                closePurchaseModal();
+                loadPlantPurchases(plantName);
+                loadLedger(currentReportId);
+            } catch (err) {
+                showToast('Error: ' + err.message);
+            }
+        }
+
+        // Sale Modal
+        let currentSalePlant = '';
+        function openSaleModal(plantName, displayName) {
+            currentSalePlant = plantName;
+            const modal = document.createElement('div');
+            modal.id = 'saleModal';
+            modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50';
+            modal.onclick = (e) => { if (e.target === modal) closeSaleModal(); };
+            modal.innerHTML = `
+                <div class="card" style="max-width:400px;width:100%;">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold">💰 Add Sale/Harvest for ${displayName}</h3>
+                        <button onclick="closeSaleModal()" style="border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;background:none;color:var(--fg);">✕</button>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Produce Name</label>
+                            <input type="text" id="saleItemName" class="input-field" placeholder="e.g. Tomatoes, Coriander leaves">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Quantity</label>
+                                <input type="number" id="saleQuantity" class="input-field" step="0.1" min="0.1" value="1">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Unit</label>
+                                <input type="text" id="saleUnit" class="input-field" placeholder="kg, bunches, pcs" value="kg">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Price per Unit (₹)</label>
+                            <input type="number" id="salePricePerUnit" class="input-field" step="0.01" min="0" placeholder="0.00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Notes (optional)</label>
+                            <textarea id="saleNotes" class="input-field" rows="2" placeholder="Any notes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button onclick="submitSale()" class="btn-primary flex-1" style="background:var(--accent);">Add Sale</button>
+                        <button onclick="closeSaleModal()" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer;">Cancel</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+        }
+
+        function closeSaleModal() {
+            const modal = document.getElementById('saleModal');
+            if (modal) modal.remove();
+        }
+
+        async function submitSale() {
+            const plantName = currentSalePlant;
+            const itemName = document.getElementById('saleItemName').value;
+            const quantity = parseFloat(document.getElementById('saleQuantity').value);
+            const unit = document.getElementById('saleUnit').value;
+            const pricePerUnit = parseFloat(document.getElementById('salePricePerUnit').value);
+            const notes = document.getElementById('saleNotes').value;
+
+            if (!itemName || isNaN(quantity) || isNaN(pricePerUnit)) {
+                showToast('Please fill all required fields');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/v1/sales', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        report_id: currentReportId,
+                        plant_name: plantName,
+                        item_name: itemName,
+                        quantity,
+                        unit,
+                        price_per_unit: pricePerUnit,
+                        notes: notes || null
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to add sale');
+                showToast('Sale added!');
+                closeSaleModal();
+                loadPlantSales(plantName);
+                loadLedger(currentReportId);
+            } catch (err) {
+                showToast('Error: ' + err.message);
+            }
+        }
+
+        async function loadPlantPurchases(plantName) {
+            try {
+                const response = await fetch(`/api/v1/purchases/${currentReportId}?plant_name=${encodeURIComponent(plantName)}`);
+                const purchases = await response.json();
+                const container = document.getElementById(`purchaseList-${plantName.replace(/\s+/g, '-')}`);
+                if (container) {
+                    container.innerHTML = purchases.length === 0
+                        ? '<p style="color:var(--muted);font-size:12px;">No purchases yet</p>'
+                        : purchases.map(p => `
+                            <div style="padding:8px;background:var(--card);border-radius:6px;border:1px solid var(--border);display:flex;justify-content:space-between;">
+                                <div>
+                                    <div style="font-weight:500;">${escapeHtml(p.item_name)} (${p.item_type})</div>
+                                    <div style="font-size:11px;color:var(--muted);">${p.quantity} ${p.unit} × ₹${p.cost_per_unit} = ₹${p.total_cost}</div>
+                                </div>
+                                <div style="font-size:12px;color:var(--error);">₹${p.total_cost}</div>
+                            </div>`).join('');
+                }
+            } catch (err) {
+                console.error('Failed to load purchases:', err);
+            }
+        }
+
+        async function loadPlantSales(plantName) {
+            try {
+                const response = await fetch(`/api/v1/sales/${currentReportId}?plant_name=${encodeURIComponent(plantName)}`);
+                const sales = await response.json();
+                const container = document.getElementById(`saleList-${plantName.replace(/\s+/g, '-')}`);
+                if (container) {
+                    container.innerHTML = sales.length === 0
+                        ? '<p style="color:var(--muted);font-size:12px;">No sales yet</p>'
+                        : sales.map(s => `
+                            <div style="padding:8px;background:var(--card);border-radius:6px;border:1px solid var(--border);display:flex;justify-content:space-between;">
+                                <div>
+                                    <div style="font-weight:500;">${escapeHtml(s.item_name)}</div>
+                                    <div style="font-size:11px;color:var(--muted);">${s.quantity} ${s.unit} × ₹${s.price_per_unit} = ₹${s.total_revenue}</div>
+                                </div>
+                                <div style="font-size:12px;color:var(--accent);">₹${s.total_revenue}</div>
+                            </div>`).join('');
+                }
+            } catch (err) {
+                console.error('Failed to load sales:', err);
+            }
+        }
+
+        // Load purchases/sales for all plants in recommendations
+        async function loadAllPlantTracking(recommendations) {
+            for (const rec of recommendations) {
+                loadPlantPurchases(rec.plant_name);
+                loadPlantSales(rec.plant_name);
+            }
+        }
+
+        // Topic navigation smooth scroll
+        document.querySelectorAll('.topic-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Highlight active
+                    document.querySelectorAll('.topic-link').forEach(l => l.style.borderColor = 'var(--border)');
+                    this.style.borderColor = 'var(--accent)';
+                }
+            });
+        });
+
+        // Moon Calendar
+        async function loadMoonCalendar(reportId) {
+            try {
+                const response = await fetch('/api/v1/moon-calendar');
+                const data = await response.json();
+                displayMoonCalendar(data);
+            } catch (err) {
+                console.error('Failed to load moon calendar:', err);
+            }
+        }
+
+        function displayMoonCalendar(data) {
+            const moon = data.current_moon;
+            const biodynamic = data.biodynamic_advice;
+            const lunar = data.lunar_date;
+            const auspicious = data.auspicious_dates;
+
+            // Current moon phase
+            const phaseIcon = moon.phase === 'New Moon' ? '🌑' : 
+                            moon.phase === 'Full Moon' ? '🌕' : 
+                            moon.phase.includes('Waxing') ? '🌒' : '🌘';
+            document.getElementById('moonCurrent').innerHTML = `
+                <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+                    <div style="font-size:48px;">${phaseIcon}</div>
+                    <div>
+                        <div style="font-size:18px;font-weight:700;">${escapeHtml(moon.phase)}</div>
+                        <div style="font-size:13px;color:var(--muted);">
+                            Illumination: ${moon.illumination}% &bull; ${moon.is_waxing ? 'Waxing 📈' : 'Waning 📉'} &bull; Next phase in ~${moon.days_to_next_phase} days
+                        </div>
+                    </div>
+                </div>`;
+
+            // Biodynamic advice
+            const categoryIcon = biodynamic.category === 'root' ? '🥕' : 
+                               biodynamic.category === 'leaf' ? '🥬' : 
+                               biodynamic.category === 'fruit' ? '🍅' : '🌸';
+            document.getElementById('moonBiodynamic').innerHTML = `
+                <div style="padding:16px;background:${biodynamic.category === 'root' ? 'rgba(139,92,246,0.1)' : biodynamic.category === 'leaf' ? 'rgba(16,185,129,0.1)' : biodynamic.category === 'fruit' ? 'rgba(239,68,68,0.1)' : 'rgba(236,72,153,0.1)'};border-radius:8px;border-left:4px solid ${biodynamic.category === 'root' ? '#8b5cf6' : biodynamic.category === 'leaf' ? '#10b981' : biodynamic.category === 'fruit' ? '#ef4444' : '#ec4899'};">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <span style="font-size:20px;">${categoryIcon}</span>
+                        <strong style="text-transform:capitalize;">${escapeHtml(biodynamic.category)} Phase</strong>
+                    </div>
+                    <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">${escapeHtml(biodynamic.description)}</div>
+                    <div style="font-size:12px;">
+                        <strong>Suitable plants:</strong> ${biodynamic.suitable_plants.length ? biodynamic.suitable_plants.map(p => `<span class="photo-feature">${escapeHtml(p)}</span>`).join('') : 'None from your recommendations'}
+                    </div>
+                    <div style="font-size:11px;color:var(--muted);margin-top:6px;">${escapeHtml(biodynamic.avoid)}</div>
+                </div>`;
+
+            // Lunar date
+            document.getElementById('moonLunar').innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+                    <div style="padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);text-align:center;">
+                        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Tithi</div>
+                        <div style="font-size:16px;font-weight:600;">${escapeHtml(lunar.tithi)}</div>
+                    </div>
+                    <div style="padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);text-align:center;">
+                        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Paksha</div>
+                        <div style="font-size:16px;font-weight:600;">${escapeHtml(lunar.paksha)}</div>
+                    </div>
+                    <div style="padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);text-align:center;">
+                        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Lunar Month</div>
+                        <div style="font-size:16px;font-weight:600;">${escapeHtml(lunar.lunar_month)}</div>
+                    </div>
+                    <div style="padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);text-align:center;">
+                        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Lunar Day</div>
+                        <div style="font-size:16px;font-weight:600;">${lunar.day}</div>
+                    </div>
+                </div>`;
+
+            // Auspicious dates
+            document.getElementById('moonAuspicious').innerHTML = `
+                <div>
+                    <div style="font-weight:600;margin-bottom:8px;">📅 Auspicious Planting Dates (Next 30 Days)</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                        ${auspicious.slice(0, 15).map(d => `
+                            <span class="photo-feature" style="font-size:11px;background:${d.biodynamic === 'root' ? 'rgba(139,92,246,0.15)' : d.biodynamic === 'leaf' ? 'rgba(16,185,129,0.15)' : d.biodynamic === 'fruit' ? 'rgba(239,68,68,0.15)' : 'rgba(236,72,153,0.15)'};">
+                                ${d.date} (${d.day.substring(0,3)}) — ${d.moon_phase}, ${d.biodynamic} — ${d.tithi}
+                            </span>`).join('')}
+                        ${auspicious.length > 15 ? `<span style="font-size:11px;color:var(--muted);">+ ${auspicious.length - 15} more...</span>` : ''}
+                    </div>
+                </div>`;
         }
     </script>
 </body>
