@@ -1683,19 +1683,13 @@ class ReportGenerateResponse(BaseModel):
     )
 
 
-# In-memory store
+@app.get("/", response_class=FileResponse)
+async def root():
+    return FileResponse(os.path.join(os.path.dirname(__file__), "..", "static", "index.html"))
+
+
+# In-memory report cache (supplements SQLite persistence)
 reports_db = {}
-
-
-@app.get("/", response_class=FileResponse)
-async def root():
-    return FileResponse(os.path.join(os.path.dirname(__file__), "..", "static", "index.html"))
-
-
-@app.get("/", response_class=FileResponse)
-async def root():
-    return FileResponse(os.path.join(os.path.dirname(__file__), "..", "static", "index.html"))
-
 
 # --- Enhanced Health Check ---
 
