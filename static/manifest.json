@@ -1,0 +1,21 @@
+{
+  "name": "GreenScope - AI Gardening Intelligence for India",
+  "short_name": "GreenScope",
+  "description": "Discover what you can grow based on your location, soil, and garden conditions. India-focused with 50 plants including Tulsi, Neem, Ashwagandha.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "education"],
+  "lang": "en",
+  "dir": "ltr"
+}

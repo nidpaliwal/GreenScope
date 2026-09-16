@@ -10,6 +10,8 @@
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#10b981">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -269,10 +271,24 @@
                 <div id="ledgerDetails" class="space-y-4"></div>
             </div>
 
+            <div id="careCalendarCard" class="card animate-fade-in-up delay-4 hidden">
+                <h2 class="text-lg font-bold mb-3" id="careCalendarTitle">📅 Care Calendar</h2>
+                <div id="careCalendarTasks" class="space-y-3"></div>
+            </div>
+
+            <div id="soilHealthCard" class="card animate-fade-in-up delay-4 hidden">
+                <h2 class="text-lg font-bold mb-3" id="soilHealthTitle">🌱 Soil Health Tracker</h2>
+                <div id="soilHealthForm" class="mb-4"></div>
+                <div id="soilHealthCharts" class="space-y-4"></div>
+                <div id="soilHealthLogs" class="space-y-3"></div>
+            </div>
+
             <div class="card animate-fade-in-up delay-4">
                 <a id="openReportBtn" href="#" target="_blank" class="block w-full text-center mb-3 py-3 rounded-md font-medium text-white bg-blue-600 hover:bg-blue-700 transition" style="text-decoration:none;pointer-events:none;opacity:0.5;" disabled><span id="openReportText">Open Full Report Page</span></a>
                 <a id="icsBtn" href="#" class="block w-full text-center mb-3 py-3 rounded-md font-medium transition" style="text-decoration:none;pointer-events:none;opacity:0.5;border:2px solid var(--accent);color:var(--accent);"><span id="icsText">Add Planting Reminders (.ics)</span></a>
-                <button id="pdfBtn" class="btn-primary w-full mb-3" disabled><span id="pdfText">Download Report</span></button>
+                <button id="pdfBtn" class="btn-primary w-full mb-3" disabled><span id="pdfText">Download Report (HTML)</span></button>
+                <button id="csvBtn" class="btn-primary w-full mb-3" disabled style="background:#10b981;"><span id="csvText">Export CSV</span></button>
+                <button id="xlsxBtn" class="btn-primary w-full mb-3" disabled style="background:#217346;"><span id="xlsxText">Export Excel</span></button>
                 <button id="shareBtn" class="btn-primary w-full" disabled><span id="shareText">Copy Share Link</span></button>
                 <div id="toast" class="hidden fixed bottom-4 right-4 bg-green-700 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity"></div>
             </div>
@@ -286,6 +302,33 @@
                 <button onclick="closePlantModal()" aria-label="Close plant details" style="border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;background:none;color:var(--fg);">✕</button>
             </div>
             <div id="plantModalBody"></div>
+        </div>
+    </div>
+
+    <div id="diagnoseModal" class="hidden" role="dialog" aria-modal="true" aria-label="Plant health diagnosis" onclick="if(event.target===this)closeDiagnoseModal()">
+        <div id="diagnoseModalCard" class="card" style="max-width:500px;width:100%;max-height:85vh;overflow-y:auto;">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold">🔬 Plant Health Diagnosis</h3>
+                <button onclick="closeDiagnoseModal()" style="border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;background:none;color:var(--fg);">✕</button>
+            </div>
+            <div id="diagnoseStep1" class="space-y-4">
+                <p style="font-size:13px;color:var(--muted);">Select symptoms you're observing on your plant</p>
+                <div id="symptomCheckboxes" class="grid grid-cols-2 gap-2"></div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="submitDiagnosis()" class="btn-primary flex-1">Diagnose</button>
+                    <button onclick="closeDiagnoseModal()" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer;">Cancel</button>
+                </div>
+            </div>
+            <div id="diagnoseResults" class="hidden space-y-4">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h3 class="text-lg font-bold">Diagnosis Results</h3>
+                    <button onclick="backToSymptoms()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--card);cursor:pointer;">← Change Symptoms</button>
+                </div>
+                <div id="diagnosisList" class="space-y-3"></div>
+                <div class="text-center pt-2">
+                    <p style="font-size:11px;color:var(--muted);">Deterministic rule engine • No ML • Based on symptom rules</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -354,23 +397,426 @@
         let currentCategoryFilter = null;
         let currentLang = localStorage.getItem('lang') || 'en';
 
-        const HINDI_NAMES = {
-            'Tulsi': 'तुलसी', 'Neem': 'नीम', 'Ashwagandha': 'अश्वगंधा', 'Brahmi': 'ब्राह्मी',
-            'Amla': 'आंवला', 'Giloy': 'गिलोय', 'Curry Leaf': 'करी पत्ता', 'Aloe Vera': 'एलोवेरा',
-            'Lemongrass': 'लेमनग्रास', 'Moringa': 'मोरिंगा', 'Turmeric': 'हल्दी', 'Coriander': 'धनिया',
-            'Fenugreek': 'मेथी', 'Marigold': 'गेंदा', 'Okra': 'भिंडी', 'Chili': 'मिर्च',
-            'Moong': 'मूंग', 'Brinjal': 'बैंगन', 'Tomato': 'टमाटर', 'Potato': 'आलू',
-            'Onion': 'प्याज', 'Garlic': 'लहसुन', 'Ginger': 'अदरक', 'Rice': 'चावल',
-            'Wheat': 'गेहूं', 'Banana': 'केला', 'Mango': 'आम', 'Coconut': 'नारियल',
-            'Sunflower': 'सूरजमुखी', 'Rose': 'गुलाब', 'Jasmine': 'चमेली', 'Hibiscus': 'गुड़हल',
-            'Lavender': 'लैवेंडर', 'Mint': 'पुदीना', 'Spinach': 'पालक', 'Cabbage': 'पत्ता गोभी',
-            'Cauliflower': 'फूल गोभी', 'Peas': 'मटर', 'Carrot': 'गाजर', 'Radish': 'मूली',
-            'Beetroot': 'चुकंदर', 'Cucumber': 'खीरा', 'Pumpkin': 'कद्दू', 'Bottle Gourd': 'लौकी',
-            'Bitter Gourd': 'करेला', 'Sweet Potato': 'शकरकंद', 'Yam': 'जिमीकंद', 'Sesame': 'तिल',
-            'Mustard': 'सरसों', 'Groundnut': 'मूंगफली', 'Sugarcane': 'गन्ना'
+        const LANGUAGES = {
+            en: { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
+            hi: { code: 'hi', name: 'Hindi', nativeName: 'हिंदी', flag: '🇮🇳' },
+            ta: { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
+            bn: { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇧🇩' },
+            mr: { code: 'mr', name: 'Marathi', nativeName: 'मराठी', flag: '🇮🇳' },
+            gu: { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', flag: '🇮🇳' }
         };
 
-        const HINDI_UI = {
+        const PLANT_NAMES = {
+            en: {},
+            hi: {
+                'Tulsi': 'तुलसी', 'Neem': 'नीम', 'Ashwagandha': 'अश्वगंधा', 'Brahmi': 'ब्राह्मी',
+                'Amla': 'आंवला', 'Giloy': 'गिलोय', 'Curry Leaf': 'करी पत्ता', 'Aloe Vera': 'एलोवेरा',
+                'Lemongrass': 'लेमनग्रास', 'Moringa': 'मोरिंगा', 'Turmeric': 'हल्दी', 'Coriander': 'धनिया',
+                'Fenugreek': 'मेथी', 'Marigold': 'गेंदा', 'Okra': 'भिंडी', 'Chili': 'मिर्च',
+                'Moong': 'मूंग', 'Brinjal': 'बैंगन', 'Tomato': 'टमाटर', 'Potato': 'आलू',
+                'Onion': 'प्याज', 'Garlic': 'लहसुन', 'Ginger': 'अदरक', 'Rice': 'चावल',
+                'Wheat': 'गेहूं', 'Banana': 'केला', 'Mango': 'आम', 'Coconut': 'नारियल',
+                'Sunflower': 'सूरजमुखी', 'Rose': 'गुलाब', 'Jasmine': 'चमेली', 'Hibiscus': 'गुड़हल',
+                'Lavender': 'लैवेंडर', 'Mint': 'पुदीना', 'Spinach': 'पालक', 'Cabbage': 'पत्ता गोभी',
+                'Cauliflower': 'फूल गोभी', 'Peas': 'मटर', 'Carrot': 'गाजर', 'Radish': 'मूली',
+                'Beetroot': 'चुकंदर', 'Cucumber': 'खीरा', 'Pumpkin': 'कद्दू', 'Bottle Gourd': 'लौकी',
+                'Bitter Gourd': 'करेला', 'Sweet Potato': 'शकरकंद', 'Yam': 'जिमीकंद', 'Sesame': 'तिल',
+                'Mustard': 'सरसों', 'Groundnut': 'मूंगफली', 'Sugarcane': 'गन्ना'
+            },
+            ta: {
+                'Tulsi': 'துலசி', 'Neem': 'வேம்பு', 'Ashwagandha': 'அஸ்வகந்தா', 'Brahmi': 'பிராமி',
+                'Amla': 'நெல்லிக்காய்', 'Giloy': 'சித்தமருது', 'Curry Leaf': 'கறிவேப்பிலை', 'Aloe Vera': 'அலோ vera',
+                'Lemongrass': 'எலுமிச்சை புல்', 'Moringa': 'முருங்கை', 'Turmeric': 'மஞ்சள்', 'Coriander': 'கொத்தமல்லி',
+                'Fenugreek': 'வெந்தயம்', 'Marigold': 'சாமந்தி', 'Okra': 'வெண்டைக்காய்', 'Chili': 'மிளகாய்',
+                'Moong': 'பாசிப்பருப்பு', 'Brinjal': 'கத்தரிக்காய்', 'Tomato': 'தக்காளி', 'Potato': 'உருளைக்கிழங்கு',
+                'Onion': 'வெங்காயம்', 'Garlic': 'பூண்டு', 'Ginger': 'இஞ்சி', 'Rice': 'அரிசி',
+                'Wheat': 'கோதுமை', 'Banana': 'வாழைப்பழம்', 'Mango': 'மாங்காய்', 'Coconut': 'தேங்காய்',
+                'Sunflower': 'சூரியகாந்தி', 'Rose': 'ரோஜா', 'Jasmine': 'மல்லிகை', 'Hibiscus': 'செம்பருத்தி',
+                'Lavender': 'லேவண்டர்', 'Mint': 'புதினா', 'Spinach': 'பசலைக்கீரை', 'Cabbage': 'முட்டைக்கோசு',
+                'Cauliflower': 'காலிபிளவர்', 'Peas': 'பட்டாணி', 'Carrot': 'கேரட்', 'Radish': 'முள்ளங்கி',
+                'Beetroot': 'பீட்ரூட்', 'Cucumber': 'வெள்ளரிக்காய்', 'Pumpkin': 'பூசணிக்காய்', 'Bottle Gourd': 'சுரைக்காய்',
+                'Bitter Gourd': 'பாகற்காய்', 'Sweet Potato': 'சர்க்கரைவள்ளி கிழங்கு', 'Yam': 'சேனைக்கிழங்கு', 'Sesame': 'எள்',
+                'Mustard': 'கடுகு', 'Groundnut': 'வேர்க்கடலை', 'Sugarcane': 'கரும்பு'
+            },
+            bn: {
+                'Tulsi': 'তুলসী', 'Neem': 'নিম', 'Ashwagandha': 'অশ্বগন্ধা', 'Brahmi': 'ব্রাহ্মী',
+                'Amla': 'আম্লকি', 'Giloy': 'গulancha', 'Curry Leaf': 'কড়ি পাতা', 'Aloe Vera': 'এলো ভেরা',
+                'Lemongrass': 'লেমন গ্রাস', 'Moringa': 'সজিনা', 'Turmeric': 'হলুদ', 'Coriander': 'ধনিয়া',
+                'Fenugreek': 'মেথি', 'Marigold': 'গাঁদা', 'Okra': 'ভিন্ডি', 'Chili': 'মরিচ',
+                'Moong': 'মুগ দাল', 'Brinjal': 'বেগুন', 'Tomato': 'টমেটো', 'Potato': 'আলু',
+                'Onion': 'পেঁয়াজ', 'Garlic': 'রসুন', 'Ginger': 'আদা', 'Rice': 'চাল',
+                'Wheat': 'গম', 'Banana': 'কলা', 'Mango': 'আম', 'Coconut': 'নারিকেল',
+                'Sunflower': 'সূর্যমুখী', 'Rose': 'গোলাপ', 'Jasmine': 'চমেলি', 'Hibiscus': 'জবা',
+                'Lavender': 'লেভেন্ডার', 'Mint': 'পুদিনা', 'Spinach': 'পালং শাক', 'Cabbage': 'বাঁধাকপি',
+                'Cauliflower': 'ফুলকপি', 'Peas': 'মটরশুটি', 'Carrot': 'গাজর', 'Radish': 'মুলা',
+                'Beetroot': 'বিট', 'Cucumber': 'শশা', 'Pumpkin': 'কুমড়ো', 'Bottle Gourd': 'লাউ',
+                'Bitter Gourd': 'করলা', 'Sweet Potato': 'মিষ্টি আলু', 'Yam': 'চুপরি আলু', 'Sesame': 'তিল',
+                'Mustard': 'সরিষা', 'Groundnut': 'চিনাবাদাম', 'Sugarcane': 'আখ'
+            },
+            mr: {
+                'Tulsi': 'तुळस', 'Neem': 'कडुलिंब', 'Ashwagandha': 'अश्वगंधा', 'Brahmi': 'ब्राह्मी',
+                'Amla': 'आवळा', 'Giloy': 'गुळवेल', 'Curry Leaf': 'कढीलिंब', 'Aloe Vera': 'एलोव्हेरा',
+                'Lemongrass': 'लेमनग्रास', 'Moringa': 'शेवगा', 'Turmeric': 'हळद', 'Coriander': 'कोथिंबीर',
+                'Fenugreek': 'मेथी', 'Marigold': 'झेंडू', 'Okra': 'भेंडी', 'Chili': 'मिरची',
+                'Moong': 'मूंग', 'Brinjal': 'वांगे', 'Tomato': 'टोमॅटो', 'Potato': 'बटाटा',
+                'Onion': 'कांदा', 'Garlic': 'लसुण', 'Ginger': 'आले', 'Rice': 'तांदूळ',
+                'Wheat': 'गहू', 'Banana': 'केळी', 'Mango': 'आंबा', 'Coconut': 'नारळ',
+                'Sunflower': 'सूर्यफुल', 'Rose': 'गुलाब', 'Jasmine': 'मोगरा', 'Hibiscus': 'जासवंद',
+                'Lavender': 'लॅवेंडर', 'Mint': 'पुदीना', 'Spinach': 'पालक', 'Cabbage': 'कोबी',
+                'Cauliflower': 'फ्लॉवर', 'Peas': 'वाटाणे', 'Carrot': 'गाजर', 'Radish': 'मुळा',
+                'Beetroot': 'बीट', 'Cucumber': 'काकडी', 'Pumpkin': 'भोपळा', 'Bottle Gourd': 'दुधी',
+                'Bitter Gourd': 'कारले', 'Sweet Potato': 'रताळे', 'Yam': 'सूरण', 'Sesame': 'तिळ',
+                'Mustard': 'मोहरी', 'Groundnut': 'शेंगदाणा', 'Sugarcane': 'ऊस'
+            },
+            gu: {
+                'Tulsi': 'તુલસી', 'Neem': 'લિમડો', 'Ashwagandha': 'અશ્વગંધા', 'Brahmi': 'બ્રાહ્મી',
+                'Amla': 'આંવલા', 'Giloy': 'ગલો', 'Curry Leaf': 'મિઠો લિમડો', 'Aloe Vera': 'એલોવેરા',
+                'Lemongrass': 'લેમંગ્રાસ', 'Moringa': 'સરગ્વો', 'Turmeric': 'હળદર', 'Coriander': 'ધાણા',
+                'Fenugreek': 'મેથી', 'Marigold': 'ગલગોતા', 'Okra': 'ભીંડો', 'Chili': 'મરચા',
+                'Moong': 'મગ', 'Brinjal': 'રિંગણા', 'Tomato': 'ટમેટા', 'Potato': 'બટાટા',
+                'Onion': 'ડુંગળી', 'Garlic': 'લસણ', 'Ginger': 'અદરક', 'Rice': 'ચોખા',
+                'Wheat': 'ગઓં', 'Banana': 'કેળા', 'Mango': 'કેરી', 'Coconut': 'નારિયેલ',
+                'Sunflower': 'સૂરજમુખી', 'Rose': 'ગુલાબ', 'Jasmine': 'મોગરા', 'Hibiscus': 'જાસમુદ',
+                'Lavender': 'લેવેન્ડર', 'Mint': 'ફુદીનો', 'Spinach': 'પાલક', 'Cabbage': 'કોબી',
+                'Cauliflower': 'ફુલગોભી', 'Peas': 'વટાણા', 'Carrot': 'ગાજર', 'Radish': 'મૂળા',
+                'Beetroot': 'બીટ', 'Cucumber': 'કાકડી', 'Pumpkin': 'કોળું', 'Bottle Gourd': 'દુધી',
+                'Bitter Gourd': 'કરેલા', 'Sweet Potato': 'શક્કરિયા', 'Yam': 'સુરણ', 'Sesame': 'તલ',
+                'Mustard': 'રાયડો', 'Groundnut': 'મગફળી', 'Sugarcane': 'શેરદી'
+            }
+        };
+
+        const UI_TRANSLATIONS = {
+            en: {},
+            hi: {
+                'Location': 'स्थान',
+                'Garden Photo (Optional)': 'बगीचे की फोटो (वैकल्पिक)',
+                'Upload Photo': 'फोटो अपलोड करें',
+                'Analyze My Garden': 'मेरे बगीचे का विश्लेषण करें',
+                'Fetching real climate data...': 'असली जलवायु डेटा लाया जा रहा है...',
+                'Location Environment': 'स्थान का वातावरण',
+                'Avg Temp': 'औसत तापमान',
+                'Rainfall': 'वर्षा',
+                'Sunlight': 'धूप',
+                'Soil pH': 'मिट्टी का pH',
+                'Soil Type': 'मिट्टी का प्रकार',
+                'Frost Risk': 'पाला का खतरा',
+                'Agro Zone': 'कृषि क्षेत्र',
+                'Garden Analysis': 'बगीचे का विश्लेषण',
+                'Garden Health Assessment': 'बगीचे के स्वास्थ्य का आकलन',
+                'Sunlight': 'धूप',
+                'Water': 'पानी',
+                'Temperature': 'तापमान',
+                'Soil': 'मिट्टी',
+                'Overall': 'कुल मिलाकर',
+                'Warnings': 'चेतावनियाँ',
+                'Best For You': 'आपके लिए सर्वश्रेष्ठ',
+                'Best Overall': 'सर्वश्रेष्ठ समग्र',
+                'Best Low-Water': 'सर्वश्रेष्ठ कम-पानी',
+                'Fastest Harvest': 'सबसे तेज़ फसल',
+                'Best Flower': 'सर्वश्रेष्ठ फूल',
+                'Best Herb': 'सर्वश्रेष्ठ जड़ी-बूटी',
+                'Your garden bed': 'आपका बगीचा',
+                'Plant Recommendations': 'पौधों की सिफारिशें',
+                'Comparison Table': 'तुलना तालिका',
+                'Plant': 'पौधा',
+                'Suitability': 'उपयुक्तता',
+                'Growth': 'वृद्धि',
+                'Why Not These Plants?': 'ये पौधे क्यों नहीं?',
+                'Open Full Report Page': 'पूरा रिपोर्ट पेज खोलें',
+                'Add Planting Reminders (.ics)': 'रोपण अनुस्मारक जोड़ें (.ics)',
+                'Download Report': 'रिपोर्ट डाउनलोड करें',
+                'Copy Share Link': 'साझा लिंक कॉपी करें',
+                'What to Plant This Month': 'इस महीने क्या लगाएं',
+                'Loading report...': 'रिपोर्ट लोड हो रही है...',
+                'Report not found or expired.': 'रिपोर्ट नहीं मिली या समाप्त हो गई।',
+                'Create Your Own': 'अपना बनाएं',
+                'Shared Report': 'साझा रिपोर्ट',
+                'Generated': 'जनरेट किया गया',
+                'No warnings — conditions look good!': 'कोई चेतावनी नहीं — स्थिति अच्छी लग रही है!',
+                'Est. water': 'अनुमानित पानी',
+                'Est. CO₂': 'अनुमानित CO₂',
+                'rough estimates': 'मोटे अनुमान',
+                'Water': 'पानी',
+                'Sun': 'धूप',
+                'Planting Season': 'रोपण का मौसम',
+                'Scientific Name': 'वैज्ञानिक नाम',
+                'Care Guide': 'देखभाल गाइड',
+                'Suitability': 'उपयुक्तता',
+                'Climate': 'जलवायु',
+                'pH': 'pH',
+                'Soil': 'मिट्टी',
+                'Photo': 'फोटो',
+                'Good': 'अच्छा',
+                'Low': 'कम',
+                'Moderate': 'मध्यम',
+                'High': 'उच्च',
+                'Cold': 'ठंडा',
+                'Hot': 'गर्म',
+                'EXTREME pH': 'चरम pH',
+                'None': 'कोई नहीं',
+                'Year-round': 'पूरे साल',
+                'Kharif': 'खरीफ',
+                'Rabi': 'रबी',
+                'Zaid': 'जायद',
+                'Monsoon': 'मानसून',
+                'Select a location...': 'स्थान चुनें...',
+                'Other (type below)...': 'अन्य (नीचे टाइप करें)...',
+                'Enter your location': 'अपना स्थान दर्ज करें',
+                'e.g. Varanasi, Uttar Pradesh': 'उदा. वाराणसी, उत्तर प्रदेश',
+                'Generate': 'जनरेट करें',
+                'Analyze': 'विश्लेषण करें',
+                'Report': 'रिपोर्ट',
+                'Download': 'डाउनलोड',
+                'Share': 'साझा करें',
+                'Open': 'खोलें',
+                'Add': 'जोड़ें',
+                'Copy': 'कॉपी करें',
+                'Link': 'लिंक',
+                'Reminders': 'अनुस्मारक',
+                'Calendar': 'कैलेंडर',
+                'Export': 'निर्यात करें',
+                'PDF': 'पीडीएफ',
+                'Print': 'प्रिंट करें',
+                'Save': 'सेव करें',
+                'Close': 'बंद करें',
+                'Back': 'वापस',
+                'Next': 'अगला',
+                'Previous': 'पिछला',
+                'Submit': 'सबमिट करें',
+                'Cancel': 'रद्द करें',
+                'OK': 'ठीक है',
+                'Yes': 'हाँ',
+                'No': 'नहीं',
+                'Error': 'त्रुटि',
+                'Success': 'सफलता',
+                'Warning': 'चेतावनी',
+                'Info': 'जानकारी',
+                'Loading': 'लोड हो रहा है',
+                'Please wait...': 'कृपया प्रतीक्षा करें...',
+                'No data available': 'कोई डेटा उपलब्ध नहीं',
+                'Try again': 'फिर से कोशिश करें',
+                'Failed to load': 'लोड करने में विफल',
+                'Connection error': 'कनेक्शन त्रुटि',
+                'Too many requests': 'बहुत सारे अनुरोध',
+                'Please wait a moment and try again': 'कृपया एक पल प्रतीक्षा करें और फिर कोशिश करें',
+                'Watering Schedule': 'सिंचाई अनुसूची',
+                'Frequency': 'आवृत्ति',
+                'Per watering': 'प्रति सिंचाई',
+                'Weekly total': 'साप्ताहिक कुल',
+                'Seasonal notes': 'मौसमी नोट्स',
+                'Pest & Disease Alerts': 'कीट और रोग अलर्ट',
+                'Trigger': 'ट्रिगर',
+                'High': 'उच्च',
+                'Moderate': 'मध्यम',
+                'Low': 'कम',
+                'GreenScope Assistant': 'ग्रीनस्कोप सहायक',
+                'Ask about plants, care, pests...': 'पौधों, देखभाल, कीटों के बारे में पूछें...',
+                'Deterministic assistant — uses local plant database, no LLM': 'निश्चित सहायक — स्थानीय पौधा डेटाबेस का उपयोग करता है, कोई LLM नहीं',
+                'Ledger / Profit & Loss': 'खाता / लाभ और हानि',
+                'Total Spent': 'कुल खर्च',
+                'Total Earned': 'कुल कमाई',
+                'Net Profit': 'शुद्ध लाभ',
+                'No purchases or sales recorded yet. Add your first entry below!': 'अभी तक कोई खरीद या बिक्री दर्ज नहीं। नीचे अपनी पहली एंट्री जोड़ें!',
+                'Add Purchase': 'खरीद जोड़ें',
+                'Add Sale': 'बिक्री जोड़ें',
+                'Purchase': 'खरीद',
+                'Sale': 'बिक्री',
+                'Item Type': 'आइटम प्रकार',
+                'Item Name': 'आइटम नाम',
+                'Quantity': 'मात्रा',
+                'Unit': 'इकाई',
+                'Cost per Unit': 'प्रति इकाई लागत',
+                'Price per Unit': 'प्रति इकाई मूल्य',
+                'Notes': 'नोट्स',
+                'Seeds': 'बीज',
+                'Saplings': 'पौधे',
+                'Fertilizer': 'उर्वरक',
+                'Tools': 'उपकरण',
+                'Other': 'अन्य',
+                'kg': 'किग्रा',
+                'pcs': 'टुकड़े',
+                'liters': 'लीटर',
+                'Add Purchase': 'खरीद जोड़ें',
+                'Add Sale': 'बिक्री जोड़ें',
+                'Cancel': 'रद्द करें',
+                'Produce Name': 'उत्पाद नाम'
+            },
+            ta: {
+                'Location': 'இடம்',
+                'Garden Photo (Optional)': 'தோட்டம் புகைப்படம் (விருப்பம்)',
+                'Upload Photo': 'புகைப்படம் பதிவேற்று',
+                'Analyze My Garden': 'என் தோட்டத்தை பகுப்பாய்வு செய்',
+                'Fetching real climate data...': 'தள்ளான் மானிடData	getting...',
+                'Location Environment': 'இடத்தின் சூழல்',
+                'Avg Temp': 'சராசரி வெப்பநிலை',
+                'Rainfall': 'மழை',
+                'Sunlight': 'சூரிய ஒளி',
+                'Soil pH': 'மண் pH',
+                'Soil Type': 'மண் வகை',
+                'Frost Risk': 'பஞ்ச கவலை',
+                'Agro Zone': 'விவசாய மண்டலம்',
+                'Garden Analysis': 'தோட்டம் பகுப்பாய்வு',
+                'Garden Health Assessment': 'தோட்ட ஆரோக்கிய மதிப்பீடு',
+                'Sunlight': 'சூரிய ஒளி',
+                'Water': 'தண்ணீர்',
+                'Temperature': 'வெப்பநிலை',
+                'Soil': 'மண்',
+                'Overall': 'மொத்தம்',
+                'Warnings': 'எச்சரிக்கைகள்',
+                'Best For You': 'உங்களுக்கே சிறந்தது',
+                'Best Overall': 'மொத்தம் சிறந்தது',
+                'Best Low-Water': 'குறைந்த தண்ணீர் சிறந்தது',
+                'Fastest Harvest': 'வேகமாக பயிர்',
+                'Best Flower': 'சிறந்த பூ',
+                'Best Herb': 'சிறந்த மூலிகை',
+                'Your garden bed': 'உங்கள் தோட்டmals',
+                'Plant Recommendations': 'தாவர சுசனைகள்',
+                'Comparison Table': 'இடையேற்ற jíблиக்கம்',
+                'Plant': 'தாவரம்',
+                'Suitability': 'பொருத்தம்',
+                'Growth': 'வளர்ச்சி',
+                'Why Not These Plants?': 'இவை ஏன் இல்லை?',
+                'Open Full Report Page': 'முழு அறிக்கை பக்கத்தை திறக்க',
+                'Add Planting Reminders (.ics)': 'நடவு நினைவூட்டல்கள் (.ics) சேர்க்க',
+                'Download Report': 'அறிக்கை பதிவிறக்க',
+                'Copy Share Link': 'பகிர் இணைப்பை நகலெடுக்க',
+                'What to Plant This Month': 'இந்த மாதம் என்ன நடவு',
+                'Loading report...': 'அறிக்கை ஏற்றப்படுகிறது...',
+                'Report not found or expired.': 'அறிக்கை கிடைக்கவில்லை அல்லது காலாவதானத்தers',
+                'Create Your Own': 'உங்களுடையது உருவாக்கு',
+                'Shared Report': 'பகிரப்பட்ட அறிக்கை',
+                'Generated': 'உருவாக்கப்பட்டது',
+                'No warnings — conditions look good!': 'எச்சரிக்கைகள் இல்லை — நிலை நல்லது!',
+                'Est. water': 'அனுமான தண்ணீர்',
+                'Est. CO₂': 'அனுமான CO₂',
+                'rough estimates': 'அன்றாட மதிப்பீடு',
+                'Water': 'தண்ணீர்',
+                'Sun': 'சூரியன்',
+                'Planting Season': 'நடவு காலம்',
+                'Scientific Name': 'அறிவியல் பெயர்',
+                'Care Guide': 'பாதுகாப்பு வழிகாட்டி',
+                'Suitability': 'பொருத்தம்',
+                'Climate': 'காலநிலை',
+                'pH': 'pH',
+                'Soil': 'மண்',
+                'Photo': 'புகைப்படம்',
+                'Good': 'நல்லது',
+                'Low': 'குறைவு',
+                'Moderate': 'மிதமான',
+                'High': 'உயர்வு',
+                'Cold': 'குளிர்',
+                'Hot': 'வெப்பம்',
+                'EXTREME pH': 'அதிக pH',
+                'None': 'இல்லை',
+                'Year-round': 'வருடம் முழுவதும்',
+                'Kharif': 'கரிப்பயிர்',
+                'Rabi': 'ரேபிபயிர்',
+                'Zaid': 'சீதாபயிர்',
+                'Monsoon': 'காற்று மழை',
+                'Select a location...': 'இடத்தைத் தேர்வு செய்...',
+                'Other (type below)...': 'தொடரங்கhidel (கீழே தட்டச்சு செய்)...',
+                'Enter your location': 'உங்கள் இடத்தைக் கொடு',
+                'e.g. Varanasi, Uttar Pradesh': 'எ.கா. வாராணசி, உத்தரப்பிரதேசம்',
+                'Generate': 'உருவாக்கு',
+                'Analyze': 'பகுப்பாய்வு செய்',
+                'Report': 'அறிக்கை',
+                'Download': 'பதிவிறக்க',
+                'Share': 'பகிர்',
+                'Open': 'திறக்க',
+                'Add': 'சேர்',
+                'Copy': 'நகலெடுக்க',
+                'Link': 'இணைப்பு',
+                'Reminders': 'நினைவூட்டல்கள்',
+                'Calendar': 'நாட்காட்டி',
+                'Export': 'ஏற்றுமதி செய்',
+                'PDF': 'பிடீஎஃப்',
+                'Print': 'அச்சிடு',
+                'Save': 'சேமி',
+                'Close': 'முடிக்க',
+                'Back': 'பின்',
+                'Next': 'அடுத்தது',
+                'Previous': 'முன்னாள்',
+                'Submit': 'சமர்ப்பிக்க',
+                'Cancel': 'ரத்து செய்',
+                'OK': 'சரி',
+                'Yes': 'ஆம்',
+                'No': 'இல்லை',
+                'Error': 'பிழை',
+                'Success': 'வெற்றி',
+                'Warning': 'எச்சரிக்கை',
+                'Info': 'தகவல்',
+                'Loading': 'ஏற்றப்படுகிறது',
+                'Please wait...': 'தயவுசெய்து காத்திருக்கவும்...',
+                'No data available': 'தரவு இல்லை',
+                'Try again': 'மீண்டும் முயற்சிச் செய்',
+                'Failed to load': 'ஏற்றுவதில் தோல்வி',
+                'Connection error': 'இணைப்பு பிழை',
+                'Too many requests': 'நிரந்தரம் கோரிக்கைகள்',
+                'Please wait a moment and try again': 'ஒரு கணம் காத்து மீண்டும் முயற்சிச் செய்',
+                'Watering Schedule': 'நீர்ப்பாசியிடல் அட்டவணை',
+                'Frequency': 'அ berkala',
+                'Per watering': 'ஒவ்வொரு நீர்ப்பாசியிடலுக்குக்',
+                'Weekly total': 'வாராத்துமை மொத்தம்',
+                'Seasonal notes': 'காலவட்ட அறிமுகங்கள்',
+                'Pest & Disease Alerts': 'கித் & நோய் எச்சரிக்கைகள்',
+                'Trigger': 'தொடங்கும் தændது',
+                'High': 'அதிகம்',
+                'Moderate': 'மிதம்',
+                'Low': 'குறைவு',
+                'GreenScope Assistant': 'கிரீன்ஸ்கோப் உதவியாளர்',
+                'Ask about plants, care, pests...': 'தாவரங்கள், பராமரிப்பு, பூச்சிகள் பற்றி கேளுங்கள்...',
+                'Deterministic assistant — uses local plant database, no LLM': 'நிச்சய உதவியாளர் — உள்ளூர் தாவர தரவுத்தளத்தை பயன்படுத்துகிறது, LLM இல்லை',
+                'Ledger / Profit & Loss': 'கணக்கு / லாப-நஷ்டம்',
+                'Total Spent': 'மொத்தம் செலவு',
+                'Total Earned': 'மொத்தம் வருமானம்',
+                'Net Profit': 'சுத்த லாபம்',
+                'No purchases or sales recorded yet. Add your first entry below!': 'இன்னும் என்னும் பதிவு செய்யப்படவில்லை. கீழே உங்கள் முதலேய் பதிவைச் சேர்க்கவும்!',
+                'Add Purchase': 'வாங்கிய விதத ghi eச்',
+                'Add Sale': 'விற்பனைச் சேர்',
+                'Purchase': 'வாங்குதல்',
+                'Sale': 'விற்பனை',
+                'Item Type': 'பொருள் வகை',
+                'Item Name': 'பொருள் பெயர்',
+                'Quantity': 'அளவு',
+                'Unit': 'அலகு',
+                'Cost per Unit': 'அலகு செலவு',
+                'Price per Unit': 'அலகு விலை',
+                'Notes': 'குறிப்புகள்',
+                'Seeds': 'விதைகள்',
+                'Saplings': 'நாடுகள்',
+                'Fertilizer': 'உரம்',
+                'Tools': 'கருவிகள்',
+                'Other': 'இன்னம்',
+                'kg': 'கி.கி',
+                'pcs': 'எண்ணிக்கை',
+                'liters': 'லிட்டர்கள்',
+                'Add Purchase': 'வாங்கிய விதத ghi eச்',
+                'Add Sale': 'விற்பனைச் சேர்',
+                'Cancel': 'ரத்து செய்',
+                'Produce Name': 'உற்பத்தி பெயர்'
+            }
+        };
+
+        function getPlantName(name) {
+            if (PLANT_NAMES[currentLang] && PLANT_NAMES[currentLang][name]) return PLANT_NAMES[currentLang][name];
+            return name;
+        }
+
+        function t(key) {
+            if (UI_TRANSLATIONS[currentLang] && UI_TRANSLATIONS[currentLang][key]) return UI_TRANSLATIONS[currentLang][key];
+            return key;
+        }
+
+        function toggleLang() {
+            const langCodes = Object.keys(LANGUAGES);
+            const currentIndex = langCodes.indexOf(currentLang);
+            const nextIndex = (currentIndex + 1) % langCodes.length;
+            currentLang = langCodes[nextIndex];
+            localStorage.setItem('lang', currentLang);
+            const langInfo = LANGUAGES[currentLang];
+            document.getElementById('langToggle').textContent = langInfo.flag + ' ' + langInfo.nativeName;
+            if (currentReportId) refreshDisplay();
+        }
             'Location': 'स्थान',
             'Garden Photo (Optional)': 'बगीचे की फोटो (वैकल्पिक)',
             'Upload Photo': 'फोटो अपलोड करें',
@@ -784,6 +1230,115 @@
         function closePlantModal() { document.getElementById('plantModal').classList.add('hidden'); }
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePlantModal(); });
 
+        // Diagnosis Modal Functions
+        function closeDiagnoseModal() { document.getElementById('diagnoseModal').classList.add('hidden'); }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDiagnoseModal(); });
+
+        // Symptom list for diagnosis
+        const SYMPTOM_LIST = [
+            { key: "yellow_leaves", label: "Yellow Leaves", icon: "🟡" },
+            { key: "brown_spots", label: "Brown Spots", icon: "🟤" },
+            { key: "wilting", label: "Wilting", icon: "🥀" },
+            { key: "holes_in_leaves", label: "Holes in Leaves", icon: "🕳️" },
+            { key: "white_powder", label: "White Powder", icon: "⚪" },
+            { key: "stunted_growth", label: "Stunted Growth", icon: "📉" },
+            { key: "curling_leaves", label: "Curling Leaves", icon: "🌀" },
+            { key: "white_patches", label: "White Patches", icon: "📋" },
+            { key: "black_spots", label: "Black Spots", icon: "⚫" },
+            { key: "leaf_drop", label: "Leaf Drop", icon: "🍂" },
+        ];
+
+        function openDiagnoseModal(plantName) {
+            const modal = document.getElementById('diagnoseModal');
+            const checkboxes = document.getElementById('symptomCheckboxes');
+            const results = document.getElementById('diagnoseResults');
+            const step1 = document.getElementById('diagnoseStep1');
+            
+            // Store current plant for diagnosis
+            modal.dataset.plantName = plantName || '';
+            
+            // Render symptom checkboxes
+            checkboxes.innerHTML = SYMPTOM_LIST.map(s => `
+                <label style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s;" 
+                     onmouseover="this.style.borderColor='var(--accent)'"
+                     onmouseout="this.style.borderColor='var(--border)'">
+                    <input type="checkbox" value="${s.key}" style="width:18px;height:18px;accent-color:var(--accent);">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:18px;">${s.icon}</span>
+                        <span style="font-weight:500;">${s.label}</span>
+                    </div>
+                </label>`).join('');
+            
+            step1.classList.remove('hidden');
+            document.getElementById('diagnoseResults').classList.add('hidden');
+            modal.classList.remove('hidden');
+        }
+
+        function closeDiagnoseModal() {
+            document.getElementById('diagnoseModal').classList.add('hidden');
+        }
+
+        function backToSymptoms() {
+            document.getElementById('diagnoseStep1').classList.remove('hidden');
+            document.getElementById('diagnoseResults').classList.add('hidden');
+        }
+
+        async function submitDiagnosis() {
+            const checkboxes = document.querySelectorAll('#symptomCheckboxes input:checked');
+            const symptoms = Array.from(checkboxes).map(cb => cb.value);
+            const plantName = document.getElementById('diagnoseModal').dataset.plantName || '';
+            
+            if (symptoms.length === 0) {
+                showToast('Please select at least one symptom');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/v1/diagnose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        symptoms: symptoms,
+                        plant_name: plantName || null,
+                        environment: _lastReport ? _lastReport.environment : null
+                    })
+                });
+                const data = await response.json();
+                displayDiagnosisResults(data);
+            } catch (err) {
+                showToast('Error: ' + err.message);
+            }
+        }
+
+        function displayDiagnosisResults(data) {
+            document.getElementById('diagnoseStep1').classList.add('hidden');
+            document.getElementById('diagnoseResults').classList.remove('hidden');
+            
+            const container = document.getElementById('diagnosisList');
+            if (!data.diagnoses || data.diagnoses.length === 0) {
+                container.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;">No matching conditions found. Try different symptoms or consult a local expert.</p>';
+                return;
+            }
+            
+            container.innerHTML = data.diagnoses.map(d => `
+                <div style="padding:16px;background:var(--card);border-radius:8px;border:1px solid var(--border);border-left:4px solid ${d.confidence >= 70 ? 'var(--error)' : d.confidence >= 40 ? 'var(--warning)' : 'var(--accent)'};">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                        <div>
+                            <strong style="font-size:15px;">${d.condition}</strong>
+                            ${d.plant_susceptible ? '<span style="margin-left:8px;padding:2px 6px;border-radius:4px;background:rgba(239,68,68,0.15);color:var(--error);font-size:10px;font-weight:600;">Host Susceptible</span>' : ''}
+                        </div>
+                        <span style="font-size:12px;padding:2px 8px;border-radius:4px;background:${d.confidence >= 70 ? 'rgba(239,68,68,0.15)' : d.confidence >= 40 ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.15)'};color:${d.confidence >= 70 ? 'var(--error)' : d.confidence >= 40 ? 'var(--warning)' : 'var(--accent)'};font-weight:600;">
+                            ${d.confidence}% confidence
+                        </span>
+                    </div>
+                    <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">
+                        Triggered by: ${data.symptoms.map(s => s.replace('_', ' ')).join(', ')}
+                    </div>
+                    <div style="font-size:13px;line-height:1.5;">${d.advice}</div>
+                    ${d.plant_susceptible ? '<div style="margin-top:8px;padding:8px;background:rgba(239,68,68,0.1);border-radius:6px;font-size:12px;color:var(--error);"><strong>⚠️ Note:</strong> This plant is known to be susceptible to this condition in your environment.</div>' : ''}
+                </div>`).join('');
+        }
+
         function renderCategoryFilter() {
             const categories = [
                 { value: null, label: 'All', icon: '🌿' },
@@ -794,6 +1349,7 @@
                 { value: 'spice', label: 'Spice', icon: '🌶️' },
                 { value: 'pulse', label: 'Pulse', icon: '🫘' },
                 { value: 'decorative', label: 'Decorative', icon: '🌺' },
+                { value: 'container', label: 'Container', icon: '🪴' },
             ];
             const container = document.getElementById('categoryChips');
             container.innerHTML = categories.map(cat => {
@@ -982,6 +1538,7 @@
                         </div>` : ''}
                         <div style="font-size:10px;color:var(--muted);margin-top:6px;">${escapeHtml(rec.watering_schedule.disclaimer || '')}</div>
                     </div>` : ''}
+                    <div id="wateringForecast-${rec.plant_name.replace(/\s+/g, '-')}" style="margin-top:8px;"></div>
                     ${rec.pest_disease_alerts && rec.pest_disease_alerts.length ? `
                     <div style="margin-top:12px;padding:12px;background:rgba(239,68,68,0.05);border-radius:8px;border-left:3px solid var(--error);">
                         <div style="font-weight:600;font-size:13px;margin-bottom:8px;">🐛 Pest & Disease Alerts</div>
@@ -1046,8 +1603,13 @@
             // Load moon calendar
             loadMoonCalendar(report.report_id);
 
+            // Load care calendar
+            loadCareCalendar(report.report_id);
+
             resultsSection.classList.remove('hidden');
             pdfBtn.disabled = false;
+            csvBtn.disabled = false;
+            xlsxBtn.disabled = false;
             shareBtn.disabled = false;
             currentReportId = report.report_id;
             openReportBtn.href = `/report/${report.report_id}`;
@@ -1184,6 +1746,50 @@
             navigator.clipboard.writeText(shareUrl).then(() => showToast('Report link copied!')).catch(() => showToast('Copy failed'));
         });
 
+        csvBtn.addEventListener('click', () => {
+            if (!currentReportId) return;
+            csvBtn.disabled = true;
+            csvBtn.textContent = 'Exporting...';
+            fetch(`/api/v1/reports/${currentReportId}/export.csv`)
+                .then(r => {
+                    if (!r.ok) throw new Error('Export failed');
+                    return r.blob();
+                })
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `GreenScope-${currentReportId.substring(0,8)}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast('CSV exported!');
+                })
+                .catch(() => showToast('CSV export failed'))
+                .finally(() => { csvBtn.disabled = false; csvBtn.textContent = 'Export CSV'; });
+        });
+
+        xlsxBtn.addEventListener('click', () => {
+            if (!currentReportId) return;
+            xlsxBtn.disabled = true;
+            xlsxBtn.textContent = 'Exporting...';
+            fetch(`/api/v1/reports/${currentReportId}/export.xlsx`)
+                .then(r => {
+                    if (!r.ok) throw new Error('Export failed');
+                    return r.blob();
+                })
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `GreenScope-${currentReportId.substring(0,8)}.xlsx`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast('Excel exported!');
+                })
+                .catch(() => showToast('Excel export failed (install openpyxl for Excel support)'))
+                .finally(() => { xlsxBtn.disabled = false; xlsxBtn.textContent = 'Export Excel'; });
+        });
+
         document.getElementById('location-select').focus();
 
         // Chat Assistant
@@ -1291,6 +1897,387 @@
                     </div>
                 </div>`;
             }).join('');
+        }
+
+        // Care Calendar Functions
+        async function loadCareCalendar(reportId) {
+            try {
+                const response = await fetch(`/api/v1/reports/${reportId}/care-calendar`);
+                const data = await response.json();
+                displayCareCalendar(data);
+            } catch (err) {
+                console.error('Failed to load care calendar:', err);
+            }
+        }
+
+        function displayCareCalendar(data) {
+            const card = document.getElementById('careCalendarCard');
+            const container = document.getElementById('careCalendarTasks');
+            
+            if (!data.tasks || data.tasks.length === 0) {
+                card.classList.add('hidden');
+                return;
+            }
+            
+            card.classList.remove('hidden');
+            
+            // Group tasks by plant for better organization
+            const tasksByPlant = {};
+            for (const task of data.tasks) {
+                if (!tasksByPlant[task.plant_name]) {
+                    tasksByPlant[task.plant_name] = [];
+                }
+                tasksByPlant[task.plant_name].push(task);
+            }
+            
+            container.innerHTML = Object.entries(tasksByPlant).map(([plantName, tasks]) => {
+                const taskIcons = {
+                    watering: '💧',
+                    fertilizing: '🌱',
+                    pruning: '✂️',
+                    harvesting: '🌾'
+                };
+                const priorityColors = {
+                    high: 'var(--error)',
+                    medium: 'var(--warning)',
+                    low: 'var(--muted)'
+                };
+                
+                return `
+                <div style="padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <strong>${plantLink(plantName)}</strong>
+                        <span style="font-size:11px;color:var(--muted);">Planting: ${tasks[0].planting_date ? new Date(tasks[0].planting_date).toLocaleDateString() : 'N/A'}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        ${tasks.map(task => {
+                            const daysUntil = Math.ceil((new Date(task.next_due_date) - new Date()) / (1000 * 60 * 60 * 24));
+                            const urgency = daysUntil <= 1 ? 'style="font-weight:600;color:var(--error);"' : '';
+                            const freqText = task.frequency_days > 0 ? `Every ${task.frequency_days} days` : 'One-time';
+                            return `
+                            <div style="padding:10px;background:var(--card);border-radius:6px;border:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span style="font-size:16px;">${taskIcons[task.task_type] || '📋'}</span>
+                                <div style="flex:1;min-width:150px;">
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        <strong>${task.task_type.charAt(0).toUpperCase() + task.task_type.slice(1)}</strong>
+                                        <span style="font-size:10px;padding:1px 6px;border-radius:4px;background:${priorityColors[task.priority] || 'var(--muted)'};color:white;font-weight:600;">${task.priority.toUpperCase()}</span>
+                                    </div>
+                                    <div style="font-size:12px;color:var(--muted);">${task.description}</div>
+                                </div>
+                                <div ${urgency} style="font-size:12px;color:var(--muted);">
+                                    Due: ${new Date(task.next_due_date).toLocaleDateString()} 
+                                    ${daysUntil >= 0 ? `(${daysUntil} day${daysUntil !== 1 ? 's' : ''})` : '(Overdue)'}
+                                </div>
+                                <div style="font-size:11px;color:var(--muted);">${freqText}</div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Soil Health Tracker Functions
+        async function loadSoilHealth(reportId) {
+            // Load logs
+            try {
+                const response = await fetch(`/api/v1/reports/${reportId}/soil-health`);
+                const logs = await response.json();
+                displaySoilHealthLogs(logs);
+            } catch (err) {
+                console.error('Failed to load soil health logs:', err);
+            }
+
+            // Load trends for charts
+            try {
+                const response = await fetch(`/api/v1/reports/${reportId}/soil-health/trends`);
+                const trends = await response.json();
+                displaySoilHealthCharts(trends);
+            } catch (err) {
+                console.error('Failed to load soil health trends:', err);
+            }
+
+            // Render form
+            renderSoilHealthForm();
+        }
+
+        function renderSoilHealthForm() {
+            const formEl = document.getElementById('soilHealthForm');
+            if (!formEl) return;
+            formEl.innerHTML = `
+                <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">📝 Log Soil Test</h3>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Plant</label>
+                        <select id="soilPlantSelect" class="input-field"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Source</label>
+                        <select id="soilSourceSelect" class="input-field">
+                            <option value="meter">📏 Meter Reading</option>
+                            <option value="lab">🧪 Lab Test</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">pH</label>
+                        <input type="number" id="soilPhInput" class="input-field" step="0.1" min="0" max="14" placeholder="6.5">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Organic Matter %</label>
+                        <input type="number" id="soilOmInput" class="input-field" step="0.1" min="0" max="100" placeholder="2.5">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Source</label>
+                        <select id="soilSourceInput" class="input-field">
+                            <option value="meter">📏 Meter</option>
+                            <option value="lab">🧪 Lab</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nitrogen (ppm)</label>
+                        <input type="number" id="soilNInput" class="input-field" step="1" min="0" placeholder="50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Phosphorus (ppm)</label>
+                        <input type="number" id="soilPInput" class="input-field" step="1" min="0" placeholder="30">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Potassium (ppm)</label>
+                        <input type="number" id="soilKInput" class="input-field" step="1" min="0" placeholder="40">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-medium mb-1">Notes (optional)</label>
+                    <textarea id="soilNotesInput" class="input-field" rows="2" placeholder="Any observations..."></textarea>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="submitSoilHealth()" class="btn-primary flex-1">Log Soil Test</button>
+                    <button onclick="clearSoilForm()" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer;">Clear</button>
+                </div>
+                <div id="soilAmendmentAdvice" class="mt-3 hidden" style="padding:12px;background:rgba(245,158,11,0.1);border-radius:8px;border-left:3px solid var(--warning);font-size:12px;"></div>
+            `;
+            // Populate plant select
+            const select = document.getElementById('soilPlantSelect');
+            if (select && _lastReport) {
+                select.innerHTML = _lastReport.recommendations.map(r => 
+                    `<option value="${escapeHtml(r.plant_name)}">${escapeHtml(r.plant_name)}</option>`
+                ).join('');
+            }
+            // Add change listener for pH to show amendments
+            const phInput = document.getElementById('soilPhInput');
+            if (phInput) {
+                phInput.addEventListener('input', debounce(showSoilAmendments, 300));
+            }
+        }
+
+        function debounce(fn, delay) {
+            let timeoutId;
+            return (...args) => {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        function showSoilAmendments() {
+            const ph = parseFloat(document.getElementById('soilPhInput')?.value);
+            const plantName = document.getElementById('soilPlantSelect')?.value;
+            const adviceEl = document.getElementById('soilAmendmentAdvice');
+            if (!ph || !plantName || isNaN(ph) || !adviceEl) {
+                adviceEl.classList.add('hidden');
+                return;
+            }
+            // Use the existing get_soil_amendments logic from backend
+            // For now, show a simple client-side suggestion
+            const plantMap = {};
+            if (_lastReport) {
+                for (const rec of _lastReport.recommendations) {
+                    plantMap[rec.plant_name] = rec;
+                }
+            }
+            const rec = plantMap[plantName];
+            if (!rec) {
+                adviceEl.classList.add('hidden');
+                return;
+            }
+            // We'll fetch amendments from backend
+            fetch(`/api/v1/soil-health/amendments?plant_name=${encodeURIComponent(plantName)}&ph=${ph}`)
+                .then(r => r.json())
+                .then(amendments => {
+                    if (amendments && amendments.length > 0) {
+                        adviceEl.innerHTML = '<strong>💡 Suggested Amendments:</strong><br>' + 
+                            amendments.map(a => `• ${a.issue}: ${a.amendment} (Organic: ${a.organic_option})`).join('<br>');
+                        adviceEl.classList.remove('hidden');
+                    } else {
+                        adviceEl.classList.add('hidden');
+                    }
+                })
+                .catch(() => adviceEl.classList.add('hidden'));
+        }
+
+        async function submitSoilHealth() {
+            const plantName = document.getElementById('soilPlantSelect')?.value;
+            const ph = parseFloat(document.getElementById('soilPhInput')?.value);
+            const om = parseFloat(document.getElementById('soilOmInput')?.value);
+            const n = parseFloat(document.getElementById('soilNInput')?.value);
+            const p = parseFloat(document.getElementById('soilPInput')?.value);
+            const k = parseFloat(document.getElementById('soilKInput')?.value);
+            const source = document.getElementById('soilSourceInput')?.value;
+            const notes = document.getElementById('soilNotesInput')?.value;
+
+            if (!plantName || isNaN(ph)) {
+                showToast('Please select a plant and enter pH');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/v1/soil-health', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        report_id: currentReportId,
+                        plant_name: plantName,
+                        ph,
+                        organic_matter_pct: isNaN(om) ? null : om,
+                        nitrogen_ppm: isNaN(n) ? null : n,
+                        phosphorus_ppm: isNaN(p) ? null : p,
+                        potassium_ppm: isNaN(p) ? null : k,  // Note: using p variable for k
+                        source,
+                        notes: notes || null
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to log soil test');
+                showToast('Soil test logged!');
+                clearSoilForm();
+                loadSoilHealth(currentReportId);
+            } catch (err) {
+                showToast('Error: ' + err.message);
+            }
+        }
+
+        function clearSoilForm() {
+            const inputs = ['soilPhInput', 'soilOmInput', 'soilNInput', 'soilPInput', 'soilKInput', 'soilNotesInput'];
+            inputs.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            document.getElementById('soilAmendmentAdvice')?.classList.add('hidden');
+        }
+
+        async function loadSoilHealth(reportId) {
+            if (!reportId) return;
+            await Promise.all([
+                fetch(`/api/v1/reports/${reportId}/soil-health`).then(r => r.json()).then(displaySoilHealthLogs).catch(console.error),
+                fetch(`/api/v1/reports/${reportId}/soil-health/trends`).then(r => r.json()).then(displaySoilHealthCharts).catch(console.error)
+            ];
+            renderSoilHealthForm();
+        }
+
+        function displaySoilHealthLogs(logs) {
+            const container = document.getElementById('soilHealthLogs');
+            if (!container) return;
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;">No soil tests logged yet. Add your first test above!</p>';
+                return;
+            }
+
+            // Group by plant
+            const byPlant = {};
+            for (const log of logs) {
+                if (!byPlant[log.plant_name]) byPlant[log.plant_name] = [];
+                byPlant[log.plant_name].push(log);
+            }
+
+            container.innerHTML = Object.entries(byPlant).map(([plant, logs]) => `
+                <div style="margin-bottom:16px;">
+                    <h4 style="font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+                        <span>🌱</span> ${plantLink(plant)}
+                        <span style="font-size:11px;color:var(--muted);">(${logs.length} test${logs.length > 1 ? 's' : ''})</span>
+                    </h4>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        ${logs.map(log => `
+                            <div style="padding:10px;background:var(--card);border-radius:6px;border:1px solid var(--border);">
+                                <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px;">
+                                    <span><strong>pH:</strong> ${log.ph}</span>
+                                    ${log.organic_matter_pct !== null ? `<span><strong>OM%:</strong> ${log.organic_matter_pct}%</span>` : ''}
+                                    ${log.nitrogen_ppm !== null ? `<span><strong>N:</strong> ${log.nitrogen_ppm} ppm</span>` : ''}
+                                    ${log.phosphorus_ppm !== null ? `<span><strong>P:</strong> ${log.phosphorus_ppm} ppm</span>` : ''}
+                                    ${log.potassium_ppm !== null ? `<span><strong>K:</strong> ${log.potassium_ppm} ppm</span>` : ''}
+                                    <span style="color:var(--muted);">${log.source === 'lab' ? '🧪 Lab' : '📏 Meter'}</span>
+                                    <span style="color:var(--muted);font-size:11px;">${new Date(log.log_date * 1000).toLocaleDateString()}</span>
+                                    ${log.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:4px;">${escapeHtml(log.notes)}</div>` : ''}
+                                </div>
+                            </div>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displaySoilHealthCharts(trends) {
+            const container = document.getElementById('soilHealthCharts');
+            if (!container) return;
+
+            if (!trends || trends.length === 0) {
+                container.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;">Add soil tests to see trends over time</p>';
+                return;
+            }
+
+            // Simple chart using Chart.js if available, otherwise table
+            const hasChartJS = typeof Chart !== 'undefined';
+            
+            container.innerHTML = trends.map(trend => `
+                <div style="margin-bottom:24px;">
+                    <h4 style="font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                        <span>📊</span> ${trend.plant_name} - Soil Health Trends
+                    </h4>
+                    ${hasChartJS ? `
+                        <div style="height:200px;">
+                            <canvas id="chart-${trend.plant_name.replace(/\s+/g, '-')}"></canvas>
+                        </div>
+                        <script>
+                            (function() {
+                                const ctx = document.getElementById('chart-${trend.plant_name.replace(/\s+/g, '-')}').getContext('2d');
+                                const datasets = [];
+                                if (${JSON.stringify(trend.ph_trend)}.length) datasets.push({label:'pH',data:${JSON.stringify(trend.ph_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#8b5cf6',fill:false});
+                                if (${JSON.stringify(trend.om_trend)}.length) datasets.push({label:'OM%',data:${JSON.stringify(trend.om_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#10b981',fill:false});
+                                if (${JSON.stringify(trend.n_trend)}.length) datasets.push({label:'N (ppm)',data:${JSON.stringify(trend.n_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#f59e0b',fill:false});
+                                if (${JSON.stringify(trend.p_trend)}.length) datasets.push({label:'P (ppm)',data:${JSON.stringify(trend.p_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#ef4444',fill:false});
+                                if (${JSON.stringify(trend.k_trend)}.length) datasets.push({label:'K (ppm)',data:${JSON.stringify(trend.k_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#3b82f6',fill:false});
+                                new Chart(ctx, {
+                                    type:'line',
+                                    data:{datasets},
+                                    options:{
+                                        responsive:true,
+                                        maintainAspectRatio:false,
+                                        scales:{x:{type:'time',time:{unit:'day'}},y:{beginAtZero:false}}
+                                    }
+                                });
+                            })();
+                        </script>
+                    ` : `
+                        <div style="overflow-x:auto;">
+                            <table class="comp-table" style="font-size:11px;">
+                                <thead><tr><th>Date</th><th>pH</th><th>OM%</th><th>N (ppm)</th><th>P (ppm)</th><th>K (ppm)</th></tr></thead>
+                                <tbody>
+                                    ${(() => {
+                                        // Merge all dates
+                                        const dates = new Set();
+                                        [${JSON.stringify(trend.ph_trend)},${JSON.stringify(trend.om_trend)},${JSON.stringify(trend.n_trend)},${JSON.stringify(trend.p_trend)},${JSON.stringify(trend.k_trend)}].flat().forEach(d => dates.add(d.date));
+                                        return Array.from(dates).sort().map(date => {
+                                            const ph = ${JSON.stringify(trend.ph_trend)}.find(d => d.date === date)?.value ?? '—';
+                                            const om = ${JSON.stringify(trend.om_trend)}.find(d => d.date === date)?.value ?? '—';
+                                            const n = ${JSON.stringify(trend.n_trend)}.find(d => d.date === date)?.value ?? '—';
+                                            const p = ${JSON.stringify(trend.p_trend)}.find(d => d.date === date)?.value ?? '—';
+                                            const k = ${JSON.stringify(trend.k_trend)}.find(d => d.date === date)?.value ?? '—';
+                                            return \`<tr><td>\${date}</td><td>\${ph}</td><td>\${om}</td><td>\${n}</td><td>\${p}</td><td>\${k}</td></tr>\`;
+                                        }).join('');
+                                    })()}
+                                </tbody>
+                            </table>
+                        </div>
+                    `}
+                </div>
+            `).join('');
         }
 
         // Purchase Modal
@@ -1530,7 +2517,54 @@
             for (const rec of recommendations) {
                 loadPlantPurchases(rec.plant_name);
                 loadPlantSales(rec.plant_name);
+                loadWateringForecast(rec.plant_name);
             }
+        }
+
+        // Watering Forecast Functions
+        async function loadWateringForecast(plantName) {
+            if (!currentReportId) return;
+            try {
+                const response = await fetch(`/api/v1/reports/${currentReportId}/watering-forecast`);
+                const data = await response.json();
+                displayWateringForecast(plantName, data);
+            } catch (err) {
+                console.error('Failed to load watering forecast for ' + plantName, err);
+            }
+        }
+
+        function displayWateringForecast(plantName, data) {
+            const container = document.getElementById(`wateringForecast-${plantName.replace(/\s+/g, '-')}`);
+            if (!container) return;
+
+            if (!data.forecast_days || data.forecast_days.length === 0) {
+                return;
+            }
+
+            const hasAlerts = data.forecast_days.some(d => d.skip_watering);
+            if (!hasAlerts) {
+                return;
+            }
+
+            container.innerHTML = data.forecast_days
+                .filter(d => d.skip_watering)
+                .map(d => {
+                    const icon = d.skip_reason && d.skip_reason.includes('Rain') ? '☔' : '❄️';
+                    const color = d.skip_reason && d.skip_reason.includes('Rain') ? 'rgba(59,130,246,0.15)' : 'rgba(236,72,153,0.15)';
+                    const borderColor = d.skip_reason && d.skip_reason.includes('Rain') ? 'var(--accent)' : 'var(--error)';
+                    return `
+                    <div style="padding:10px;background:${color};border-radius:8px;border-left:3px solid ${borderColor};display:flex;align-items:center;gap:10px;">
+                        <span style="font-size:18px;">${icon}</span>
+                        <div style="flex:1;">
+                            <div style="font-weight:600;font-size:13px;color:${icon === '☔' ? 'var(--accent)' : 'var(--error)'};">
+                                ${icon} ${d.skip_reason} — Skip watering on ${d.day_name} (${d.date})
+                            </div>
+                            <div style="font-size:12px;color:var(--muted);">
+                                Rain: ${d.precipitation_mm} mm · Min temp: ${d.min_temp_c}°C
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
         }
 
         // Topic navigation smooth scroll
@@ -1631,6 +2665,20 @@
                     </div>
                 </div>`;
         }
+    </script>
+    <script>
+      // Service Worker Registration for PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registered:', registration.scope);
+            })
+            .catch(error => {
+              console.log('SW registration failed:', error);
+            });
+        });
+      }
     </script>
 </body>
 </html>

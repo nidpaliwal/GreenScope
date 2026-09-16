@@ -48,7 +48,7 @@ Categories | Garden Risk | Comparison Table | Why Not?
 - **Environment Card**: Shows avg temp, rainfall, sunlight, pH, soil type, frost risk
 - **Garden Risk Assessment**: Sunlight, water, temperature, soil health with warnings
 - **Best For You Categories**: Best Overall, Low-Water, Fastest Harvest, Flower, Herb
-- **Comparison Table**: Side-by-side plant comparison
+- **Comparison Table**: Side-by-side plant comparison (now with Water Score & Companion Notes columns)
 - **Why Not?**: Explains why rejected plants scored lower
 - **Interactive Map**: Leaflet map showing geocoded location
 - **Dark Mode**: Toggle for dark/light theme
@@ -60,6 +60,15 @@ Categories | Garden Risk | Comparison Table | Why Not?
 - **Watering Schedule Calculator**: Personalized watering frequency, per-session amounts, weekly schedule, seasonal notes
 - **Pest & Disease Alerts**: Category-specific alerts triggered by environmental conditions with risk level and actionable advice
 - **Deterministic Chat Assistant**: Floating chat widget using local plant database (no LLM, no API keys, works offline) — answers questions about plant care, categories, field sizes, watering, pests, seasons
+- **Purchase Tracking**: Record seeds, saplings, fertilizer, tools costs per plant recommendation
+- **Sales Tracking**: Record harvest revenue (produce, herbs) per plant
+- **Ledger / Profit & Loss Dashboard**: Total spent vs. earned per plant and overall with net profit
+- **Moon Phase & Biodynamic Calendar**: Current moon phase, biodynamic planting category (root/leaf/fruit/flower), Panchang tithi/paksha/lunar month, 30-day auspicious planting dates
+- **Header Topic Navigation**: Quick links to all report sections (Analyze, Environment, Risk, Best For You, Garden Bed, Recommendations, Comparison, Ledger, Calendar)
+- **Water Conservation Score**: 0-100 score per plant (water need vs. local rainfall); estimates liters/season saved vs. Bottle Gourd baseline; shown in plant cards and comparison table
+- **Companion Planting Suggestions**: ~50 static rules; shows "grows well with" / "avoid near" per plant based on report's other recommendations
+- **Regenerative Economics Dashboard**: `is_organic` flag on purchases; splits organic vs. conventional spend; estimates organic matter added (kg) and CO₂ offset (kg) from organic inputs (compost, vermicompost, neem cake, etc.)
+- **Pollinator-Friendly Tagging**: 9 plants flagged; 🐝 badge on cards; API filter `pollinator_friendly=true`
 
 ## Demo Script (lead with differentiators, in this order)
 
@@ -95,6 +104,12 @@ Categories | Garden Risk | Comparison Table | Why Not?
 | `GET`  | `/api/v1/feedback/summary`    | Aggregated helpfulness per plant |
 | `POST` | `/api/v1/chat`                | Deterministic chat assistant (local plant DB) |
 | `GET`  | `/api/v1/health`              | Health check             |
+| `POST` | `/api/v1/purchases`           | Record a purchase (seeds, saplings, fertilizer, tools) |
+| `GET`  | `/api/v1/purchases/{report_id}` | List purchases for a report (optional plant filter) |
+| `POST` | `/api/v1/sales`               | Record a sale/harvest    |
+| `GET`  | `/api/v1/sales/{report_id}`   | List sales for a report (optional plant filter) |
+| `GET`  | `/api/v1/ledger/{report_id}`  | Profit/loss summary + regenerative economics (organic spend, organic matter kg, CO₂ offset kg) |
+| `GET`  | `/api/v1/moon-calendar`       | Moon phase, biodynamic advice, Panchang, auspicious dates |
 
 ### Generate Report Request Body
 
@@ -103,7 +118,8 @@ Categories | Garden Risk | Comparison Table | Why Not?
   "location": {"location": "Delhi, NCR"},
   "photo": {"image_id": "img1", "filename": "garden.jpg", "base64": "..."},
   "num_recommendations": 15,
-  "category": "herb"
+  "category": "herb",
+  "pollinator_friendly": true
 }
 ```
 
@@ -113,6 +129,9 @@ Categories | Garden Risk | Comparison Table | Why Not?
 | photo | object | No | Garden photo with `image_id`, `filename`, `base64` |
 | num_recommendations | integer | No (default 15) | Number of recommendations (1-20) |
 | category | string | No | Filter by plant category: `herb`, `fruit`, `vegetable`, `spice`, `pulse`, `flower` |
+| pollinator_friendly | boolean | No | Filter for pollinator-friendly plants only |
+
+**Category aliases:** `decorative` → `flower` (case-insensitive, whitespace trimmed). Invalid category returns 422.
 
 **Category aliases:** `decorative` → `flower` (case-insensitive, whitespace trimmed). Invalid category returns 422.
 
@@ -250,25 +269,35 @@ flowchart LR
 
 - **Watering Schedule Calculator** — Personalized watering frequency, amounts per session, weekly schedule, and seasonal notes based on plant water needs, rainfall, temperature, humidity, soil type, and frost risk
 - **Pest & Disease Alerts** — Category-specific alerts triggered by environmental conditions (temperature, humidity, rainfall) with risk level and actionable advice
-
-### Recently Added
-
 - **Deterministic Chat Assistant** — Floating chat widget using local plant database (no LLM, no API keys, works offline). Answers questions about plant care, categories (flowers, fruits, vegetables, herbs, spices, pulses, decorative), field sizes (large farm, balcony/container), watering, pests, and seasons.
+- **Purchase & Sales Tracking + Ledger** — Record seed/fertilizer/tool costs and harvest revenue per plant; profit/loss dashboard with net profit per plant and overall
+- **Moon Phase & Biodynamic Calendar** — Current moon phase, biodynamic category (root/leaf/fruit/flower), Panchang (tithi/paksha/lunar month), 30-day auspicious planting dates
+- **Header Topic Navigation** — Quick links to all report sections
+- **Water Conservation Score** — 0-100 score comparing plant water needs vs. local rainfall; estimates liters/season saved vs. high-water baseline (Bottle Gourd); shown per plant and in comparison table
+- **Companion Planting Suggestions** — Static rule table (~50 pairs) for good/avoid companions; `companion_suggestions()` function checks against report's recommendations; displayed per plant card and in comparison table
+- **Regenerative Economics Dashboard** — `is_organic` flag on purchases splits spend (organic vs. conventional); converts organic inputs (compost, vermicompost, neem cake, etc.) to estimated organic matter added (kg) and CO₂ offset (kg); shown in Ledger with net profit
+- **Pollinator-Friendly Tagging** — `pollinator_friendly` boolean on 9 plants (Marigold, Sunflower, Hibiscus, Jasmine, Rose, Lavender, Mustard, Coriander, Tulsi, Lemongrass, Lotus); badge on recommendations; `pollinator_friendly=true` filter in API request
 
 ### Deferred by Design
 
 - **AI chatbot / RAG Q&A (black-box LLM)** — Intentionally not built. Our core differentiator is deterministic, explainable scoring; a black-box chat layer would work against that pitch. The deterministic assistant above provides Q&A without sacrificing explainability.
 
-### Deferred for Time (Hackathon Scope)
+### In Progress (High Value, Near-Term)
+
+- CSV/Excel export of recommendations
+- Container/balcony gardening mode (UI filter + pot-size/depth in plant_db.json)
+- Soil amendment suggestions (pH/soil mismatch → actionable tips)
+- Harvest timeline / Gantt view (sowing→harvest visual per plant)
+- Companion planting matrix (visual grid of 50 plants help/hurt)
+- Yield/cost estimator tied to ledger (ROI per garden bed)
+- Redis/in-memory TTL caching for Nominatim/Open-Meteo
+
+### Deferred for Time (Larger Scope)
 
 - PostgreSQL migration (replace ephemeral SQLite on free-tier hosting)
-- CSV/Excel export of recommendations
-- Harvest timeline visualization (Gantt-style sowing → harvest)
-- Container/balcony gardening mode
-- Multi-language expansion (Tamil, Bengali, Marathi, Gujarati)
-- Soil amendment suggestions
-- Redis caching for geocode/climate API responses
 - PWA support for offline access to saved reports
+- Multi-language expansion (Tamil, Bengali, Marathi, Gujarati)
+- Plant health tracker over time (photos/notes/trends per plant)
 
 ---
 

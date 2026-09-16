@@ -175,7 +175,16 @@
                             <div style="margin-top:10px;">${bars}</div>
                             <div style="margin-top:10px;font-size:12px;color:var(--muted);">
                                 💧 ${escapeHtml(rec.water_requirement || '?')} water &nbsp; ☀️ ${escapeHtml(rec.sun_requirement || '?')} sun &nbsp; 🌱 ${escapeHtml(rec.growth_duration || '?')} &nbsp; 📅 ${escapeHtml(rec.planting_season || '?')}
+                                ${rec.pollinator_friendly ? ' &nbsp; 🐝 <span style="color:var(--accent);font-weight:500;">Pollinator-friendly</span>' : ''}
                             </div>
+                            ${rec.companion_suggestions ? `<div style="margin-top:8px;padding:8px;background:var(--bg);border-radius:6px;font-size:12px;">
+                                ${rec.companion_suggestions.grows_well_with && rec.companion_suggestions.grows_well_with.length ? `<span style="color:var(--accent);">✓ Grows well with:</span> ${escapeHtml(rec.companion_suggestions.grows_well_with.join(', '))}` : ''}
+                                ${rec.companion_suggestions.avoid_near && rec.companion_suggestions.avoid_near.length ? `<span style="color:var(--error);margin-left:12px;">✗ Avoid near:</span> ${escapeHtml(rec.companion_suggestions.avoid_near.join(', '))}` : ''}
+                            </div>` : ''}
+                            ${rec.water_conservation_score !== undefined ? `<div style="margin-top:8px;padding:8px;background:var(--bg);border-radius:6px;font-size:12px;">
+                                <span style="font-weight:500;">Water Conservation Score: ${rec.water_conservation_score.toFixed(0)}/100</span>
+                                ${rec.liters_saved_vs_baseline !== undefined ? `<span style="margin-left:12px;">💧 Saves ~${rec.liters_saved_vs_baseline.toFixed(0)}L/season (${rec.pct_water_saved || 0}% vs Bottle Gourd)</span>` : ''}
+                            </div>` : ''}
                             <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);">
                                 ${escapeHtml(rec.care_guide)}
                             </div>
@@ -189,13 +198,15 @@
                     <h2 class="text-lg font-bold mb-3">Comparison Table</h2>
                     <div style="overflow-x:auto;">
                         <table class="comp-table">
-                            <thead><tr><th>Plant</th><th>Suitability</th><th>Water</th><th>Sun</th><th>Growth</th></tr></thead>
+                            <thead><tr><th>Plant</th><th>Suitability</th><th>Water</th><th>Water Score</th><th>Sun</th><th>Growth</th><th>Companion Notes</th></tr></thead>
                             <tbody>${report.comparison_table.map((r, i) => `<tr style="${i === 0 ? 'font-weight:600;' : ''}">
                                 <td>${i + 1}. ${wikiLink(r.name, null)}</td>
                                 <td>${r.suitability.toFixed(0)}%</td>
                                 <td>${escapeHtml(r.water)}</td>
+                                <td>${r.water_score !== undefined ? r.water_score.toFixed(0) + '%' : '—'}</td>
                                 <td>${escapeHtml(r.sun)}</td>
-                                <td>${escapeHtml(r.growth)}</td></tr>`).join('')}</tbody>
+                                <td>${escapeHtml(r.growth)}</td>
+                                <td style="max-width:200px;white-space:normal;">${escapeHtml(r.companion_notes || '—')}</td></tr>`).join('')}</tbody>
                         </table>
                     </div>
                 </div>`;

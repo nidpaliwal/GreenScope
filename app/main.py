@@ -54,16 +54,62 @@ POLLINATOR_PLANTS = {
 }
 # Well-documented companion pairs (tomato+marigold etc.)
 COMPANIONS = {
-    "Tomato": (["Marigold", "Tulsi", "Garlic"], ["Potato"]),
-    "Marigold": (["Tomato", "Brinjal", "Chili"], []),
-    "Tulsi": (["Tomato", "Chili", "Brinjal"], []),
-    "Garlic": (["Tomato", "Carrot", "Rose"], ["Peas"]),
-    "Onion": (["Carrot", "Beetroot"], ["Peas"]),
-    "Carrot": (["Onion", "Garlic", "Tomato"], []),
-    "Mint": (["Brinjal", "Cabbage"], []),
-    "Coriander": (["Spinach", "Onion"], []),
-    "Mustard": (["Peas", "Black Gram"], []),
-    "Lemongrass": (["Tomato", "Brinjal"], []),
+    "Tomato": (["Marigold", "Tulsi", "Garlic", "Basil", "Onion", "Carrot"], ["Potato", "Fennel", "Cabbage", "Corn"]),
+    "Marigold": (["Tomato", "Brinjal", "Chili", "Potato", "Rose", "Cucumber"], []),
+    "Tulsi": (["Tomato", "Chili", "Brinjal", "Peppers"], ["Rue"]),
+    "Garlic": (["Tomato", "Carrot", "Rose", "Spinach", "Beetroot"], ["Peas", "Beans", "Parsley"]),
+    "Onion": (["Carrot", "Beetroot", "Tomato", "Pepper", "Strawberry"], ["Peas", "Beans", "Sage"]),
+    "Carrot": (["Onion", "Garlic", "Tomato", "Lettuce", "Radish", "Peas"], ["Dill", "Parsnip"]),
+    "Mint": (["Brinjal", "Cabbage", "Tomato", "Peas"], ["Parsley"]),
+    "Coriander": (["Spinach", "Onion", "Tomato", "Potato"], ["Fennel"]),
+    "Mustard": (["Peas", "Black Gram", "Wheat"], ["Sunflower"]),
+    "Lemongrass": (["Tomato", "Brinjal", "Pepper"], []),
+    "Brinjal": (["Marigold", "Tulsi", "Beans", "Spinach", "Thyme"], ["Fennel"]),
+    "Chili": (["Tomato", "Basil", "Onion", "Carrot", "Marigold"], ["Fennel", "Kohlrabi"]),
+    "Spinach": (["Strawberry", "Peas", "Radish", "Coriander", "Garlic"], ["Potato"]),
+    "Peas": (["Carrot", "Radish", "Turnip", "Cucumber", "Corn", "Beans"], ["Onion", "Garlic", "Gladiolus"]),
+    "Cabbage": (["Dill", "Mint", "Rosemary", "Sage", "Thyme", "Onion"], ["Strawberry", "Tomato", "Pole Beans"]),
+    "Cauliflower": (["Dill", "Mint", "Rosemary", "Sage", "Thyme"], ["Strawberry", "Tomato"]),
+    "Radish": (["Peas", "Lettuce", "Cucumber", "Spinach", "Carrot"], ["Hyssop"]),
+    "Bottle Gourd": (["Corn", "Beans", "Nasturtium", "Radish"], ["Potato"]),
+    "Ridge Gourd": (["Corn", "Beans", "Sunflower"], ["Potato"]),
+    "Bitter Gourd": (["Corn", "Beans", "Marigold"], ["Potato", "Herbs"]),
+    "Okra": (["Peppers", "Eggplant", "Basil", "Melon"], []),
+    "Moringa": (["Sweet Potato", "Pumpkin", "Beans"], []),
+    "Turmeric": (["Ginger", "Chili", "Coriander"], []),
+    "Ginger": (["Turmeric", "Chili", "Cilantro"], []),
+    "Coriander": (["Spinach", "Tomato", "Potato", "Anise"], ["Fennel", "Caraway"]),
+    "Fenugreek": (["Corn", "Cucumber", "Potato"], []),
+    "Cowpea": (["Corn", "Cucumber", "Strawberry"], ["Onion", "Garlic"]),
+    "Black Gram": (["Corn", "Cucumber"], ["Onion", "Garlic"]),
+    "Pigeon Pea": (["Millet", "Sorghum"], ["Onion", "Garlic"]),
+    "Moong": (["Corn", "Cucumber", "Potato"], ["Onion", "Garlic"]),
+    "Sunflower": (["Corn", "Cucumber", "Melon", "Squash"], ["Potato", "Pole Beans"]),
+    "Jasmine": (["Rose", "Lavender", "Citrus"], []),
+    "Hibiscus": (["Rose", "Marigold", "Citrus"], []),
+    "Rose": (["Garlic", "Onion", "Chives", "Marigold", "Lavender"], []),
+    "Lotus": (["Water Lily", "Papyrus"], []),
+    "Mint": (["Cabbage", "Tomato", "Peas", "Kale"], ["Parsley", "Chamomile"]),
+    "Lemongrass": (["Tomato", "Pepper", "Brinjal", "Citrus"], []),
+    "Aloe Vera": (["Strawberry", "Onion", "Garlic"], []),
+    "Curry Leaf": (["Tomato", "Chili", "Brinjal"], []),
+    "Ashwagandha": (["Tomato", "Pepper", "Spinach"], []),
+    "Brahmi": (["Mint", "Coriander", "Lettuce"], []),
+    "Giloy": (["Neem", "Tulsi", "Moringa"], []),
+    "Neem": (["Turmeric", "Ginger", "Tulsi"], []),
+    "Amla": (["Lemon", "Guava", "Mango"], []),
+    "Banana": (["Papaya", "Sweet Potato", "Beans"], []),
+    "Papaya": (["Banana", "Pineapple", "Beans"], []),
+    "Mango": (["Garlic", "Marigold", "Chives"], []),
+    "Guava": (["Marigold", "Mint", "Basil"], []),
+    "Lemon": (["Marigold", "Nasturtium", "Petunia"], []),
+    "Stevia": (["Mint", "Thyme", "Oregano"], []),
+    "Artichoke": (["Peas", "Sunflower", "Tarragon"], []),
+    "Sweet Potato": (["Beans", "Peas", "Spinach"], ["Squash"]),
+    "Yam": (["Beans", "Corn", "Peas"], []),
+    "Beetroot": (["Onion", "Garlic", "Cabbage", "Lettuce"], ["Pole Beans", "Mustard"]),
+    "Carrot": (["Onion", "Leek", "Sage", "Rosemary", "Tomato", "Lettuce"], ["Dill", "Parsnip"]),
+    "Radish": (["Carrot", "Lettuce", "Peas", "Nasturtium", "Cucumber"], ["Hyssop"]),
 }
 # Qualitative water need -> estimated liters/plant/week (approx, labeled as estimate)
 WATER_L_PER_WEEK = {"low": 3.0, "medium": 8.0, "high": 18.0}
@@ -74,8 +120,8 @@ CO2_KG_PER_YEAR = {
 }
 
 # Valid plant categories and aliases for filtering
-VALID_CATEGORIES = {"herb", "fruit", "vegetable", "spice", "pulse", "flower"}
-CATEGORY_ALIASES = {"decorative": "flower"}
+VALID_CATEGORIES = {"herb", "fruit", "vegetable", "spice", "pulse", "flower", "container"}
+CATEGORY_ALIASES = {"decorative": "flower", "container": "container"}
 
 # --- Watering Schedule Calculator ---
 # Base watering frequency (days between watering) by water requirement
@@ -238,6 +284,203 @@ def get_pest_disease_alerts(plant: dict, env: dict) -> list:
     return triggered_alerts
 
 
+# --- Companion Planting Suggestions ---
+
+def companion_suggestions(plant: dict, all_recommendations: list) -> dict:
+    """Get companion planting suggestions for a plant based on other recommendations in the report.
+    
+    Returns dict with 'grows_well_with' and 'avoid_near' lists of plant names from recommendations.
+    """
+    plant_name = plant.get("name", "")
+    grows_with, avoid = COMPANIONS.get(plant_name, ([], []))
+    
+    rec_names = {r.plant_name for r in all_recommendations}
+    
+    good_companions = [c for c in grows_with if c in rec_names]
+    bad_companions = [c for c in avoid if c in rec_names]
+    
+    # Also check category-based companions for plants not in COMPANIONS dict
+    plant_category = plant.get("category", "")
+    category_companions = {
+        "vegetable": {"good": ["herb", "flower"], "avoid": ["fruit"]},
+        "fruit": {"good": ["herb", "flower"], "avoid": []},
+        "herb": {"good": ["vegetable", "flower"], "avoid": []},
+        "flower": {"good": ["vegetable", "fruit", "herb"], "avoid": []},
+        "spice": {"good": ["herb", "vegetable"], "avoid": []},
+        "pulse": {"good": ["vegetable", "herb"], "avoid": ["allium"]},
+    }
+    
+    cat_rules = category_companions.get(plant_category, {"good": [], "avoid": []})
+    
+    # Add category-based suggestions for plants not explicitly listed
+    if not good_companions and cat_rules["good"]:
+        for r in all_recommendations:
+            r_plant = next((p for p in PLANTS if p["name"] == r.plant_name), None)
+            if r_plant and r_plant.get("category") in cat_rules["good"]:
+                good_companions.append(r.plant_name)
+    
+    if not bad_companions and cat_rules["avoid"]:
+        for r in all_recommendations:
+            r_plant = next((p for p in PLANTS if p["name"] == r.plant_name), None)
+            if r_plant and r_plant.get("category") in cat_rules["avoid"]:
+                bad_companions.append(r.plant_name)
+    
+    # Special case: avoid alliums near legumes
+    if plant_category == "pulse":
+        alliums = [r.plant_name for r in all_recommendations 
+                   if r.plant_name in ["Onion", "Garlic", "Chives", "Leek"]]
+        bad_companions.extend(alliums)
+    
+    # Remove duplicates and self
+    good_companions = list(dict.fromkeys([c for c in good_companions if c != plant_name]))
+    bad_companions = list(dict.fromkeys([c for c in bad_companions if c != plant_name]))
+    
+    return {
+        "grows_well_with": good_companions[:3],  # Limit to top 3
+        "avoid_near": bad_companions[:3],
+        "notes": []
+    }
+
+
+# --- Water Conservation Score ---
+
+def calculate_water_conservation_score(plant: dict, env: dict) -> dict:
+    """Calculate water conservation score (0-100) and estimated liters saved per season.
+    
+    Compares plant's water need against location's rainfall.
+    Low-water plants in low-rainfall areas score high.
+    """
+    water_req = plant.get("water", "medium")
+    rainfall_mm = env.get("rainfall_mm", 900)
+    growth_days = plant.get("growth_days", 60)
+    
+    # Water requirement tiers (liters/week per plant)
+    WATER_L_PER_WEEK = {"low": 3.0, "medium": 8.0, "high": 18.0}
+    weekly_water = WATER_L_PER_WEEK.get(water_req, 8.0)
+    
+    # Baseline high-water crop for comparison (Bottle Gourd)
+    baseline_weekly = WATER_L_PER_WEEK["high"]  # 18 L/week
+    
+    # Calculate conservation score (0-100)
+    # High score = plant uses less water than climate provides
+    if water_req == "low":
+        if rainfall_mm < 600:
+            score = 95  # Perfect match: low water need, dry climate
+        elif rainfall_mm < 1000:
+            score = 80
+        else:
+            score = 60  # Low water plant in wet climate - still good but not optimal
+    elif water_req == "medium":
+        if 600 <= rainfall_mm <= 1500:
+            score = 85
+        elif rainfall_mm < 600:
+            score = 55  # Needs irrigation in dry climate
+        else:
+            score = 70  # High rainfall - some waterlogging risk
+    else:  # high water
+        if rainfall_mm > 1500:
+            score = 80  # High rainfall matches high water need
+        elif rainfall_mm > 1000:
+            score = 50
+        else:
+            score = 20  # High water plant in dry climate - unsustainable
+    
+    # Estimated liters per season
+    weeks_in_season = max(1, growth_days / 7)
+    plant_liters_per_season = weekly_water * weeks_in_season
+    baseline_liters_per_season = baseline_weekly * weeks_in_season
+    liters_saved = max(0, baseline_liters_per_season - plant_liters_per_season)
+    pct_saved = round((liters_saved / baseline_liters_per_season) * 100, 1) if baseline_liters_per_season > 0 else 0
+    
+    return {
+        "water_conservation_score": round(score, 1),
+        "estimated_liters_per_season": round(plant_liters_per_season, 1),
+        "baseline_liters_per_season": round(baseline_liters_per_season, 1),
+        "liters_saved_vs_baseline": round(liters_saved, 1),
+        "pct_water_saved": pct_saved,
+        "disclaimer": "Water estimates are rough approximations based on plant category and growth duration. Actual usage varies by soil, weather, and management."
+    }
+
+
+def get_soil_amendments(plant: dict, env: dict) -> list:
+    """Get soil amendment suggestions based on pH mismatch and soil type incompatibility."""
+    amendments = []
+    env_ph = env.get("ph", 6.5)
+    env_soil = env.get("soil_type", "loam").lower()
+    plant_soil_prefs = [s.lower() for s in plant.get("soil", ["loam"])]
+    plant_min_ph = plant.get("min_ph", 6.0)
+    plant_max_ph = plant.get("max_ph", 7.5)
+    plant_name = plant.get("name", "this plant")
+
+    # pH adjustments
+    if env_ph < plant_min_ph:
+        diff = plant_min_ph - env_ph
+        if diff > 1.0:
+            amendments.append({
+                "issue": f"Soil pH {env_ph} is too acidic for {plant_name} (needs {plant_min_ph}-{plant_max_ph})",
+                "severity": "high" if diff > 1.5 else "moderate",
+                "amendment": "Add garden lime (calcium carbonate) at 200-400g per sq meter. Retest pH after 2-3 weeks.",
+                "organic_option": "Wood ash (100-200g/sq m) or crushed eggshells worked into top 15cm soil."
+            })
+        else:
+            amendments.append({
+                "issue": f"Soil pH {env_ph} is slightly acidic for {plant_name} (needs {plant_min_ph}-{plant_max_ph})",
+                "severity": "low",
+                "amendment": "Add dolomite lime at 100-200g per sq meter. Water in well.",
+                "organic_option": "Compost (2-3cm layer) helps buffer pH naturally over time."
+            })
+    elif env_ph > plant_max_ph:
+        diff = env_ph - plant_max_ph
+        if diff > 1.0:
+            amendments.append({
+                "issue": f"Soil pH {env_ph} is too alkaline for {plant_name} (needs {plant_min_ph}-{plant_max_ph})",
+                "severity": "high" if diff > 1.5 else "moderate",
+                "amendment": "Add elemental sulfur at 50-100g per sq meter. Takes 2-3 months to fully react.",
+                "organic_option": "Peat moss (5-10cm layer) or pine needle mulch. Coffee grounds as top dressing."
+            })
+        else:
+            amendments.append({
+                "issue": f"Soil pH {env_ph} is slightly alkaline for {plant_name} (needs {plant_min_ph}-{plant_max_ph})",
+                "severity": "low",
+                "amendment": "Add organic compost (3-5cm) and mulch with pine bark. Monitor pH monthly.",
+                "organic_option": "Diluted vinegar (1 cup per 10L water) for immediate but temporary correction."
+            })
+
+    # Soil type mismatches
+    soil_match = any(pref in env_soil or env_soil in pref for pref in plant_soil_prefs)
+    if not soil_match:
+        if "clay" in env_soil and "sandy" in str(plant_soil_prefs):
+            amendments.append({
+                "issue": f"Heavy clay soil ({env_soil}) may not suit {plant_name} (prefers {', '.join(plant.get('soil', ['loam']))})",
+                "severity": "moderate",
+                "amendment": "Add coarse sand (30-40% by volume) + compost (30%) to improve drainage. Raised beds recommended.",
+                "organic_option": "Gypsum (200-300g/sq m) breaks up clay. Add leaf mold for structure."
+            })
+        elif "sandy" in env_soil and "clay" in str(plant_soil_prefs):
+            amendments.append({
+                "issue": f"Sandy soil ({env_soil}) drains too fast for {plant_name} (prefers {', '.join(plant.get('soil', ['loam']))})",
+                "severity": "moderate",
+                "amendment": "Add clay-rich subsoil or bentonite (5-10% by volume) + compost (30%). Mulch heavily.",
+                "organic_option": "Coconut coir or vermiculite (20%) for water retention. Biochar (5-10%) helps."
+            })
+        elif "laterite" in env_soil or "red" in env_soil:
+            amendments.append({
+                "issue": f"Laterite/red soil ({env_soil}) low in nutrients for {plant_name}",
+                "severity": "moderate",
+                "amendment": "Add rock phosphate (200g/sq m) + green manure crop before planting. Compost (5cm layer).",
+                "organic_option": "Neem cake (100g/sq m) + vermicompost (2kg/sq m). Biofertilizers: Azotobacter, PSB."
+            })
+        elif "black cotton" in env_soil:
+            amendments.append({
+                "issue": f"Black cotton soil ({env_soil}) cracks when dry, waterlogs when wet",
+                "severity": "moderate",
+                "amendment": "Deep plowing + gypsum (500g/sq m). Add sand (20%) + FYM (10 tons/acre). Ridge planting.",
+                "organic_option": "Crop residue mulch (10cm). Green manuring with dhaincha/sunnhemp."
+            })
+
+    return amendments
+
+
 def plant_tags(plant_name: str) -> List[str]:
     tags = []
     if plant_name in AIR_PURIFYING_PLANTS:
@@ -289,6 +532,120 @@ def build_garden_bed(recommendations: list) -> dict:
 # On Render free tier, disk is ephemeral — reports survive until next deploy/spin-down.
 # For persistent reports, set SQLITE_PATH env var to a persistent SQLite file path.
 # For Postgres (production), set DATABASE_URL to a Postgres connection string.
+
+class PostgresConnectionWrapper:
+    """Wrapper to make psycopg2 connection behave like sqlite3 connection."""
+    def __init__(self, conn):
+        self.conn = conn
+        self._cursor = None
+    
+    def execute(self, query, params=None):
+        if self._cursor:
+            self._cursor.close()
+        self._cursor = self.conn.cursor()
+        if params:
+            self._cursor.execute(query, params)
+        else:
+            self._cursor.execute(query)
+        return self
+    
+    def fetchall(self):
+        if self._cursor:
+            return self._cursor.fetchall()
+        return []
+    
+    def fetchone(self):
+        if self._cursor:
+            return self._cursor.fetchone()
+        return None
+    
+    def commit(self):
+        self.conn.commit()
+    
+    def close(self):
+        if self._cursor:
+            self._cursor.close()
+        self.conn.close()
+    
+    @property
+    def row_factory(self):
+        return None
+    
+    @row_factory.setter
+    def row_factory(self, value):
+        pass  # psycopg2 uses RealDictCursor
+
+
+def _init_postgres_schema(conn):
+    """Initialize Postgres schema with all required tables."""
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS reports (
+                report_id TEXT PRIMARY KEY,
+                location TEXT,
+                latitude REAL,
+                longitude REAL,
+                environment JSONB,
+                photo_analysis JSONB,
+                recommendations JSONB,
+                generated_at REAL,
+                processing_time_ms REAL,
+                rejected_plants JSONB,
+                categories JSONB,
+                garden_risk JSONB,
+                comparison_table JSONB,
+                garden_bed JSONB,
+                data_source TEXT
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS feedback (
+                id SERIAL PRIMARY KEY,
+                report_id TEXT,
+                plant_name TEXT,
+                vote TEXT CHECK(vote IN ('up', 'down')),
+                created_at REAL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS purchases (
+                id SERIAL PRIMARY KEY,
+                report_id TEXT,
+                plant_name TEXT,
+                item_type TEXT CHECK(item_type IN ('seeds', 'saplings', 'fertilizer', 'tools', 'other')),
+                item_name TEXT,
+                quantity REAL,
+                unit TEXT,
+                cost_per_unit REAL,
+                total_cost REAL,
+                purchase_date REAL,
+                notes TEXT,
+                created_at REAL,
+                is_organic BOOLEAN DEFAULT FALSE
+            )
+        """)
+        # Migration for existing tables
+        try:
+            cur.execute("ALTER TABLE purchases ADD COLUMN IF NOT EXISTS is_organic BOOLEAN DEFAULT FALSE")
+        except Exception:
+            pass
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS sales (
+                id SERIAL PRIMARY KEY,
+                report_id TEXT,
+                plant_name TEXT,
+                item_name TEXT,
+                quantity REAL,
+                unit TEXT,
+                price_per_unit REAL,
+                total_revenue REAL,
+                sale_date REAL,
+                notes TEXT,
+                created_at REAL
+            )
+        """)
+    conn.commit()
+
 
 def get_db():
     # Check for Postgres first (DATABASE_URL convention)
@@ -356,9 +713,15 @@ def get_db():
             total_cost REAL,
             purchase_date REAL,
             notes TEXT,
-            created_at REAL
+            created_at REAL,
+            is_organic INTEGER DEFAULT 0
         )"""
     )
+    # Migration for existing tables
+    try:
+        conn.execute("ALTER TABLE purchases ADD COLUMN is_organic INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
     # Sales tracking table
     conn.execute(
         """CREATE TABLE IF NOT EXISTS sales (
@@ -373,6 +736,36 @@ def get_db():
             sale_date REAL,
             notes TEXT,
             created_at REAL
+        )"""
+    )
+    # Soil health tracking table
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS soil_health_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_id TEXT,
+            plant_name TEXT,
+            log_date REAL,
+            ph REAL,
+            organic_matter_pct REAL,
+            nitrogen_ppm REAL,
+            phosphorus_ppm REAL,
+            potassium_ppm REAL,
+            source TEXT,
+            notes TEXT
+        )"""
+    )
+    # Plant health tracking table
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS plant_health_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_id TEXT,
+            plant_name TEXT,
+            log_date REAL,
+            symptoms TEXT,
+            diagnosis TEXT,
+            severity TEXT,
+            treatment TEXT,
+            photo_url TEXT
         )"""
     )
     conn.commit()
@@ -409,6 +802,16 @@ def save_report_to_db(report):
                 "estimated_co2_kg_per_year": r.estimated_co2_kg_per_year,
                 "watering_schedule": r.watering_schedule,
                 "pest_disease_alerts": r.pest_disease_alerts,
+                "pot_size_cm": r.pot_size_cm,
+                "pot_depth_cm": r.pot_depth_cm,
+                "container_suitable": r.container_suitable,
+                "soil_amendments": r.soil_amendments,
+                "companion_suggestions": r.companion_suggestions,
+                "water_conservation_score": r.water_conservation_score,
+                "estimated_liters_per_season": r.estimated_liters_per_season,
+                "liters_saved_vs_baseline": r.liters_saved_vs_baseline,
+                "pct_water_saved": r.pct_water_saved,
+                "pollinator_friendly": r.pollinator_friendly,
             } for r in report.recommendations]),
             report.generated_at,
             report.processing_time_ms,
@@ -547,6 +950,13 @@ DEFAULT_ENV = {
 
 def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
     """Returns (env_dict, data_source) where data_source is 'live_api' or 'fallback'."""
+    
+    # Check climate cache first (Open-Meteo rate-limit protection)
+    climate_cache_key = f"{lat:.4f},{lng:.4f}"
+    cached_env = _climate_cache.get(climate_cache_key)
+    if cached_env:
+        return cached_env, "cached_api"
+
     # Try Open-Meteo Climate API first
     try:
         import httpx
@@ -629,7 +1039,7 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
                         if frost != "none":
                             alerts.append(f"Frost risk: {frost}. Protect frost-sensitive plants during winter months.")
 
-                    return {
+                    result_env = {
                         "avg_temp_c": avg_temp,
                         "rainfall_mm": total_rain,
                         "humidity": humidity,
@@ -640,7 +1050,9 @@ def get_env_for_location(lat: float, lng: float, location_str: str) -> tuple:
                         "heat_risk": heat_risk,
                         "climate_alerts": alerts,
                         "agro_zone": agro_zone,
-                    }, "live_api"
+                    }
+                    _climate_cache.set(climate_cache_key, result_env)
+                    return result_env, "live_api"
     except Exception:
         pass
 
@@ -787,11 +1199,15 @@ def score_plant(plant: dict, env: dict, photo_obs: dict) -> dict:
             photo_score += 15
     scores["photo"] = min(100, photo_score)
 
+    # Water conservation score (derived metric, not in weighted total)
+    water_conservation = calculate_water_conservation_score(plant, env)
+    scores["water_conservation"] = water_conservation["water_conservation_score"]
+
     # Weighted total
     total = sum(scores[k] * SCORING_WEIGHTS[k] for k in SCORING_WEIGHTS)
     total = round(min(100, max(0, total)), 1)
 
-    return {"total": total, "breakdown": scores, "reasons": reasons}
+    return {"total": total, "breakdown": scores, "reasons": reasons, "water_conservation": water_conservation}
 
 
 # --- Photo Analysis (Pillow-based with filename fallback) ---
@@ -976,6 +1392,7 @@ class ReportGenerateRequest(BaseModel):
     photo: Optional[PhotoUpload] = Field(None, description="Optional uploaded garden photo")
     num_recommendations: int = Field(15, ge=1, le=20, description="Number of plant recommendations")
     category: Optional[str] = Field(None, description="Filter recommendations by plant category (herb, fruit, vegetable, spice, pulse, flower)")
+    pollinator_friendly: Optional[bool] = Field(None, description="Filter for pollinator-friendly plants only")
 
     @field_validator("category")
     @classmethod
@@ -1007,6 +1424,16 @@ class ReportRecommendation(BaseModel):
     estimated_co2_kg_per_year: Optional[float] = Field(None, description="Estimated CO2 kg/plant/year (approx)")
     watering_schedule: Optional[dict] = Field(None, description="Personalized watering schedule with frequency, amounts, and seasonal notes")
     pest_disease_alerts: Optional[list] = Field(None, description="Relevant pest and disease alerts for this plant in this environment")
+    pot_size_cm: Optional[int] = Field(None, description="Recommended pot diameter in cm")
+    pot_depth_cm: Optional[int] = Field(None, description="Recommended pot depth in cm")
+    container_suitable: Optional[bool] = Field(None, description="Whether plant is suitable for container/balcony gardening")
+    soil_amendments: Optional[list] = Field(None, description="Soil amendment suggestions for pH/soil mismatches")
+    companion_suggestions: Optional[dict] = Field(None, description="Companion planting: grows_well_with and avoid_near lists")
+    water_conservation_score: Optional[float] = Field(None, description="Water conservation score 0-100 (higher = more sustainable)")
+    estimated_liters_per_season: Optional[float] = Field(None, description="Estimated liters of water per growing season")
+    liters_saved_vs_baseline: Optional[float] = Field(None, description="Estimated liters saved vs high-water baseline crop")
+    pct_water_saved: Optional[float] = Field(None, description="Percentage water saved vs baseline (Bottle Gourd)")
+    pollinator_friendly: Optional[bool] = Field(None, description="Whether plant attracts pollinators")
 
 
 class GardenRisk(BaseModel):
@@ -1060,15 +1487,47 @@ async def health_check():
     return {"status": "healthy", "service": "GreenScope API"}
 
 
-# --- Geocoding Cache (Nominatim rate-limit protection) ---
-_geocode_cache = {}
+# --- Caching (Nominatim/Open-Meteo rate-limit protection) ---
+import time
+
+class TTLCache:
+    """Simple in-memory cache with TTL support."""
+    def __init__(self, default_ttl: int = 3600):
+        self._cache = {}
+        self._ttl = default_ttl
+    
+    def get(self, key: str):
+        if key in self._cache:
+            value, expiry = self._cache[key]
+            if time.time() < expiry:
+                return value
+            else:
+                del self._cache[key]
+        return None
+    
+    def set(self, key: str, value, ttl: int = None):
+        expiry = time.time() + (ttl or self._ttl)
+        self._cache[key] = (value, expiry)
+    
+    def clear_expired(self):
+        now = time.time()
+        expired = [k for k, (_, exp) in self._cache.items() if now >= exp]
+        for k in expired:
+            del self._cache[k]
+
+# Geocoding cache (1 hour TTL)
+_geocode_cache = TTLCache(default_ttl=3600)
+
+# Climate data cache (6 hour TTL)
+_climate_cache = TTLCache(default_ttl=21600)
 
 async def geocode_location(location: LocationInput):
     cache_key = location.location.strip().lower()
 
     # Check cache first (Nominatim rate-limit protection)
-    if cache_key in _geocode_cache:
-        return _geocode_cache[cache_key]
+    cached = _geocode_cache.get(cache_key)
+    if cached:
+        return cached
 
     # Try Nominatim (OpenStreetMap) geocoding first
     try:
@@ -1085,7 +1544,7 @@ async def geocode_location(location: LocationInput):
                     lng = float(data[0]["lon"])
                     display = data[0].get("display_name", location.location)
                     result = {"latitude": lat, "longitude": lng, "formatted": display.split(",")[0]}
-                    _geocode_cache[cache_key] = result
+                    _geocode_cache.set(cache_key, result)
                     return result
             elif r.status_code == 429:
                 # Nominatim rate-limited — fall through to hardcoded
@@ -1155,11 +1614,24 @@ async def generate_report(request: Request, body: ReportGenerateRequest):
     # Filter plants by category if specified
     plant_pool = PLANTS
     if body.category:
-        plant_pool = [p for p in PLANTS if p.get("category") == body.category]
+        if body.category == "container":
+            # Special filter for container/balcony suitable plants
+            plant_pool = [p for p in PLANTS if p.get("container_suitable", True)]
+        else:
+            plant_pool = [p for p in PLANTS if p.get("category") == body.category]
         if not plant_pool:
             raise HTTPException(
                 status_code=400,
                 detail=f"No plants found for category '{body.category}'. Valid categories: {', '.join(sorted(VALID_CATEGORIES))}"
+            )
+
+    # Filter by pollinator-friendly if specified
+    if body.pollinator_friendly:
+        plant_pool = [p for p in plant_pool if p.get("pollinator_friendly", False)]
+        if not plant_pool:
+            raise HTTPException(
+                status_code=400,
+                detail="No pollinator-friendly plants found for the selected criteria"
             )
 
     scored = []
@@ -1200,6 +1672,9 @@ async def generate_report(request: Request, body: ReportGenerateRequest):
             f"Score Breakdown:\n{score_lines}"
         )
 
+        # Water conservation data from score_result
+        water_conservation = score_result.get("water_conservation", {})
+        
         recommendations.append(ReportRecommendation(
             plant_name=plant["name"],
             scientific_name=plant.get("scientific_name"),
@@ -1216,7 +1691,22 @@ async def generate_report(request: Request, body: ReportGenerateRequest):
             estimated_co2_kg_per_year=CO2_KG_PER_YEAR.get(plant.get("category", "vegetable"), 1.0),
             watering_schedule=calculate_watering_schedule(plant, env),
             pest_disease_alerts=get_pest_disease_alerts(plant, env),
+            pot_size_cm=plant.get("pot_size_cm"),
+            pot_depth_cm=plant.get("pot_depth_cm"),
+            container_suitable=plant.get("container_suitable", True),
+            soil_amendments=get_soil_amendments(plant, env),
+            water_conservation_score=water_conservation.get("water_conservation_score"),
+            estimated_liters_per_season=water_conservation.get("estimated_liters_per_season"),
+            liters_saved_vs_baseline=water_conservation.get("liters_saved_vs_baseline"),
+            pct_water_saved=water_conservation.get("pct_water_saved"),
+            pollinator_friendly=plant.get("pollinator_friendly", False),
         ))
+
+    # Add companion suggestions (second pass now that we have all recommendations)
+    for rec in recommendations:
+        plant_data = next((p for p in PLANTS if p["name"] == rec.plant_name), None)
+        if plant_data:
+            rec.companion_suggestions = companion_suggestions(plant_data, recommendations)
 
     # Categories
     categories = {}
@@ -1315,12 +1805,33 @@ async def generate_report(request: Request, body: ReportGenerateRequest):
             growth_str = f"{days // 365} yr"
         else:
             growth_str = f"{days}d"
+        
+        # Get water conservation score
+        water_conservation = score_result.get("water_conservation", {})
+        water_score = water_conservation.get("water_conservation_score", 0)
+        
+        # Get companion notes (need to check against top 8)
+        companion = companion_suggestions(plant, [r for r in recommendations])
+        grows_with = companion.get("grows_well_with", [])
+        avoid = companion.get("avoid_near", [])
+        companion_note = ""
+        if grows_with:
+            companion_note += f"✓ {', '.join(grows_with)}"
+        if avoid:
+            if companion_note:
+                companion_note += " | "
+            companion_note += f"✗ {', '.join(avoid)}"
+        if not companion_note:
+            companion_note = "—"
+        
         comparison.append({
             "name": plant["name"],
             "suitability": score_result["total"],
             "water": plant.get("water", "medium"),
             "sun": plant.get("sun", "full"),
             "growth": growth_str,
+            "water_score": round(water_score, 1),
+            "companion_notes": companion_note,
         })
 
     processing_time_ms = (time.time() - start_time) * 1000
@@ -1539,6 +2050,16 @@ async def get_report(report_id: str):
             estimated_co2_kg_per_year=r.get('estimated_co2_kg_per_year'),
             watering_schedule=r.get('watering_schedule'),
             pest_disease_alerts=r.get('pest_disease_alerts'),
+            pot_size_cm=r.get('pot_size_cm'),
+            pot_depth_cm=r.get('pot_depth_cm'),
+            container_suitable=r.get('container_suitable', True),
+            soil_amendments=r.get('soil_amendments'),
+            companion_suggestions=r.get('companion_suggestions'),
+            water_conservation_score=r.get('water_conservation_score'),
+            estimated_liters_per_season=r.get('estimated_liters_per_season'),
+            liters_saved_vs_baseline=r.get('liters_saved_vs_baseline'),
+            pct_water_saved=r.get('pct_water_saved'),
+            pollinator_friendly=r.get('pollinator_friendly'),
         )
         recs.append(rec)
     gr = report.get('garden_risk')
@@ -1584,6 +2105,7 @@ class PurchaseCreate(BaseModel):
     cost_per_unit: float = Field(..., ge=0)
     purchase_date: Optional[float] = None
     notes: Optional[str] = None
+    is_organic: bool = Field(False, description="Whether this purchase is organic/regenerative input")
 
 
 class PurchaseResponse(BaseModel):
@@ -1599,6 +2121,7 @@ class PurchaseResponse(BaseModel):
     purchase_date: float
     notes: Optional[str]
     created_at: float
+    is_organic: bool = False
 
 
 class SaleCreate(BaseModel):
@@ -1632,6 +2155,222 @@ class LedgerSummary(BaseModel):
     total_sales: float
     net_profit: float
     by_plant: dict
+    # Regenerative economics
+    organic_purchases_total: float = 0.0
+    conventional_purchases_total: float = 0.0
+    estimated_organic_matter_kg: float = 0.0
+    estimated_co2_offset_kg: float = 0.0
+
+
+# Organic matter / CO2 offset estimation for regenerative inputs
+ORGANIC_MATTER_PER_KG = {
+    # Compost, manure, organic fertilizers - kg organic matter per kg product
+    "compost": 0.4,      # ~40% organic matter
+    "vermicompost": 0.5, # ~50% organic matter
+    "fym": 0.3,          # Farm yard manure ~30%
+    "neem cake": 0.6,
+    "bone meal": 0.2,
+    "blood meal": 0.1,
+    "rock phosphate": 0.0,
+    "green manure": 0.8,
+    "biochar": 0.8,
+    "cow dung": 0.25,
+    "poultry manure": 0.4,
+    "pressmud": 0.35,
+    "city compost": 0.3,
+}
+DEFAULT_ORGANIC_MATTER_RATIO = 0.3  # Default for unknown organic inputs
+
+# CO2 sequestration: ~1.8 kg CO2 per kg organic matter added to soil (approximate)
+CO2_PER_KG_ORGANIC_MATTER = 1.8
+
+
+def calculate_organic_impact(purchases: list) -> dict:
+    """Calculate estimated organic matter added and CO2 offset from organic purchases.
+    
+    Args:
+        purchases: List of purchase dicts with item_name, quantity, unit, is_organic, item_type
+    
+    Returns:
+        dict with organic_matter_kg, co2_offset_kg, organic_spend, conventional_spend
+    """
+    organic_matter_kg = 0.0
+    organic_spend = 0.0
+    conventional_spend = 0.0
+    
+    for p in purchases:
+        total_cost = p.get("total_cost", p.get("quantity", 0) * p.get("cost_per_unit", 0))
+        is_organic = p.get("is_organic", False)
+        item_name = p.get("item_name", "").lower()
+        quantity = p.get("quantity", 0)
+        unit = p.get("unit", "kg").lower()
+        
+        if is_organic:
+            organic_spend += total_cost
+            # Estimate organic matter based on item name
+            matter_ratio = DEFAULT_ORGANIC_MATTER_RATIO
+            for key, ratio in ORGANIC_MATTER_PER_KG.items():
+                if key in item_name:
+                    matter_ratio = ratio
+                    break
+            
+            # Convert quantity to kg if needed
+            qty_kg = quantity
+            if unit in ("g", "gram", "grams"):
+                qty_kg = quantity / 1000
+            elif unit in ("ton", "tonne", "tons", "tonnes"):
+                qty_kg = quantity * 1000
+            elif unit in ("bag", "bags"):  # Assume 25kg/bag typical
+                qty_kg = quantity * 25
+            
+            organic_matter_kg += qty_kg * matter_ratio
+        else:
+            conventional_spend += total_cost
+    
+    co2_offset_kg = organic_matter_kg * CO2_PER_KG_ORGANIC_MATTER
+    
+    return {
+        "organic_matter_kg": round(organic_matter_kg, 2),
+        "co2_offset_kg": round(co2_offset_kg, 2),
+        "organic_spend": round(organic_spend, 2),
+        "conventional_spend": round(conventional_spend, 2),
+    }
+
+
+# --- Smart Care Calendar ---
+# Auto-recurring tasks (watering, fertilizing, pruning, harvesting) per plant stage
+# Planting date defaults to report generation date, editable per plant
+
+class CareTask(BaseModel):
+    plant_name: str
+    task_type: str  # "watering", "fertilizing", "pruning", "harvesting"
+    frequency_days: int
+    next_due_date: str  # ISO format
+    description: str
+    priority: str  # "high", "medium", "low"
+    planting_date: Optional[str] = None  # ISO format, editable per plant
+
+
+class CareCalendarResponse(BaseModel):
+    report_id: str
+    tasks: List[CareTask]
+    generated_at: float
+
+
+@app.get("/api/v1/reports/{report_id}/care-calendar", response_model=CareCalendarResponse)
+@limiter.limit("60/minute")
+async def care_calendar(request: Request, report_id: str):
+    """Get auto-generated care calendar for all recommended plants."""
+    report = load_report_from_db(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    from datetime import date, timedelta
+    today = date.today()
+    report_date = date.fromtimestamp(report.get("generated_at", time.time()))
+
+    tasks = []
+    for rec in report.get("recommendations", [])[:10]:
+        plant_name = rec.get("plant_name", "")
+        if not plant_name:
+            continue
+
+        # Get plant details from DB
+        plant_map = {p["name"]: p for p in PLANTS}
+        plant = plant_map.get(plant_name, {})
+
+        # Default planting date = report generation date (editable per plant)
+        planting_date = rec.get("planting_date_override") or report_date.isoformat()
+
+        # --- Watering tasks ---
+        water_schedule = rec.get("watering_schedule", {})
+        freq_days = water_schedule.get("frequency_days", 3)
+        if not freq_days or freq_days < 1:
+            freq_days = 3
+
+        # Calculate next watering due date
+        days_since_report = (today - report_date).days
+        next_water_offset = freq_days - (days_since_report % freq_days)
+        if next_water_offset == freq_days:
+            next_water_offset = 0
+        next_water_date = today + timedelta(days=next_water_offset)
+
+        tasks.append(CareTask(
+            plant_name=plant_name,
+            task_type="watering",
+            frequency_days=freq_days,
+            next_due_date=next_water_date.isoformat(),
+            description=f"Water {plant_name} ({water_schedule.get('liters_per_watering', '?')} L per session)",
+            priority="high",
+            planting_date=planting_date
+        ))
+
+        # --- Fertilizing tasks ---
+        # Heavy feeders (fruit/vegetable): every 30 days, herbs: every 60 days
+        category = plant.get("category", "herb")
+        if category in ("fruit", "vegetable"):
+            fert_freq = 30
+        else:
+            fert_freq = 60
+
+        next_fert_offset = fert_freq - (days_since_report % fert_freq)
+        if next_fert_offset == fert_freq:
+            next_fert_offset = 0
+        next_fert_date = today + timedelta(days=next_fert_offset)
+
+        tasks.append(CareTask(
+            plant_name=plant_name,
+            task_type="fertilizing",
+            frequency_days=fert_freq,
+            next_due_date=next_fert_date.isoformat(),
+            description=f"Fertilize {plant_name} (balanced NPK, follow package rates)",
+            priority="medium",
+            planting_date=planting_date
+        ))
+
+        # --- Pruning tasks ---
+        # Prune at flowering/fruiting stage for fruiting plants
+        if category in ("fruit", "vegetable"):
+            prune_freq = 60
+            next_prune_offset = prune_freq - (days_since_report % prune_freq)
+            if next_prune_offset == prune_freq:
+                next_prune_offset = 0
+            next_prune_date = today + timedelta(days=next_prune_offset)
+
+            tasks.append(CareTask(
+                plant_name=plant_name,
+                task_type="pruning",
+                frequency_days=prune_freq,
+                next_due_date=next_prune_date.isoformat(),
+                description=f"Prune {plant_name} (remove dead/diseased, shape for airflow)",
+                priority="medium",
+                planting_date=planting_date
+            ))
+
+        # --- Harvesting task ---
+        # Based on growth_duration from planting date
+        growth_days = plant.get("growth_days", 60)
+        harvest_date = report_date + timedelta(days=growth_days)
+        if harvest_date >= today:
+            days_until_harvest = (harvest_date - today).days
+            tasks.append(CareTask(
+                plant_name=plant_name,
+                task_type="harvesting",
+                frequency_days=0,  # One-time
+                next_due_date=harvest_date.isoformat(),
+                description=f"Harvest {plant_name} (expected maturity ~{growth_days} days from planting)",
+                priority="high",
+                planting_date=planting_date
+            ))
+
+    # Sort by next due date
+    tasks.sort(key=lambda t: t.next_due_date)
+
+    return CareCalendarResponse(
+        report_id=report_id,
+        tasks=tasks,
+        generated_at=time.time()
+    )
 
 
 @app.post("/api/v1/purchases", response_model=PurchaseResponse)
@@ -1643,11 +2382,11 @@ async def create_purchase(request: Request, purchase: PurchaseCreate):
     total_cost = purchase.quantity * purchase.cost_per_unit
     cursor = conn.execute(
         """INSERT INTO purchases
-        (report_id, plant_name, item_type, item_name, quantity, unit, cost_per_unit, total_cost, purchase_date, notes, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (report_id, plant_name, item_type, item_name, quantity, unit, cost_per_unit, total_cost, purchase_date, notes, created_at, is_organic)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (purchase.report_id, purchase.plant_name, purchase.item_type, purchase.item_name,
          purchase.quantity, purchase.unit, purchase.cost_per_unit, total_cost,
-         purchase_date, purchase.notes, time.time())
+         purchase_date, purchase.notes, time.time(), purchase.is_organic)
     )
     conn.commit()
     purchase_id = cursor.lastrowid
@@ -1664,7 +2403,8 @@ async def create_purchase(request: Request, purchase: PurchaseCreate):
         total_cost=total_cost,
         purchase_date=purchase_date,
         notes=purchase.notes,
-        created_at=time.time()
+        created_at=time.time(),
+        is_organic=purchase.is_organic
     )
 
 
@@ -1689,7 +2429,8 @@ async def get_purchases(request: Request, report_id: str, plant_name: Optional[s
         item_type=r["item_type"], item_name=r["item_name"],
         quantity=r["quantity"], unit=r["unit"], cost_per_unit=r["cost_per_unit"],
         total_cost=r["total_cost"], purchase_date=r["purchase_date"],
-        notes=r["notes"], created_at=r["created_at"]
+        notes=r["notes"], created_at=r["created_at"],
+        is_organic=bool(r.get("is_organic", 0))
     ) for r in rows]
 
 
@@ -1752,11 +2493,11 @@ async def get_sales(request: Request, report_id: str, plant_name: Optional[str] 
 @app.get("/api/v1/ledger/{report_id}", response_model=LedgerSummary)
 @limiter.limit("60/minute")
 async def get_ledger(request: Request, report_id: str):
-    """Get profit/loss ledger for a report."""
+    """Get profit/loss ledger for a report with regenerative economics."""
     conn = get_db()
-    # Total purchases
+    # Total purchases with details
     purchase_rows = conn.execute(
-        "SELECT plant_name, SUM(total_cost) as total FROM purchases WHERE report_id = ? GROUP BY plant_name",
+        "SELECT * FROM purchases WHERE report_id = ?",
         (report_id,)
     ).fetchall()
     # Total sales
@@ -1766,7 +2507,18 @@ async def get_ledger(request: Request, report_id: str):
     ).fetchall()
     conn.close()
 
-    purchases_by_plant = {r["plant_name"]: r["total"] for r in purchase_rows}
+    # Calculate organic impact
+    purchases_list = [dict(r) for r in purchase_rows]
+    organic_impact = calculate_organic_impact(purchases_list)
+
+    # Aggregate by plant
+    purchases_by_plant = {}
+    for r in purchase_rows:
+        plant = r["plant_name"]
+        if plant not in purchases_by_plant:
+            purchases_by_plant[plant] = 0
+        purchases_by_plant[plant] += r["total_cost"]
+    
     sales_by_plant = {r["plant_name"]: r["total"] for r in sale_rows}
 
     all_plants = set(purchases_by_plant.keys()) | set(sales_by_plant.keys())
@@ -1789,7 +2541,169 @@ async def get_ledger(request: Request, report_id: str):
         total_purchases=round(total_purchases, 2),
         total_sales=round(total_sales, 2),
         net_profit=round(total_sales - total_purchases, 2),
-        by_plant=by_plant
+        by_plant=by_plant,
+        organic_purchases_total=organic_impact["organic_spend"],
+        conventional_purchases_total=organic_impact["conventional_spend"],
+        estimated_organic_matter_kg=organic_impact["organic_matter_kg"],
+        estimated_co2_offset_kg=organic_impact["co2_offset_kg"],
+    )
+
+
+@app.get("/api/v1/reports/{report_id}/export.csv")
+@limiter.limit("30/minute")
+async def export_report_csv(request: Request, report_id: str):
+    """Export report recommendations as CSV."""
+    report = load_report_from_db(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    import csv
+    import io
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header row
+    writer.writerow([
+        "Rank", "Plant Name", "Scientific Name", "Suitability Score (%)",
+        "Water Requirement", "Sun Requirement", "Growth Duration",
+        "Planting Season", "Estimated Water L/Week", "Estimated CO2 Kg/Year",
+        "Care Guide", "Score Climate", "Score pH", "Score Sunlight",
+        "Score Water", "Score Soil", "Score Photo", "Water Conservation Score",
+        "Estimated Liters/Season", "Liters Saved vs Baseline", "Pct Water Saved",
+        "Companion Grows Well With", "Companion Avoid Near"
+    ])
+
+    # Data rows
+    for i, rec in enumerate(report.get("recommendations", []), 1):
+        sb = rec.get("score_breakdown", {})
+        companion = rec.get("companion_suggestions", {})
+        grows_with = ", ".join(companion.get("grows_well_with", [])) if companion else ""
+        avoid = ", ".join(companion.get("avoid_near", [])) if companion else ""
+        writer.writerow([
+            i,
+            rec.get("plant_name", ""),
+            rec.get("scientific_name", ""),
+            rec.get("suitability_score", ""),
+            rec.get("water_requirement", ""),
+            rec.get("sun_requirement", ""),
+            rec.get("growth_duration", ""),
+            rec.get("planting_season", ""),
+            rec.get("estimated_water_l_per_week", ""),
+            rec.get("estimated_co2_kg_per_year", ""),
+            rec.get("care_guide", "").replace("\n", " "),
+            sb.get("climate", ""),
+            sb.get("ph", ""),
+            sb.get("sunlight", ""),
+            sb.get("water", ""),
+            sb.get("soil", ""),
+            sb.get("photo", ""),
+            rec.get("water_conservation_score", ""),
+            rec.get("estimated_liters_per_season", ""),
+            rec.get("liters_saved_vs_baseline", ""),
+            rec.get("pct_water_saved", ""),
+            grows_with,
+            avoid,
+        ])
+
+    output.seek(0)
+    filename = f"greenscope-{report.get('location', 'report').replace(' ', '_').replace(',', '')}-{report_id[:8]}.csv"
+    return PlainTextResponse(
+        output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+
+@app.get("/api/v1/reports/{report_id}/export.xlsx")
+@limiter.limit("30/minute")
+async def export_report_xlsx(request: Request, report_id: str):
+    """Export report recommendations as Excel (XLSX)."""
+    report = load_report_from_db(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, Alignment, PatternFill
+        from openpyxl.utils import get_column_letter
+    except ImportError:
+        raise HTTPException(status_code=501, detail="Excel export requires openpyxl. Install with: pip install openpyxl")
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Recommendations"
+
+    # Styles
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="10B981", end_color="10B981", fill_type="solid")
+    header_alignment = Alignment(horizontal="center", wrap_text=True)
+
+    headers = [
+        "Rank", "Plant Name", "Scientific Name", "Suitability Score (%)",
+        "Water Requirement", "Sun Requirement", "Growth Duration",
+        "Planting Season", "Estimated Water L/Week", "Estimated CO2 Kg/Year",
+        "Care Guide", "Score Climate", "Score pH", "Score Sunlight",
+        "Score Water", "Score Soil", "Score Photo", "Water Conservation Score",
+        "Estimated Liters/Season", "Liters Saved vs Baseline", "Pct Water Saved",
+        "Companion Grows Well With", "Companion Avoid Near"
+    ]
+
+    # Write headers
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+
+    # Write data
+    for row_idx, rec in enumerate(report.get("recommendations", []), 2):
+        sb = rec.get("score_breakdown", {})
+        companion = rec.get("companion_suggestions", {})
+        grows_with = ", ".join(companion.get("grows_well_with", [])) if companion else ""
+        avoid = ", ".join(companion.get("avoid_near", [])) if companion else ""
+        row_data = [
+            row_idx - 1,
+            rec.get("plant_name", ""),
+            rec.get("scientific_name", ""),
+            rec.get("suitability_score", ""),
+            rec.get("water_requirement", ""),
+            rec.get("sun_requirement", ""),
+            rec.get("growth_duration", ""),
+            rec.get("planting_season", ""),
+            rec.get("estimated_water_l_per_week", ""),
+            rec.get("estimated_co2_kg_per_year", ""),
+            rec.get("care_guide", "").replace("\n", " "),
+            sb.get("climate", ""),
+            sb.get("ph", ""),
+            sb.get("sunlight", ""),
+            sb.get("water", ""),
+            sb.get("soil", ""),
+            sb.get("photo", ""),
+            rec.get("water_conservation_score", ""),
+            rec.get("estimated_liters_per_season", ""),
+            rec.get("liters_saved_vs_baseline", ""),
+            rec.get("pct_water_saved", ""),
+            grows_with,
+            avoid,
+        ]
+        for col, value in enumerate(row_data, 1):
+            ws.cell(row=row_idx, column=col, value=value)
+
+    # Auto-fit columns
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 18
+
+    # Save to bytes
+    import io
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    filename = f"greenscope-{report.get('location', 'report').replace(' ', '_').replace(',', '')}-{report_id[:8]}.xlsx"
+    return PlainTextResponse(
+        output.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
 
 
@@ -2205,6 +3119,717 @@ async def report_calendar_ics(request: Request, report_id: str):
         "\r\n".join(lines),
         media_type="text/calendar",
         headers={"Content-Disposition": f'attachment; filename="greenscope-{report_id[:8]}.ics"'},
+    )
+
+
+# --- Watering Forecast (Rain/Frost Advisory) ---
+
+class WateringForecastDay(BaseModel):
+    date: str  # YYYY-MM-DD
+    day_name: str
+    precipitation_mm: float
+    min_temp_c: float
+    skip_watering: bool
+    skip_reason: Optional[str] = None
+    watering_scheduled: bool
+
+
+class WateringForecastResponse(BaseModel):
+    report_id: str
+    location: str
+    latitude: float
+    longitude: float
+    forecast_days: List[WateringForecastDay]
+    generated_at: float
+
+
+@app.get("/api/v1/reports/{report_id}/watering-forecast", response_model=WateringForecastResponse)
+@limiter.limit("60/minute")
+async def watering_forecast(request: Request, report_id: str):
+    """Get 7-day watering forecast with rain/frost skip advisories."""
+    report = load_report_from_db(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    lat = report.get("latitude", 28.6139)
+    lng = report.get("longitude", 77.2090)
+    location = report.get("location", "")
+
+    # Fetch 7-day forecast from Open-Meteo
+    forecast_days = []
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(
+                "https://api.open-meteo.com/v1/forecast",
+                params={
+                    "latitude": lat,
+                    "longitude": lng,
+                    "daily": "precipitation_sum,temperature_2m_min",
+                    "timezone": "Asia/Kolkata",
+                    "forecast_days": 7,
+                },
+            )
+            if r.status_code == 200:
+                data = r.json().get("daily", {})
+                dates = data.get("time", [])
+                precipitation = data.get("precipitation_sum", [])
+                temp_min = data.get("temperature_2m_min", [])
+
+                for i, date_str in enumerate(dates):
+                    precip = precipitation[i] if i < len(precipitation) else 0
+                    temp_min = temp_min[i] if i < len(temp_min) else 20
+
+                    skip = False
+                    reason = None
+                    if precip >= 5:
+                        skip = True
+                        reason = f"Rain expected ({precip} mm)"
+                    elif temp_min <= 2:
+                        skip = True
+                        reason = f"Frost risk (min {temp_min:.1f}°C)"
+
+                    day_name = date.fromisoformat(date_str).strftime("%A")
+                    forecast_days.append(WateringForecastDay(
+                        date=date_str,
+                        day_name=day_name,
+                        precipitation_mm=round(precip, 1),
+                        min_temp_c=round(temp_min, 1),
+                        skip_watering=skip,
+                        skip_reason=reason,
+                        watering_scheduled=True,  # Could check against watering schedule
+                    ))
+    except Exception:
+        # If forecast fails, return empty forecast
+        pass
+
+    return WateringForecastResponse(
+        report_id=report_id,
+        location=location,
+        latitude=lat,
+        longitude=lng,
+        forecast_days=forecast_days,
+        generated_at=time.time(),
+    )
+
+
+# --- Harvest Timeline / Gantt Chart ---
+
+class HarvestTimelineEvent(BaseModel):
+    plant_name: str
+    scientific_name: Optional[str] = None
+    stage: str  # "sowing", "germination", "transplant", "flowering", "fruiting", "harvest"
+    start_date: str  # YYYY-MM-DD
+    end_date: str    # YYYY-MM-DD
+    duration_days: int
+    color: str
+    notes: str = ""
+
+
+class HarvestTimelineResponse(BaseModel):
+    report_id: str
+    location: str
+    timeline: List[HarvestTimelineEvent]
+    summary: dict
+
+
+def _season_start_month(season: str) -> int:
+    """Get typical sowing month for a season."""
+    months = {"kharif": 6, "monsoon": 6, "rabi": 10, "zaid": 3, "year-round": date.today().month}
+    return months.get(season.lower(), date.today().month)
+
+
+def _calculate_stage_dates(sow_month: int, growth_days: int, year: int) -> dict:
+    """Calculate approximate dates for each growth stage."""
+    from datetime import date, timedelta
+    
+    sow_date = date(year, sow_month, 1)
+    
+    # Approximate stage percentages of total growth cycle
+    stages = [
+        ("sowing", 0, 0.05, "#8B4513"),      # Brown - sowing
+        ("germination", 0.05, 0.15, "#8FBC8F"),  # Light green - germination
+        ("vegetative", 0.15, 0.50, "#228B22"),   # Green - vegetative growth
+        ("flowering", 0.50, 0.70, "#FFD700"),    # Gold - flowering
+        ("fruiting", 0.70, 0.90, "#FFA500"),     # Orange - fruiting
+        ("harvest", 0.90, 1.0, "#FF6347"),       # Tomato red - harvest
+    ]
+    
+    timeline = []
+    for stage_name, start_pct, end_pct, color in stages:
+        start_day = int(growth_days * start_pct)
+        end_day = int(growth_days * end_pct)
+        start_date = sow_date + timedelta(days=start_day)
+        end_date = sow_date + timedelta(days=end_day)
+        timeline.append({
+            "stage": stage_name,
+            "start_date": start_date.strftime("%Y-%m-%d"),
+            "end_date": end_date.strftime("%Y-%m-%d"),
+            "duration_days": end_day - start_day,
+            "color": color,
+        })
+    return timeline
+
+
+@app.get("/api/v1/reports/{report_id}/harvest-timeline", response_model=HarvestTimelineResponse)
+@limiter.limit("60/minute")
+async def harvest_timeline(request: Request, report_id: str):
+    """Get Gantt-style harvest timeline for recommended plants."""
+    report = load_report_from_db(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    today = date.today()
+    current_year = today.year
+    timeline = []
+
+    for r in report.get("recommendations", [])[:10]:
+        growth_days = 60
+        # Try to get actual growth days from plant DB
+        plant_map = {p["name"]: p for p in PLANTS}
+        if r.get("plant_name") in plant_map:
+            growth_days = plant_map[r["plant_name"]].get("growth_days", 60)
+
+        season = r.get("planting_season", "Year-round")
+        sow_month = _season_start_month(season)
+        
+        # Determine year for sowing (next occurrence)
+        sow_year = current_year if sow_month >= today.month else current_year + 1
+        
+        stage_dates = _calculate_stage_dates(sow_month, growth_days, sow_year)
+        
+        for stage in stage_dates:
+            timeline.append(HarvestTimelineEvent(
+                plant_name=r.get("plant_name", ""),
+                scientific_name=r.get("scientific_name"),
+                stage=stage["stage"],
+                start_date=stage["start_date"],
+                end_date=stage["end_date"],
+                duration_days=stage["duration_days"],
+                color=stage["color"],
+                notes=f"{stage['stage'].title()} phase for {r.get('plant_name', '')}"
+            ))
+
+    # Sort by start date
+    timeline.sort(key=lambda x: x.start_date)
+
+    summary = {
+        "total_plants": len(set(t.plant_name for t in timeline)),
+        "earliest_sowing": min((t.start_date for t in timeline if t.stage == "sowing"), default=None),
+        "latest_harvest": max((t.end_date for t in timeline if t.stage == "harvest"), default=None),
+        "timeline_span_days": 0,
+    }
+    if timeline:
+        all_dates = [date.fromisoformat(t.start_date) for t in timeline] + [date.fromisoformat(t.end_date) for t in timeline]
+        summary["timeline_span_days"] = (max(all_dates) - min(all_dates)).days
+
+    return HarvestTimelineResponse(
+        report_id=report_id,
+        location=report.get("location", ""),
+        timeline=timeline,
+        summary=summary,
+    )
+
+
+# --- Companion Planting Matrix ---
+
+class CompanionMatrixResponse(BaseModel):
+    plants: List[str]
+    matrix: List[List[str]]  # "good", "bad", "neutral"
+    legend: dict
+
+
+@app.get("/api/v1/reports/{report_id}/companion-matrix", response_model=CompanionMatrixResponse)
+@limiter.limit("60/minute")
+async def companion_matrix(request: Request, report_id: str):
+    """Get companion planting matrix for recommended plants."""
+    report = load_report_from_db(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    plant_names = [r.get("plant_name", "") for r in report.get("recommendations", [])[:10]]
+    n = len(plant_names)
+    
+    # Build matrix
+    matrix = []
+    for i, plant_a in enumerate(plant_names):
+        row = []
+        for j, plant_b in enumerate(plant_names):
+            if i == j:
+                row.append("self")
+            else:
+                grows_with, avoid = COMPANIONS.get(plant_a, ([], []))
+                if plant_b in grows_with:
+                    row.append("good")
+                elif plant_b in avoid:
+                    row.append("bad")
+                else:
+                    row.append("neutral")
+        matrix.append(row)
+
+    return CompanionMatrixResponse(
+        plants=plant_names,
+        matrix=matrix,
+        legend={
+            "good": "Plants benefit each other (pest control, nutrients, shade)",
+            "bad": "Plants compete or attract same pests/diseases",
+            "neutral": "No significant interaction known",
+            "self": "Same plant"
+        }
+)
+# Soil amendment suggestions (pH/soil mismatch tips) - added at plant level
+
+
+# --- Soil Health Tracker ---
+# Track pH/organic matter/N/P/K trends over seasons for each plant/bed
+
+class SoilHealthLogCreate(BaseModel):
+    report_id: str = Field(..., min_length=1, max_length=64)
+    plant_name: str = Field(..., min_length=1, max_length=100)
+    ph: float = Field(..., ge=0, le=14)
+    organic_matter_pct: Optional[float] = Field(None, ge=0, le=100)
+    nitrogen_ppm: Optional[float] = Field(None, ge=0)
+    phosphorus_ppm: Optional[float] = Field(None, ge=0)
+    potassium_ppm: Optional[float] = Field(None, ge=0)
+    source: str = Field(default="meter", pattern="^(meter|lab)$")  # meter reading or lab test
+    notes: Optional[str] = None
+
+
+class SoilHealthLogResponse(BaseModel):
+    id: int
+    report_id: str
+    plant_name: str
+    log_date: float
+    ph: float
+    organic_matter_pct: Optional[float]
+    nitrogen_ppm: Optional[float]
+    phosphorus_ppm: Optional[float]
+    potassium_ppm: Optional[float]
+    source: str
+    notes: Optional[str]
+    amendments: Optional[list] = None
+
+
+class SoilHealthTrend(BaseModel):
+    plant_name: str
+    ph_trend: List[dict]  # [{date, value}]
+    om_trend: List[dict]
+    n_trend: List[dict]
+    p_trend: List[dict]
+    k_trend: List[dict]
+
+
+@app.post("/api/v1/soil-health", response_model=SoilHealthLogResponse)
+@limiter.limit("60/minute")
+async def create_soil_health_log(request: Request, log: SoilHealthLogCreate):
+    """Record a soil health measurement for a plant."""
+    # Verify report exists
+    report = load_report_from_db(log.report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    # Get plant details for amendment suggestions
+    plant_map = {p["name"]: p for p in PLANTS}
+    plant = plant_map.get(log.plant_name)
+
+    # Get amendment suggestions if plant exists
+    amendments = []
+    if plant:
+        env = report.get("environment", {})
+        amendments = get_soil_amendments(plant, env)
+
+    conn = get_db()
+    log_date = time.time()
+    cursor = conn.execute(
+        """INSERT INTO soil_health_logs
+        (report_id, plant_name, ph, organic_matter_pct, nitrogen_ppm, 
+         phosphorus_ppm, potassium_ppm, source, notes, log_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (log.report_id, log.plant_name, log.ph, log.organic_matter_pct,
+         log.nitrogen_ppm, log.phosphorus_ppm, log.potassium_ppm,
+         log.source, log.notes, log_date)
+    )
+    conn.commit()
+    log_id = cursor.lastrowid
+    conn.close()
+
+    return SoilHealthLogResponse(
+        id=log_id,
+        report_id=log.report_id,
+        plant_name=log.plant_name,
+        log_date=log_date,
+        ph=log.ph,
+        organic_matter_pct=log.organic_matter_pct,
+        nitrogen_ppm=log.nitrogen_ppm,
+        phosphorus_ppm=log.phosphorus_ppm,
+        potassium_ppm=log.potassium_ppm,
+        source=log.source,
+        notes=log.notes,
+        amendments=amendments
+    )
+
+
+@app.get("/api/v1/reports/{report_id}/soil-health", response_model=List[SoilHealthLogResponse])
+@limiter.limit("60/minute")
+async def get_soil_health_logs(request: Request, report_id: str, plant_name: Optional[str] = None):
+    """Get all soil health logs for a report, optionally filtered by plant."""
+    report = load_report_from_db(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    conn = get_db()
+    if plant_name:
+        rows = conn.execute(
+            "SELECT * FROM soil_health_logs WHERE report_id = ? AND plant_name = ? ORDER BY log_date DESC",
+            (report_id, plant_name)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM soil_health_logs WHERE report_id = ? ORDER BY log_date DESC",
+            (report_id,)
+        ).fetchall()
+    conn.close()
+
+    return [SoilHealthLogResponse(
+        id=r["id"], report_id=r["report_id"], plant_name=r["plant_name"],
+        log_date=r["log_date"], ph=r["ph"], organic_matter_pct=r["organic_matter_pct"],
+        nitrogen_ppm=r["nitrogen_ppm"], phosphorus_ppm=r["phosphorus_ppm"],
+        potassium_ppm=r["potassium_ppm"], source=r["source"], notes=r["notes"],
+        amendments=None
+    ) for r in rows]
+
+
+@app.get("/api/v1/reports/{report_id}/soil-health/trends", response_model=List[SoilHealthTrend])
+@limiter.limit("60/minute")
+async def get_soil_health_trends(request: Request, report_id: str):
+    """Get soil health trends for Chart.js charts."""
+    report = load_report_from_db(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    conn = get_db()
+    rows = conn.execute(
+        "SELECT * FROM soil_health_logs WHERE report_id = ? ORDER BY log_date ASC",
+        (report_id,)
+    ).fetchall()
+    conn.close()
+
+    # Group by plant
+    by_plant = {}
+    for row in rows:
+        plant = row["plant_name"]
+        if plant not in by_plant:
+            by_plant[plant] = {"ph": [], "om": [], "n": [], "p": [], "k": []}
+        if row["ph"] is not None:
+            by_plant[plant]["ph"].append({"date": row["log_date"], "value": row["ph"]})
+        if row["organic_matter_pct"] is not None:
+            by_plant[plant]["om"].append({"date": row["log_date"], "value": row["organic_matter_pct"]})
+        if row["nitrogen_ppm"] is not None:
+            by_plant[plant]["n"].append({"date": row["log_date"], "value": row["nitrogen_ppm"]})
+        if row["phosphorus_ppm"] is not None:
+            by_plant[plant]["p"].append({"date": row["log_date"], "value": row["phosphorus_ppm"]})
+        if row["potassium_ppm"] is not None:
+            by_plant[plant]["k"].append({"date": row["log_date"], "value": row["potassium_ppm"]})
+
+    trends = []
+    for plant, data in by_plant.items():
+        trends.append(SoilHealthTrend(
+            plant_name=plant,
+            ph_trend=data["ph"],
+            om_trend=data["om"],
+            n_trend=data["n"],
+            p_trend=data["p"],
+            k_trend=data["k"]
+        ))
+
+    return trends
+
+
+# --- Yield/Cost Estimator (ROI Calculator) ---
+# Estimated yield per plant per season (kg) - rough averages for Indian conditions
+ESTIMATED_YIELD_KG = {
+    "Tomato": 5.0, "Brinjal": 3.0, "Chili": 1.5, "Okra": 2.5,
+    "Spinach": 1.0, "Cabbage": 2.0, "Cauliflower": 1.5, "Peas": 1.0,
+    "Carrot": 1.5, "Beetroot": 1.5, "Radish": 0.8, "Onion": 2.0,
+    "Garlic": 1.0, "Ginger": 2.0, "Turmeric": 3.0, "Potato": 3.0,
+    "Sweet Potato": 2.5, "Yam": 3.0, "Cucumber": 3.0, "Pumpkin": 5.0,
+    "Bottle Gourd": 4.0, "Ridge Gourd": 3.0, "Bitter Gourd": 2.5,
+    "Coriander": 0.3, "Fenugreek": 0.4, "Mint": 0.5,
+    "Tulsi": 0.5, "Moringa": 10.0, "Lemongrass": 1.0, "Aloe Vera": 1.0,
+    "Curry Leaf": 1.0, "Hibiscus": 1.0, "Marigold": 0.5, "Jasmine": 0.5,
+    "Rose": 0.3, "Lotus": 2.0, "Amla": 20.0,
+    "Mango": 50.0, "Guava": 15.0, "Papaya": 30.0, "Banana": 30.0,
+    "Lemon": 10.0, "Neem": 5.0, "Ashwagandha": 1.0, "Brahmi": 0.5,
+    "Giloy": 2.0, "Moong": 1.0, "Cowpea": 1.5, "Black Gram": 1.0,
+    "Pigeon Pea": 2.0, "Mustard": 0.8, "Fenugreek": 0.5,
+    "Artichoke": 1.0, "Stevia": 0.3,
+}
+
+# Estimated market price per kg (INR) - rough averages
+ESTIMATED_PRICE_PER_KG = {
+    "Tomato": 30, "Brinjal": 40, "Chili": 80, "Okra": 50,
+    "Spinach": 40, "Cabbage": 25, "Cauliflower": 40, "Peas": 80,
+    "Carrot": 40, "Beetroot": 50, "Radish": 30, "Onion": 35,
+    "Garlic": 150, "Ginger": 120, "Turmeric": 100, "Potato": 25,
+    "Sweet Potato": 30, "Yam": 40, "Cucumber": 30, "Pumpkin": 25,
+    "Bottle Gourd": 30, "Ridge Gourd": 40, "Bitter Gourd": 60,
+    "Coriander": 200, "Fenugreek": 150, "Mint": 100,
+    "Tulsi": 80, "Moringa": 60, "Lemongrass": 80, "Aloe Vera": 100,
+    "Curry Leaf": 200, "Hibiscus": 100, "Marigold": 100, "Jasmine": 300,
+    "Rose": 200, "Lotus": 150, "Amla": 80,
+    "Mango": 80, "Guava": 60, "Papaya": 50, "Banana": 40,
+    "Lemon": 80, "Neem": 50, "Ashwagandha": 300, "Brahmi": 200,
+    "Giloy": 150, "Moong": 100, "Cowpea": 80, "Black Gram": 100,
+    "Pigeon Pea": 90, "Mustard": 80, "Fenugreek": 120,
+    "Artichoke": 150, "Stevia": 200,
+}
+
+# Default yield/price for unknown plants
+DEFAULT_YIELD_KG = 2.0
+DEFAULT_PRICE_PER_KG = 50
+
+
+class YieldEstimate(BaseModel):
+    plant_name: str
+    estimated_yield_kg: float
+    estimated_price_per_kg: float
+    estimated_revenue: float
+    estimated_cost: float = 0.0
+    estimated_profit: float = 0.0
+    roi_percent: float = 0.0
+
+
+class GardenROIResponse(BaseModel):
+    report_id: str
+    location: str
+    bed_estimates: List[YieldEstimate]
+    total_estimated_yield_kg: float
+    total_estimated_revenue: float
+    total_actual_cost: float
+    total_actual_revenue: float
+    total_profit: float
+    overall_roi_percent: float
+    disclaimer: str
+
+
+@app.get("/api/v1/reports/{report_id}/roi", response_model=GardenROIResponse)
+@limiter.limit("60/minute")
+async def garden_roi(request: Request, report_id: str):
+    """Calculate estimated ROI for garden bed using ledger data and yield estimates."""
+    report = load_report_from_db(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    conn = get_db()
+    # Get actual costs from purchases
+    purchase_rows = conn.execute(
+        "SELECT plant_name, SUM(total_cost) as total_cost FROM purchases WHERE report_id = ? GROUP BY plant_name",
+        (report_id,)
+    ).fetchall()
+    purchases_by_plant = {r["plant_name"]: r["total_cost"] for r in purchase_rows}
+
+    # Get actual revenue from sales
+    sale_rows = conn.execute(
+        "SELECT plant_name, SUM(total_revenue) as total_revenue FROM sales WHERE report_id = ? GROUP BY plant_name",
+        (report_id,)
+    ).fetchall()
+    sales_by_plant = {r["plant_name"]: r["total_revenue"] for r in sale_rows}
+    conn.close()
+
+    bed_estimates = []
+    total_est_yield = 0.0
+    total_est_revenue = 0.0
+    total_actual_cost = 0.0
+    total_actual_revenue = 0.0
+
+    for r in report.get("recommendations", [])[:10]:
+        plant_name = r.get("plant_name", "")
+        yield_kg = ESTIMATED_YIELD_KG.get(plant_name, DEFAULT_YIELD_KG)
+        price_kg = ESTIMATED_PRICE_PER_KG.get(plant_name, DEFAULT_PRICE_PER_KG)
+        est_revenue = yield_kg * price_kg
+        actual_cost = purchases_by_plant.get(plant_name, 0.0)
+        actual_revenue = sales_by_plant.get(plant_name, 0.0)
+        est_cost = actual_cost if actual_cost > 0 else (yield_kg * price_kg * 0.3)
+        est_profit = est_revenue - est_cost
+        roi = (est_profit / est_cost * 100) if est_cost > 0 else 0
+
+        bed_estimates.append(YieldEstimate(
+            plant_name=plant_name,
+            estimated_yield_kg=round(yield_kg, 2),
+            estimated_price_per_kg=round(price_kg, 2),
+            estimated_revenue=round(est_revenue, 2),
+            estimated_cost=round(est_cost, 2),
+            estimated_profit=round(est_profit, 2),
+            roi_percent=round(roi, 1),
+        ))
+
+        total_est_yield += yield_kg
+        total_est_revenue += est_revenue
+        total_actual_cost += actual_cost
+        total_actual_revenue += actual_revenue
+
+    total_profit = total_actual_revenue - total_actual_cost
+    overall_roi = (total_profit / total_actual_cost * 100) if total_actual_cost > 0 else 0
+
+    return GardenROIResponse(
+        report_id=report_id,
+        location=report.get("location", ""),
+        bed_estimates=bed_estimates,
+        total_estimated_yield_kg=round(total_est_yield, 2),
+        total_estimated_revenue=round(total_est_revenue, 2),
+        total_actual_cost=round(total_actual_cost, 2),
+        total_actual_revenue=round(total_actual_revenue, 2),
+        total_profit=round(total_profit, 2),
+        overall_roi_percent=round(overall_roi, 1),
+        disclaimer="Yields and prices are rough estimates for Indian conditions. Actual results vary by variety, management, weather, and market. Use for planning only."
+    )
+
+
+# --- Plant Health Diagnosis Wizard ---
+# Deterministic symptom → rule lookup using existing pest/disease data
+# No ML/LLM - pure rule engine with confidence scores
+
+# Symptom to condition mapping based on existing pest/disease alerts
+SYMPTOM_RULES = {
+    "yellow_leaves": [
+        {"condition": "nitrogen_deficiency", "indicators": ["older_leaves_first", "uniform_yellowing", "stunted_growth"], 
+         "advice": "Apply nitrogen-rich fertilizer (urea, compost). Check soil pH."},
+        {"condition": "overwatering", "indicators": ["wilting_despite_wet_soil", "yellow_lower_leaves", "root_rot_smell"], 
+         "advice": "Reduce watering frequency. Improve drainage. Check for root rot."},
+        {"condition": "iron_deficiency", "indicators": ["young_leaves_yellow", "green_veins", "high_ph_soil"], 
+         "advice": "Apply iron chelate or ferrous sulfate. Lower soil pH with sulfur."},
+    ],
+    "brown_spots": [
+        {"condition": "fungal_leaf_spot", "indicators": ["circular_spots", "yellow_halo", "high_humidity"], 
+         "advice": "Remove affected leaves. Improve air circulation. Copper fungicide if severe."},
+        {"condition": "bacterial_leaf_spot", "indicators": ["angular_spots", "water_soaked_edges", "yellow_halo"], 
+         "advice": "Remove affected leaves. Avoid overhead watering. Copper-based bactericide."},
+        {"condition": "nutrient_burn", "indicators": ["brown_tips", "crispy_edges", "recent_fertilizer"], 
+         "advice": "Flush soil with water. Reduce fertilizer concentration."},
+    ],
+    "wilting": [
+        {"condition": "underwatering", "indicators": ["dry_soil", "leaves_crispy", "recovers_after_water"], 
+         "advice": "Water deeply. Mulch to retain moisture. Check soil daily."},
+        {"condition": "root_rot", "indicators": ["wet_soil", "wilting_despite_water", "foul_smell", "brown_roots"], 
+         "advice": "Improve drainage immediately. Remove affected roots. Repot in fresh soil."},
+        {"condition": "vascular_wilt", "indicators": ["one_sided_wilt", "vascular_browning", "no_recovery"], 
+         "advice": "Remove plant. Solarize soil. Use resistant varieties next season."},
+    ],
+    "holes_in_leaves": [
+        {"condition": "caterpillar_damage", "indicators": ["irregular_holes", "frass_visible", "caterpillars_present"], 
+         "advice": "Hand-pick caterpillars. Apply Bt (Bacillus thuringiensis). Neem oil spray."},
+        {"condition": "beetle_damage", "indicators": ["small_round_holes", "skeletonized_leaves", "beetles_visible"], 
+         "advice": "Hand-pick beetles. Neem oil. Row covers for prevention."},
+        {"condition": "slug_snail_damage", "indicators": ["irregular_holes", "slime_trails", "night_feeding"], 
+         "advice": "Beer traps. Copper tape barriers. Diatomaceous earth. Hand-pick at night."},
+    ],
+    "white_powder": [
+        {"condition": "powdery_mildew", "indicators": ["white_powder_on_leaves", "high_humidity", "poor_airflow"], 
+         "advice": "Baking soda spray (1 tsp/L water). Improve airflow. Avoid evening watering."},
+        {"condition": "downy_mildew", "indicators": ["yellow_patches_top", "white_fuzz_underside", "cool_humid"], 
+         "advice": "Remove affected leaves. Copper fungicide. Improve airflow."},
+    ],
+    "stunted_growth": [
+        {"condition": "phosphorus_deficiency", "indicators": ["dark_green_leaves", "purple_underside", "slow_growth"], 
+         "advice": "Apply rock phosphate or bone meal. Check soil pH."},
+        {"condition": "potassium_deficiency", "indicators": ["brown_leaf_edges", "weak_stems", "poor_fruit_set"], 
+         "advice": "Apply potassium sulfate or wood ash. Check soil pH."},
+        {"condition": "root_bound", "indicators": ["roots_circling", "pot_too_small", "water_runs_through"], 
+         "advice": "Repot into larger container. Loosen root ball."},
+    ],
+}
+
+
+def diagnose_plant(symptoms: List[str], plant_name: Optional[str] = None, env: Optional[dict] = None) -> List[dict]:
+    """Deterministic diagnosis based on symptom checklist."""
+    results = []
+    
+    for symptom in symptoms:
+        symptom_lower = symptom.lower().replace(" ", "_")
+        rules = SYMPTOM_RULES.get(symptom_lower, [])
+        
+        for rule in rules:
+            confidence = 0.5  # Base confidence
+            matched_indicators = 0
+            
+            # Check if indicators match environment
+            if env:
+                if "high_humidity" in rule.get("indicators", []) and env.get("humidity", 60) > 75:
+                    matched_indicators += 1
+                if "high_ph_soil" in rule.get("indicators", []) and env.get("ph", 6.5) > 7.5:
+                    matched_indicators += 1
+                if "wet_soil" in rule.get("indicators", []) and env.get("rainfall_mm", 900) > 1500:
+                    matched_indicators += 1
+                if "dry_soil" in rule.get("indicators", []) and env.get("rainfall_mm", 900) < 500:
+                    matched_indicators += 1
+            
+            # Confidence based on matched indicators
+            total_indicators = len(rule.get("indicators", []))
+            if total_indicators > 0:
+                confidence = min(0.9, 0.3 + (matched_indicators / total_indicators) * 0.6)
+            else:
+                confidence = 0.5
+            
+            # Check if plant is susceptible (from pest alerts)
+            plant_susceptible = False
+            if plant_name:
+                alerts = get_pest_disease_alerts({"name": plant_name, "category": "vegetable"}, env or {})
+                for alert in alerts:
+                    if rule["condition"].lower() in alert["name"].lower():
+                        plant_susceptible = True
+                        confidence = min(0.95, confidence + 0.2)
+            
+            results.append({
+                "condition": rule["condition"].replace("_", " ").title(),
+                "symptom": symptom,
+                "confidence": round(confidence * 100),
+                "advice": rule["advice"],
+                "plant_susceptible": plant_susceptible,
+                "matched_indicators": matched_indicators,
+                "total_indicators": len(rule.get("indicators", [])),
+            })
+    
+    # Sort by confidence descending
+    results.sort(key=lambda x: x["confidence"], reverse=True)
+    
+    # Group by condition, keep highest confidence
+    by_condition = {}
+    for r in results:
+        cond = r["condition"]
+        if cond not in by_condition or r["confidence"] > by_condition[cond]["confidence"]:
+            by_condition[cond] = r
+    
+    return list(by_condition.values())
+
+
+class DiagnosisRequest(BaseModel):
+    symptoms: List[str] = Field(..., min_items=1, max_items=5)
+    plant_name: Optional[str] = None
+    environment: Optional[dict] = None
+
+
+class DiagnosisResponse(BaseModel):
+    plant_name: Optional[str]
+    symptoms: List[str]
+    diagnoses: List[dict]
+    disclaimer: str
+
+
+@app.post("/api/v1/diagnose", response_model=DiagnosisResponse)
+@limiter.limit("60/minute")
+async def diagnose_plant_endpoint(request: Request, body: DiagnosisRequest):
+    """Deterministic plant health diagnosis from symptoms."""
+    env = body.environment
+    if not env and body.plant_name:
+        # Try to get environment from a recent report
+        pass
+    
+    diagnoses = diagnose_plant(body.symptoms, body.plant_name, env)
+    
+    return DiagnosisResponse(
+        plant_name=body.plant_name,
+        symptoms=body.symptoms,
+        diagnoses=diagnoses,
+        disclaimer="Diagnosis based on deterministic symptom rules. Not a substitute for professional agricultural advice. Consult local extension service for confirmation."
     )
 
 
