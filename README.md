@@ -69,6 +69,7 @@ Categories | Garden Risk | Comparison Table | Why Not?
 - **Companion Planting Suggestions**: ~50 static rules; shows "grows well with" / "avoid near" per plant based on report's other recommendations
 - **Regenerative Economics Dashboard**: `is_organic` flag on purchases; splits organic vs. conventional spend; estimates organic matter added (kg) and CO₂ offset (kg) from organic inputs (compost, vermicompost, neem cake, etc.)
 - **Pollinator-Friendly Tagging**: 9 plants flagged; 🐝 badge on cards; API filter `pollinator_friendly=true`
+- **Plant Health Diagnosis**: Deterministic symptom → rule engine (no ML); 6 symptom categories (yellow leaves, brown spots, wilting, holes, white powder, stunted growth); confidence scores; organic treatment advice
 - **User Accounts (Phone OTP)**: Phone-number login with 6-digit OTP; session tokens; "My Reports" dashboard showing all past reports; JWT-like tokens stored in localStorage
 - **Push Notifications**: Watering reminders via browser push (Web Push API); one-click opt-in banner; works offline via Service Worker
 - **PWA Offline Support**: Service Worker caches report pages (`/report/*`, `/impact`); works offline; background sync stub for future offline actions
@@ -114,6 +115,30 @@ Categories | Garden Risk | Comparison Table | Why Not?
 | `POST` | `/api/v1/sales`               | Record a sale/harvest    |
 | `GET`  | `/api/v1/sales/{report_id}`   | List sales for a report (optional plant filter) |
 | `GET`  | `/api/v1/ledger/{report_id}`  | Profit/loss summary + regenerative economics (organic spend, organic matter kg, CO₂ offset kg) |
+| `GET`  | `/api/v1/moon-calendar`       | Moon phase, biodynamic advice, Panchang, auspicious dates |
+| `POST` | `/api/v1/auth/send-otp`       | Send OTP to phone (mocked SMS) |
+| `POST` | `/api/v1/auth/verify-otp`     | Verify OTP, return session token |
+| `GET`  | `/api/v1/auth/me`             | Get current user profile |
+| `GET`  | `/api/v1/auth/my-reports`     | List all reports for logged-in user |
+| `POST` | `/api/v1/auth/logout`         | Logout (client-side token clear) |
+| `POST` | `/api/v1/push/subscribe`      | Subscribe to watering reminder push notifications |
+| `POST` | `/api/v1/push/unsubscribe`    | Unsubscribe from push notifications |
+| `POST` | `/api/v1/push/trigger-watering` | Trigger test watering reminder (demo) |
+| `GET`  | `/api/v1/impact/summary`      | Community-wide aggregate impact (water saved, organic matter, CO₂ offset, top plants, regions) |
+| `GET`  | `/impact`                     | Impact dashboard HTML page |
+| `GET`  | `/api/v1/reports/{id}/care-calendar` | Auto-generated watering/fertilizing/pruning/harvesting schedule |
+| `GET`  | `/api/v1/reports/{id}/watering-forecast` | 7-day rain/frost skip advisory |
+| `GET`  | `/api/v1/reports/{id}/harvest-timeline` | Gantt-style sowing-to-harvest timeline |
+| `GET`  | `/api/v1/reports/{id}/companion-matrix` | Companion planting matrix (good/bad/neutral) |
+| `GET`  | `/api/v1/reports/{id}/roi`    | Garden ROI estimator (yield, revenue, cost, profit) |
+| `POST` | `/api/v1/diagnose`            | Deterministic plant health diagnosis from symptoms |
+| `POST` | `/api/v1/soil-health`         | Record soil health measurement (pH, OM, N/P/K) |
+| `GET`  | `/api/v1/reports/{id}/soil-health` | List soil health logs for a report |
+| `GET`  | `/api/v1/reports/{id}/soil-health/trends` | Soil health trends for Chart.js |
+| `GET`  | `/api/v1/reports/{id}/export.csv` | Export recommendations as CSV |
+| `GET`  | `/api/v1/reports/{id}/export.xlsx` | Export recommendations as Excel |
+| `GET`  | `/api/v1/reports/{id}/calendar.ics` | Season-aware planting reminders (ICS) |
+| `GET`  | `/api/v1/plant-this-month`    | Seasonal planting calendar |
 | `GET`  | `/api/v1/moon-calendar`       | Moon phase, biodynamic advice, Panchang, auspicious dates |
 
 ### Generate Report Request Body
