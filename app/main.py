@@ -1688,9 +1688,6 @@ async def root():
     return FileResponse(os.path.join(os.path.dirname(__file__), "..", "static", "index.html"))
 
 
-# In-memory report cache (supplements SQLite persistence)
-reports_db = {}
-
 # --- Enhanced Health Check ---
 
 class HealthStatus(BaseModel):
@@ -2122,7 +2119,6 @@ async def generate_report(request: Request, body: ReportGenerateRequest):
         data_source=data_source,
     )
 
-    reports_db[report_id] = response
     # Save the response model so the persistence helper can access its fields.
     save_report_to_db(response, user_id)
     return response

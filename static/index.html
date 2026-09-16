@@ -13,6 +13,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#10b981">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -2580,6 +2581,7 @@
             // Simple chart using Chart.js if available, otherwise table
             const hasChartJS = typeof Chart !== 'undefined';
             
+            // First pass: render HTML with canvas elements (no inline script tags)
             container.innerHTML = trends.map(trend => `
                 <div style="margin-bottom:24px;">
                     <h4 style="font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
@@ -2589,26 +2591,6 @@
                         <div style="height:200px;">
                             <canvas id="chart-${trend.plant_name.replace(/\s+/g, '-')}"></canvas>
                         </div>
-                        <script>
-                            (function() {
-                                const ctx = document.getElementById('chart-${trend.plant_name.replace(/\s+/g, '-')}').getContext('2d');
-                                const datasets = [];
-                                if (${JSON.stringify(trend.ph_trend)}.length) datasets.push({label:'pH',data:${JSON.stringify(trend.ph_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#8b5cf6',fill:false});
-                                if (${JSON.stringify(trend.om_trend)}.length) datasets.push({label:'OM%',data:${JSON.stringify(trend.om_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#10b981',fill:false});
-                                if (${JSON.stringify(trend.n_trend)}.length) datasets.push({label:'N (ppm)',data:${JSON.stringify(trend.n_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#f59e0b',fill:false});
-                                if (${JSON.stringify(trend.p_trend)}.length) datasets.push({label:'P (ppm)',data:${JSON.stringify(trend.p_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#ef4444',fill:false});
-                                if (${JSON.stringify(trend.k_trend)}.length) datasets.push({label:'K (ppm)',data:${JSON.stringify(trend.k_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#3b82f6',fill:false});
-                                new Chart(ctx, {
-                                    type:'line',
-                                    data:{datasets},
-                                    options:{
-                                        responsive:true,
-                                        maintainAspectRatio:false,
-                                        scales:{x:{type:'time',time:{unit:'day'}},y:{beginAtZero:false}}
-                                    }
-                                });
-                            })();
-                        </script>
                     ` : `
                         <div style="overflow-x:auto;">
                             <table class="comp-table" style="font-size:11px;">
@@ -2633,6 +2615,32 @@
                     `}
                 </div>
             `).join('');
+
+            // Second pass: initialize Chart.js instances after DOM is ready
+            if (hasChartJS) {
+                trends.forEach(trend => {
+                    const canvas = document.getElementById('chart-${trend.plant_name.replace(/\s+/g, '-')}');
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    const datasets = [];
+                    if (${JSON.stringify(trend.ph_trend)}.length) datasets.push({label:'pH',data:${JSON.stringify(trend.ph_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#8b5cf6',fill:false});
+                    if (${JSON.stringify(trend.om_trend)}.length) datasets.push({label:'OM%',data:${JSON.stringify(trend.om_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#10b981',fill:false});
+                    if (${JSON.stringify(trend.n_trend)}.length) datasets.push({label:'N (ppm)',data:${JSON.stringify(trend.n_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#f59e0b',fill:false});
+                    if (${JSON.stringify(trend.p_trend)}.length) datasets.push({label:'P (ppm)',data:${JSON.stringify(trend.p_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#ef4444',fill:false});
+                    if (${JSON.stringify(trend.k_trend)}.length) datasets.push({label:'K (ppm)',data:${JSON.stringify(trend.k_trend.map(d => ({x:d.date, y:d.value})))},borderColor:'#3b82f6',fill:false});
+                    if (datasets.length > 0) {
+                        new Chart(ctx, {
+                            type:'line',
+                            data:{datasets},
+                            options:{
+                                responsive:true,
+                                maintainAspectRatio:false,
+                                scales:{x:{type:'time',time:{unit:'day'}},y:{beginAtZero:false}}
+                            }
+                        });
+                    }
+                });
+            }
         }
 
         // Purchase Modal
