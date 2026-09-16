@@ -176,6 +176,7 @@
                             <div style="margin-top:10px;font-size:12px;color:var(--muted);">
                                 💧 ${escapeHtml(rec.water_requirement || '?')} water &nbsp; ☀️ ${escapeHtml(rec.sun_requirement || '?')} sun &nbsp; 🌱 ${escapeHtml(rec.growth_duration || '?')} &nbsp; 📅 ${escapeHtml(rec.planting_season || '?')}
                                 ${rec.pollinator_friendly ? ' &nbsp; 🐝 <span style="color:var(--accent);font-weight:500;">Pollinator-friendly</span>' : ''}
+                                ${rec.hindi_name ? ' &nbsp; 🇮🇳 <span style="color:var(--muted);font-weight:500;">' + escapeHtml(rec.hindi_name) + '</span>' : ''}
                             </div>
                             ${rec.companion_suggestions ? `<div style="margin-top:8px;padding:8px;background:var(--bg);border-radius:6px;font-size:12px;">
                                 ${rec.companion_suggestions.grows_well_with && rec.companion_suggestions.grows_well_with.length ? `<span style="color:var(--accent);">✓ Grows well with:</span> ${escapeHtml(rec.companion_suggestions.grows_well_with.join(', '))}` : ''}

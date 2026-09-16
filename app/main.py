@@ -18,14 +18,144 @@ import sqlite3
 import base64
 import httpx
 import math
+import logging
+import sys
 from datetime import date, timedelta
+from contextlib import asynccontextmanager
+
+# --- Structured Logging Setup ---
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+LOG_FORMAT = os.environ.get("LOG_FORMAT", "json")  # json or text
+
+class JSONFormatter(logging.Formatter):
+    """Structured JSON log formatter."""
+    def format(self, record: logging.LogRecord) -> str:
+        log_obj = {
+            "timestamp": self.formatTime(record, self.datefmt),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "module": record.module,
+            "function": record.funcName,
+            "line": record.lineno,
+        }
+        if record.exc_info:
+            log_obj["exception"] = self.formatException(record.exc_info)
+        if hasattr(record, 'request_id'):
+            log_obj["request_id"] = record.request_id
+        if hasattr(record, 'user_id'):
+            log_obj["user_id"] = record.user_id
+        return json.dumps(log_obj, ensure_ascii=False)
+
+def setup_logging():
+    """Configure structured logging."""
+    root_logger = logging.getLogger()
+    root_logger.setLevel(getattr(logging, LOG_LEVEL))
+    
+    # Clear existing handlers
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
+    handler = logging.StreamHandler(sys.stdout)
+    if LOG_FORMAT == "json":
+        handler.setFormatter(JSONFormatter(datefmt="%Y-%m-%dT%H:%M:%S"))
+    else:
+        handler.setFormatter(logging.Formatter(
+            "%(asctime)s %(levelname)s %(name)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S"
+        ))
+    root_logger.addHandler(handler)
+    
+    # Reduce noise from third-party loggers
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("slowapi").setLevel(logging.WARNING)
+
+setup_logging()
+logger = logging.getLogger("greenscope")
+
+# Request ID middleware for tracing
+class RequestIDMiddleware:
+    """Add request ID to all requests for tracing."""
+    def __init__(self, app):
+        self.app = app
+    
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        
+        import uuid
+        request_id = str(uuid.uuid4())[:8]
+        
+        # Add request_id to scope for access in handlers
+        scope["request_id"] = request_id
+        
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append((b"x-request-id", request_id.encode()))
+                message["headers"] = headers
+            await send(message)
+        
+        await self.app(scope, receive, send_wrapper)
+
+
+# HTTPS enforcement for production (Render)
+class HTTPSRedirectMiddleware:
+    """Enforce HTTPS in production (when behind proxy like Render)."""
+    def __init__(self, app):
+        self.app = app
+        self.env = os.environ.get("ENVIRONMENT", "development")
+    
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        
+        if self.env == "production":
+            # Check X-Forwarded-Proto header (set by Render/load balancer)
+            headers = dict(scope.get("headers", []))
+            proto = headers.get(b"x-forwarded-proto", b"http").decode()
+            if proto == "http":
+                # Redirect to HTTPS
+                url = f"https://{headers.get(b'host', b'').decode()}{scope['path']}"
+                if scope.get("query_string"):
+                    url += f"?{scope['query_string'].decode()}"
+                
+                await send({
+                    "type": "http.response.start",
+                    "status": 301,
+                    "headers": [
+                        (b"location", url.encode()),
+                        (b"content-type", b"text/plain")
+                    ]
+                })
+                await send({
+                    "type": "http.response.body",
+                    "body": b"Redirecting to HTTPS"
+                })
+                return
+        
+        await self.app(scope, receive, send)
+
+
+# Startup/shutdown lifespan for cleanup
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    logger.info("GreenScope API starting up", extra={"version": "0.1.0"})
+    yield
+    # Shutdown
+    logger.info("GreenScope API shutting down")
 
 
 # --- Plant Knowledge Base ---
 
 def load_plant_db():
     db_path = os.path.join(os.path.dirname(__file__), "plant_db.json")
-    with open(db_path, "r") as f:
+    with open(db_path, "r", encoding="utf-8") as f:
         return json.load(f)["plants"]
 
 
@@ -595,7 +725,8 @@ def _init_postgres_schema(conn):
                 garden_risk JSONB,
                 comparison_table JSONB,
                 garden_bed JSONB,
-                data_source TEXT
+                data_source TEXT,
+                user_id INTEGER
             )
         """)
         cur.execute("""
@@ -641,6 +772,35 @@ def _init_postgres_schema(conn):
                 total_revenue REAL,
                 sale_date REAL,
                 notes TEXT,
+                created_at REAL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                phone TEXT UNIQUE NOT NULL,
+                name TEXT,
+                created_at REAL,
+                last_login REAL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS otp_codes (
+                id SERIAL PRIMARY KEY,
+                phone TEXT NOT NULL,
+                code TEXT NOT NULL,
+                purpose TEXT NOT NULL,
+                expires_at REAL NOT NULL,
+                used BOOLEAN DEFAULT FALSE,
+                created_at REAL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS user_sessions (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                token TEXT UNIQUE NOT NULL,
+                expires_at REAL NOT NULL,
                 created_at REAL
             )
         """)
@@ -768,17 +928,55 @@ def get_db():
             photo_url TEXT
         )"""
     )
+    # User accounts table
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            phone TEXT UNIQUE NOT NULL,
+            name TEXT,
+            created_at REAL,
+            last_login REAL
+        )"""
+    )
+    # OTP verification table
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS otp_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            phone TEXT NOT NULL,
+            code TEXT NOT NULL,
+            purpose TEXT NOT NULL,  -- 'login', 'register'
+            expires_at REAL NOT NULL,
+            used INTEGER DEFAULT 0,
+            created_at REAL
+        )"""
+    )
+    # User sessions table (JWT tokens)
+    conn.execute(
+        """CREATE TABLE IF NOT EXISTS user_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at REAL NOT NULL,
+            created_at REAL
+        )"""
+    )
+    # Add user_id to reports table for ownership
+    for col in ("user_id",):
+        try:
+            conn.execute(f"ALTER TABLE reports ADD COLUMN {col} INTEGER")
+        except sqlite3.OperationalError:
+            pass
     conn.commit()
     return conn
 
 
-def save_report_to_db(report):
+def save_report_to_db(report, user_id: Optional[int] = None):
     conn = get_db()
     conn.execute(
         """INSERT OR REPLACE INTO reports
         (report_id, location, latitude, longitude, environment, photo_analysis, recommendations, generated_at, processing_time_ms,
-         rejected_plants, categories, garden_risk, comparison_table, garden_bed, data_source)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+         rejected_plants, categories, garden_risk, comparison_table, garden_bed, data_source, user_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             report.report_id,
             report.location,
@@ -812,6 +1010,7 @@ def save_report_to_db(report):
                 "liters_saved_vs_baseline": r.liters_saved_vs_baseline,
                 "pct_water_saved": r.pct_water_saved,
                 "pollinator_friendly": r.pollinator_friendly,
+                "hindi_name": r.hindi_name,
             } for r in report.recommendations]),
             report.generated_at,
             report.processing_time_ms,
@@ -821,6 +1020,7 @@ def save_report_to_db(report):
             json.dumps(report.comparison_table) if report.comparison_table else None,
             json.dumps(report.garden_bed) if report.garden_bed else None,
             report.data_source,
+            user_id,
         ),
     )
     conn.commit()
@@ -831,7 +1031,7 @@ def load_report_from_db(report_id):
     conn = get_db()
     row = conn.execute(
         "SELECT location, latitude, longitude, environment, photo_analysis, recommendations, generated_at, processing_time_ms,"
-        " rejected_plants, categories, garden_risk, comparison_table, garden_bed, data_source"
+        " rejected_plants, categories, garden_risk, comparison_table, garden_bed, data_source, user_id"
         " FROM reports WHERE report_id = ?",
         (report_id,),
     ).fetchone()
@@ -853,6 +1053,7 @@ def load_report_from_db(report_id):
         "comparison_table": json.loads(row[11]) if len(row) > 11 and row[11] else None,
         "garden_bed": json.loads(row[12]) if len(row) > 12 and row[12] else None,
         "data_source": row[13] if len(row) > 13 else "fallback",
+        "user_id": row[14] if len(row) > 14 else None,
     }
 
 
@@ -1322,7 +1523,15 @@ def photo_obs_to_str(photo_obs: dict) -> str:
 
 # --- FastAPI App ---
 
-app = FastAPI(title="GreenScope API", version="0.1.0")
+app = FastAPI(
+    title="GreenScope API", 
+    version="0.1.0",
+    lifespan=lifespan
+)
+
+# Add middlewares in order (last added = outermost)
+app.add_middleware(HTTPSRedirectMiddleware)
+app.add_middleware(RequestIDMiddleware)
 
 # Rate limiting: cheap insurance so one abusive client can't get our
 # server IP banned by Nominatim (their usage policy is strict: ~1 req/s).
@@ -1434,6 +1643,7 @@ class ReportRecommendation(BaseModel):
     liters_saved_vs_baseline: Optional[float] = Field(None, description="Estimated liters saved vs high-water baseline crop")
     pct_water_saved: Optional[float] = Field(None, description="Percentage water saved vs baseline (Bottle Gourd)")
     pollinator_friendly: Optional[bool] = Field(None, description="Whether plant attracts pollinators")
+    hindi_name: Optional[str] = Field(None, description="Plant name in Hindi")
 
 
 class GardenRisk(BaseModel):
@@ -1482,9 +1692,56 @@ async def root():
     return FileResponse(os.path.join(os.path.dirname(__file__), "..", "static", "index.html"))
 
 
-@app.get("/api/v1/health", response_model=dict)
+@app.get("/", response_class=FileResponse)
+async def root():
+    return FileResponse(os.path.join(os.path.dirname(__file__), "..", "static", "index.html"))
+
+
+# --- Enhanced Health Check ---
+
+class HealthStatus(BaseModel):
+    status: str
+    service: str
+    version: str
+    timestamp: float
+    uptime_seconds: float
+    database: str
+    cache: dict
+    environment: str
+
+START_TIME = time.time()
+
+@app.get("/api/v1/health", response_model=HealthStatus)
 async def health_check():
-    return {"status": "healthy", "service": "GreenScope API"}
+    """Comprehensive health check with dependency status."""
+    # Check database connectivity
+    db_status = "unknown"
+    try:
+        conn = get_db()
+        conn.execute("SELECT 1").fetchone()
+        conn.close()
+        db_status = "connected"
+    except Exception as e:
+        logger.warning("Health check: database connection failed", extra={"error": str(e)})
+        db_status = f"error: {e}"
+    
+    # Cache stats
+    geocode_cache_size = len(_geocode_cache._cache) if hasattr(_geocode_cache, '_cache') else 0
+    climate_cache_size = len(_climate_cache._cache) if hasattr(_climate_cache, '_cache') else 0
+    
+    return HealthStatus(
+        status="healthy" if db_status == "connected" else "degraded",
+        service="GreenScope API",
+        version="0.1.0",
+        timestamp=time.time(),
+        uptime_seconds=round(time.time() - START_TIME, 1),
+        database=db_status,
+        cache={
+            "geocode_entries": geocode_cache_size,
+            "climate_entries": climate_cache_size
+        },
+        environment=os.environ.get("ENVIRONMENT", "development")
+    )
 
 
 # --- Caching (Nominatim/Open-Meteo rate-limit protection) ---
@@ -1608,6 +1865,10 @@ async def generate_report(request: Request, body: ReportGenerateRequest):
         lng = body.location.longitude
         location_str = body.location.location or "Unknown location"
 
+    # Get current user if authenticated
+    user = await get_current_user(request)
+    user_id = user["user_id"] if user else None
+
     env, data_source = get_env_for_location(lat, lng, location_str)
     photo_obs = analyze_photo(body.photo)
 
@@ -1700,6 +1961,7 @@ async def generate_report(request: Request, body: ReportGenerateRequest):
             liters_saved_vs_baseline=water_conservation.get("liters_saved_vs_baseline"),
             pct_water_saved=water_conservation.get("pct_water_saved"),
             pollinator_friendly=plant.get("pollinator_friendly", False),
+            hindi_name=plant.get("hindi_name"),
         ))
 
     # Add companion suggestions (second pass now that we have all recommendations)
@@ -1868,7 +2130,7 @@ async def generate_report(request: Request, body: ReportGenerateRequest):
 
     reports_db[report_id] = response
     # Save the response model so the persistence helper can access its fields.
-    save_report_to_db(response)
+    save_report_to_db(response, user_id)
     return response
 
 
@@ -2060,6 +2322,7 @@ async def get_report(report_id: str):
             liters_saved_vs_baseline=r.get('liters_saved_vs_baseline'),
             pct_water_saved=r.get('pct_water_saved'),
             pollinator_friendly=r.get('pollinator_friendly'),
+            hindi_name=r.get('hindi_name'),
         )
         recs.append(rec)
     gr = report.get('garden_risk')
@@ -2087,6 +2350,12 @@ async def get_report(report_id: str):
 async def serve_report_page(report_id: str):
     report_path = os.path.join(os.path.dirname(__file__), "..", "static", "report.html")
     return FileResponse(report_path)
+
+
+@app.get("/impact", response_class=FileResponse)
+async def serve_impact_page():
+    impact_path = os.path.join(os.path.dirname(__file__), "..", "static", "impact.html")
+    return FileResponse(impact_path)
 
 
 class FeedbackVote(BaseModel):
@@ -2160,6 +2429,38 @@ class LedgerSummary(BaseModel):
     conventional_purchases_total: float = 0.0
     estimated_organic_matter_kg: float = 0.0
     estimated_co2_offset_kg: float = 0.0
+
+
+# --- User Authentication (Phone OTP) ---
+
+class PhoneRequest(BaseModel):
+    phone: str = Field(..., pattern=r"^\+?[1-9]\d{9,14}$", description="Phone number in E.164 format")
+
+class OTPRequest(BaseModel):
+    phone: str = Field(..., pattern=r"^\+?[1-9]\d{9,14}$")
+    code: str = Field(..., min_length=4, max_length=6)
+    purpose: str = Field("login", pattern="^(login|register)$")
+
+class OTPResponse(BaseModel):
+    success: bool
+    message: str
+    token: Optional[str] = None
+    user_id: Optional[int] = None
+    is_new_user: bool = False
+
+class UserProfile(BaseModel):
+    id: int
+    phone: str
+    name: Optional[str] = None
+    created_at: float
+    last_login: Optional[float] = None
+
+class UserReportSummary(BaseModel):
+    report_id: str
+    location: str
+    generated_at: float
+    suitability_score: float
+    top_plant: str
 
 
 # Organic matter / CO2 offset estimation for regenerative inputs
@@ -2549,6 +2850,122 @@ async def get_ledger(request: Request, report_id: str):
     )
 
 
+# --- Aggregate Impact Dashboard (Community-wide) ---
+
+class ImpactSummary(BaseModel):
+    total_reports: int
+    total_users: int
+    # Water conservation
+    total_liters_saved: float
+    avg_water_conservation_score: float
+    # Regenerative economics
+    total_organic_matter_kg: float
+    total_co2_offset_kg: float
+    total_organic_spend: float
+    # Plant recommendations
+    most_recommended_plants: List[dict]  # [{plant, count, avg_score}]
+    # By region (agro_zone)
+    regions: List[dict]  # [{zone, reports, top_plant, liters_saved}]
+
+
+@app.get("/api/v1/impact/summary", response_model=ImpactSummary)
+@limiter.limit("30/minute")
+async def get_impact_summary(request: Request):
+    """Get community-wide aggregate impact metrics across all reports."""
+    conn = get_db()
+    
+    # Total reports and users
+    total_reports = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
+    total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    
+    # Get all reports with recommendations
+    rows = conn.execute(
+        "SELECT report_id, location, environment, recommendations, user_id FROM reports"
+    ).fetchall()
+    conn.close()
+    
+    # Aggregate metrics
+    total_liters_saved = 0.0
+    water_scores = []
+    plant_counts = {}
+    plant_scores = {}
+    region_data = {}
+    
+    for row in rows:
+        env = json.loads(row["environment"]) if row["environment"] else {}
+        agro_zone = env.get("agro_zone", "Unknown")
+        recommendations = json.loads(row["recommendations"]) if row["recommendations"] else []
+        
+        # Track region data
+        if agro_zone not in region_data:
+            region_data[agro_zone] = {"reports": 0, "liters_saved": 0.0, "plant_counts": {}}
+        region_data[agro_zone]["reports"] += 1
+        
+        for rec in recommendations:
+            # Water conservation
+            liters_saved = rec.get("liters_saved_vs_baseline", 0) or 0
+            total_liters_saved += liters_saved
+            region_data[agro_zone]["liters_saved"] += liters_saved
+            
+            water_score = rec.get("water_conservation_score")
+            if water_score is not None:
+                water_scores.append(water_score)
+            
+            # Plant frequency
+            plant_name = rec.get("plant_name", "")
+            if plant_name:
+                plant_counts[plant_name] = plant_counts.get(plant_name, 0) + 1
+                score = rec.get("suitability_score", 0)
+                if plant_name not in plant_scores:
+                    plant_scores[plant_name] = []
+                plant_scores[plant_name].append(score)
+        
+        # Organic matter from purchases
+        # We'll need to query purchases separately
+    
+    # Get organic matter from all purchases
+    conn = get_db()
+    purchase_rows = conn.execute(
+        "SELECT item_name, quantity, unit, cost_per_unit, is_organic FROM purchases"
+    ).fetchall()
+    conn.close()
+    
+    all_purchases = [dict(r) for r in purchase_rows]
+    total_organic_impact = calculate_organic_impact(all_purchases)
+    
+    # Most recommended plants
+    most_recommended = sorted(
+        [{"plant": p, "count": c, "avg_score": round(sum(plant_scores[p]) / len(plant_scores[p]), 1)} 
+         for p, c in plant_counts.items()],
+        key=lambda x: x["count"],
+        reverse=True
+    )[:10]
+    
+    # Region summary
+    regions = [
+        {
+            "zone": zone,
+            "reports": data["reports"],
+            "top_plant": max(data["plant_counts"].items(), key=lambda x: x[1])[0] if data["plant_counts"] else "N/A",
+            "liters_saved": round(data["liters_saved"], 1)
+        }
+        for zone, data in region_data.items()
+    ]
+    regions.sort(key=lambda x: x["reports"], reverse=True)
+    
+    return ImpactSummary(
+        total_reports=total_reports,
+        total_users=total_users,
+        total_liters_saved=round(total_liters_saved, 1),
+        avg_water_conservation_score=round(sum(water_scores) / len(water_scores), 1) if water_scores else 0,
+        total_organic_matter_kg=round(total_organic_impact["organic_matter_kg"], 1),
+        total_co2_offset_kg=round(total_organic_impact["co2_offset_kg"], 1),
+        total_organic_spend=round(total_organic_impact["organic_spend"], 2),
+        most_recommended_plants=most_recommended,
+        regions=regions
+    )
+
+
 @app.get("/api/v1/reports/{report_id}/export.csv")
 @limiter.limit("30/minute")
 async def export_report_csv(request: Request, report_id: str):
@@ -2738,6 +3155,250 @@ async def feedback_summary(request: Request):
                "helpful_pct": round(100 * r[1] / r[3], 1) if r[3] else 0}
         for r in rows
     }
+
+
+# --- User Authentication (Phone OTP) ---
+
+# Mock SMS gateway - replace with real provider (Twilio, MSG91, etc.) in production
+async def send_otp_sms(phone: str, code: str, purpose: str) -> bool:
+    """Send OTP via SMS. Mock implementation logs to console for demo."""
+    print(f"[MOCK SMS] To: {phone} | Code: {code} | Purpose: {purpose}")
+    # In production: integrate with Twilio, MSG91, etc.
+    # Example with Twilio:
+    # client.messages.create(body=f"Your GreenScope OTP is {code}", from_=TWILIO_FROM, to=phone)
+    return True
+
+
+def generate_otp() -> str:
+    """Generate a 6-digit OTP."""
+    import random
+    return str(random.randint(100000, 999999))
+
+
+def create_session_token(user_id: int) -> str:
+    """Create a JWT-like session token (simplified for demo)."""
+    import secrets
+    return f"gs_{user_id}_{secrets.token_urlsafe(32)}"
+
+
+@app.post("/api/v1/auth/send-otp", response_model=OTPResponse)
+@limiter.limit("10/minute")
+async def send_otp(request: Request, phone_req: PhoneRequest):
+    """Send OTP to phone number for login/register."""
+    conn = get_db()
+    phone = phone_req.phone.strip()
+    
+    # Check if user exists
+    user_row = conn.execute("SELECT id, name FROM users WHERE phone = ?", (phone,)).fetchone()
+    is_new_user = user_row is None
+    
+    # Generate OTP
+    code = generate_otp()
+    expires_at = time.time() + 300  # 5 minutes
+    
+    # Store OTP
+    conn.execute(
+        "INSERT INTO otp_codes (phone, code, purpose, expires_at, used, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (phone, code, "login" if not is_new_user else "register", expires_at, 0, time.time())
+    )
+    conn.commit()
+    conn.close()
+    
+    # Send SMS (mock)
+    await send_otp_sms(phone, code, "login" if not is_new_user else "register")
+    
+    return OTPResponse(
+        success=True,
+        message=f"OTP sent to {phone}" + (" (new user)" if is_new_user else ""),
+        is_new_user=is_new_user
+    )
+
+
+@app.post("/api/v1/auth/verify-otp", response_model=OTPResponse)
+@limiter.limit("20/minute")
+async def verify_otp(request: Request, otp_req: OTPRequest):
+    """Verify OTP and create session."""
+    conn = get_db()
+    phone = otp_req.phone.strip()
+    code = otp_req.code.strip()
+    
+    # Find valid OTP
+    otp_row = conn.execute(
+        "SELECT id, expires_at, used FROM otp_codes WHERE phone = ? AND code = ? AND purpose = ? AND used = 0 ORDER BY created_at DESC LIMIT 1",
+        (phone, code, otp_req.purpose)
+    ).fetchone()
+    
+    if not otp_row:
+        conn.close()
+        return OTPResponse(success=False, message="Invalid or expired OTP")
+    
+    if otp_row["expires_at"] < time.time():
+        conn.close()
+        return OTPResponse(success=False, message="OTP expired")
+    
+    # Mark OTP as used
+    conn.execute("UPDATE otp_codes SET used = 1 WHERE id = ?", (otp_row["id"],))
+    
+    # Get or create user
+    user_row = conn.execute("SELECT id, name FROM users WHERE phone = ?", (phone,)).fetchone()
+    if user_row:
+        user_id = user_row["id"]
+        conn.execute("UPDATE users SET last_login = ? WHERE id = ?", (time.time(), user_id))
+    else:
+        cursor = conn.execute(
+            "INSERT INTO users (phone, name, created_at, last_login) VALUES (?, ?, ?, ?)",
+            (phone, None, time.time(), time.time())
+        )
+        user_id = cursor.lastrowid
+    
+    # Create session
+    token = create_session_token(user_id)
+    expires_at = time.time() + 86400 * 30  # 30 days
+    conn.execute(
+        "INSERT INTO user_sessions (user_id, token, expires_at, created_at) VALUES (?, ?, ?, ?)",
+        (user_id, token, expires_at, time.time())
+    )
+    conn.commit()
+    conn.close()
+    
+    return OTPResponse(
+        success=True,
+        message="Login successful",
+        token=token,
+        user_id=user_id,
+        is_new_user=user_row is None
+    )
+
+
+async def get_current_user(request: Request) -> Optional[dict]:
+    """Extract user from Authorization header."""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    token = auth_header[7:]
+    conn = get_db()
+    session_row = conn.execute(
+        "SELECT user_id FROM user_sessions WHERE token = ? AND expires_at > ?",
+        (token, time.time())
+    ).fetchone()
+    conn.close()
+    if not session_row:
+        return None
+    return {"user_id": session_row["user_id"]}
+
+
+@app.get("/api/v1/auth/me", response_model=UserProfile)
+async def get_profile(request: Request):
+    """Get current user profile."""
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    conn = get_db()
+    user_row = conn.execute("SELECT id, phone, name, created_at, last_login FROM users WHERE id = ?", (user["user_id"],)).fetchone()
+    conn.close()
+    if not user_row:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserProfile(
+        id=user_row["id"],
+        phone=user_row["phone"],
+        name=user_row["name"],
+        created_at=user_row["created_at"],
+        last_login=user_row["last_login"]
+    )
+
+
+@app.get("/api/v1/auth/my-reports", response_model=List[UserReportSummary])
+async def get_my_reports(request: Request):
+    """Get all reports for the current user."""
+    user = await get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT report_id, location, generated_at, 
+           (SELECT MAX(suitability_score) FROM json_each(recommendations)) as top_score,
+           (SELECT plant_name FROM json_each(recommendations) ORDER BY suitability_score DESC LIMIT 1) as top_plant
+           FROM reports WHERE user_id = ? ORDER BY generated_at DESC""",
+        (user["user_id"],)
+    ).fetchall()
+    conn.close()
+    return [
+        UserReportSummary(
+            report_id=r["report_id"],
+            location=r["location"],
+            generated_at=r["generated_at"],
+            suitability_score=r["top_score"] or 0,
+            top_plant=r["top_plant"] or ""
+        )
+        for r in rows
+    ]
+
+
+# --- Push Notifications (Watering Reminders) ---
+
+class PushSubscription(BaseModel):
+    endpoint: str
+    keys: dict  # {p256dh: "...", auth: "..."}
+
+class PushSubscribeRequest(BaseModel):
+    subscription: PushSubscription
+    report_id: Optional[str] = None
+
+class PushSubscribeResponse(BaseModel):
+    success: bool
+    message: str
+
+
+# In-memory store for push subscriptions (demo - replace with DB in production)
+push_subscriptions = {}
+
+
+@app.post("/api/v1/push/subscribe", response_model=PushSubscribeResponse)
+@limiter.limit("30/minute")
+async def subscribe_push(request: Request, body: PushSubscribeRequest):
+    """Subscribe to push notifications for watering reminders."""
+    # In production: validate VAPID, store in DB with user_id
+    sub_key = body.subscription.endpoint
+    push_subscriptions[sub_key] = {
+        "subscription": body.subscription.dict(),
+        "report_id": body.report_id,
+        "created_at": time.time()
+    }
+    print(f"Push subscription stored: {sub_key}")
+    return PushSubscribeResponse(success=True, message="Subscribed to watering reminders")
+
+
+@app.post("/api/v1/push/unsubscribe", response_model=PushSubscribeResponse)
+@limiter.limit("30/minute")
+async def unsubscribe_push(request: Request, body: PushSubscribeRequest):
+    """Unsubscribe from push notifications."""
+    sub_key = body.subscription.endpoint
+    if sub_key in push_subscriptions:
+        del push_subscriptions[sub_key]
+    return PushSubscribeResponse(success=True, message="Unsubscribed from watering reminders")
+
+
+# Mock endpoint to trigger a watering reminder (for demo/testing)
+@app.post("/api/v1/push/trigger-watering", response_model=PushSubscribeResponse)
+@limiter.limit("10/minute")
+async def trigger_watering_reminder(request: Request, report_id: str):
+    """Trigger a test watering reminder push notification."""
+    # In production: this would be called by a scheduler/cron job
+    import json
+    
+    # Web Push protocol (simplified - production needs pywebpush)
+    # For demo, we'll just log and return success
+    print(f"Triggering watering reminder for report: {report_id}")
+    
+    # In a real implementation, you would:
+    # 1. Get all subscriptions for this report/user
+    # 2. Use pywebpush to send encrypted push messages
+    # 3. Handle VAPID signing
+    
+    return PushSubscribeResponse(
+        success=True, 
+        message=f"Watering reminder triggered for {report_id} (demo - check SW console)"
+    )
 
 
 def _ics_escape(s: str) -> str:

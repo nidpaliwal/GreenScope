@@ -1,8 +1,10 @@
-// GreenScope Service Worker - Offline caching for reports
-const CACHE_NAME = 'greenscope-v1';
+// GreenScope Service Worker - Offline caching + Push notifications for watering reminders
+const CACHE_NAME = 'greenscope-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/report.html',
+  '/impact.html',
   '/manifest.json'
 ];
 
@@ -50,11 +52,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // Handle report pages - cache first for offline viewing
+  if (url.pathname.startsWith('/report/') || url.pathname === '/impact') {
+    event.respondWith(cacheFirstStrategy(event.request));
+    return;
+  }
+  
   // Handle static assets - cache first
   event.respondWith(cacheFirstStrategy(event.request));
 });
 
-// Cache first strategy for static assets
+// Cache first strategy for static assets and report pages
 async function cacheFirstStrategy(request) {
   const cached = await caches.match(request);
   if (cached) {
@@ -111,28 +119,94 @@ async function networkFirstStrategy(request) {
   }
 }
 
-// Background sync for offline actions (future enhancement)
+// Background sync for offline actions
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-purchases' || event.tag === 'sync-sales') {
+  if (event.tag === 'sync-purchases' || event.tag === 'sync-sales' || event.tag === 'sync-watering') {
     event.waitUntil(syncOfflineData(event.tag));
   }
 });
 
 async function syncOfflineData(tag) {
-  // Future: sync offline purchases/sales when back online
   console.log('Background sync triggered:', tag);
+  // Future: sync offline purchases/sales/watering when back online
 }
 
-// Push notifications (future enhancement)
+// Push notifications for watering reminders
 self.addEventListener('push', (event) => {
   if (event.data) {
-    const data = event.data.json();
-    event.waitUntil(
-      self.registration.showNotification(data.title, {
-        body: data.body,
+    try {
+      const data = event.data.json();
+      const options = {
+        body: data.body || 'Time to water your plants!',
         icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌿</text></svg>',
-        badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌿</text></svg>'
+        badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🌿</text></svg>',
+        vibrate: [200, 100, 200],
+        tag: data.tag || 'watering-reminder',
+        renotify: true,
+        data: data.data || {},
+        actions: [
+          { action: 'done', title: '✅ Done' },
+          { action: 'snooze', title: '⏰ Snooze 1h' }
+        ]
+      };
+      
+      event.waitUntil(
+        self.registration.showNotification(data.title || '🌿 GreenScope Watering Reminder', options)
+      );
+    } catch (e) {
+      console.error('Push notification error:', e);
+    }
+  }
+});
+
+// Notification click handling
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  if (event.action === 'done') {
+    // Mark watering as done - could sync to server
+    console.log('Watering marked as done');
+    event.waitUntil(
+      clients.matchAll({ type: 'window' }).then(clientList => {
+        for (const client of clientList) {
+          client.postMessage({ type: 'watering-done', data: event.notification.data });
+        }
+      })
+    );
+  } else if (event.action === 'snooze') {
+    // Snooze for 1 hour - reschedule notification
+    console.log('Snoozed for 1 hour');
+    // In a real implementation, this would reschedule via the server
+  } else {
+    // Default click - open the report page
+    const reportId = event.notification.data?.reportId;
+    const url = reportId ? `/report/${reportId}` : '/';
+    event.waitUntil(
+      clients.matchAll({ type: 'window' }).then(clientList => {
+        for (const client of clientList) {
+          if (client.url.includes(reportId) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) {
+          return clients.openWindow(url);
+        }
       })
     );
   }
 });
+
+// Periodic background sync for watering schedule (requires Periodic Background Sync API)
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'check-watering-schedule') {
+    event.waitUntil(checkWateringSchedule());
+  }
+});
+
+async function checkWateringSchedule() {
+  // This would check local IndexedDB for watering schedules
+  // and show notifications for due waterings
+  console.log('Checking watering schedule...');
+}
+
+console.log('GreenScope SW v2 loaded - offline caching + push notifications enabled');

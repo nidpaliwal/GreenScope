@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenScope — Community Impact Dashboard</title>
+    <meta name="description" content="Aggregate community impact: water saved, organic matter added, CO2 offset, top plants by region.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌍</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#f8fafc; --fg:#0f172a; --muted:#64748b; --accent:#10b981; --accent-hover:#059669; --card:#fff; --border:#e2e8f0; --warning:#f59e0b; --error:#ef4444; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg); min-height: 100vh; margin: 0; }
+        .card { background: var(--card); border-radius: 12px; padding: 24px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .stat-card { text-align: center; padding: 20px; }
+        .stat-value { font-size: 36px; font-weight: 700; line-height: 1.2; color: var(--accent); }
+        .stat-label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; }
+        .plant-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .plant-row:last-child { border-bottom: none; }
+        .plant-rank { width: 32px; font-weight: 600; color: var(--muted); font-size: 14px; }
+        .plant-name { flex: 1; font-weight: 500; }
+        .plant-meta { font-size: 12px; color: var(--muted); display: flex; gap: 16px; }
+        .region-card { padding: 16px; border-radius: 8px; background: var(--bg); margin-bottom: 12px; }
+        .region-name { font-weight: 600; font-size: 15px; }
+        .region-meta { font-size: 12px; color: var(--muted); margin-top: 6px; display: flex; gap: 16px; flex-wrap: wrap; }
+        .lang-toggle { position: fixed; bottom: 24px; right: 24px; z-index: 50; }
+        @media (max-width: 640px) { .stat-value { font-size: 28px; } }
+    </style>
+</head>
+<body>
+    <nav class="border-b border-border/50 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-xl font-bold" style="color:var(--fg);">🌍 GreenScope Impact</span>
+                <span class="text-sm px-2 py-1 rounded bg-green-50 text-green-700" style="color:#15803d;">Community Dashboard</span>
+            </div>
+            <a href="/" class="text-sm" style="color:var(--accent);text-decoration:none;">← New Report</a>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-6 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold" style="color:var(--fg);">Community Impact Dashboard</h1>
+            <p class="mt-2" style="color:var(--muted);">Aggregate metrics across all GreenScope users and reports</p>
+        </div>
+
+        <!-- Key Stats Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card stat-card">
+                <div class="stat-value" id="totalReports">—</div>
+                <div class="stat-label">Total Reports Generated</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-value" id="totalUsers">—</div>
+                <div class="stat-label">Registered Users</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-value" id="totalLitersSaved">—</div>
+                <div class="stat-label">Liters of Water Saved</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-value" id="avgWaterScore">—</div>
+                <div class="stat-label">Avg Water Conservation Score</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="card stat-card">
+                <div class="stat-value" id="totalOrganicMatter">—</div>
+                <div class="stat-label">Organic Matter Added (kg)</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-value" id="totalCO2Offset">—</div>
+                <div class="stat-label">CO₂ Offset (kg)</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-value" id="totalOrganicSpend">—</div>
+                <div class="stat-label">Organic Input Spend (₹)</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-value" id="totalRegions">—</div>
+                <div class="stat-label">Agro-zones Covered</div>
+            </div>
+        </div>
+
+        <!-- Most Recommended Plants -->
+        <div class="card mb-8">
+            <h2 class="text-lg font-bold mb-4">Most Recommended Plants</h2>
+            <div id="topPlants" class="space-y-2">
+                <div class="text-center py-8" style="color:var(--muted);">Loading…</div>
+            </div>
+        </div>
+
+        <!-- Regions -->
+        <div class="card mb-8">
+            <h2 class="text-lg font-bold mb-4">Impact by Agro-zone</h2>
+            <div id="regions" class="space-y-2">
+                <div class="text-center py-8" style="color:var(--muted);">Loading…</div>
+            </div>
+        </div>
+
+        <div class="card text-center">
+            <p class="text-sm" style="color:var(--muted);">Data updated in real-time. Metrics computed from all user reports and purchase logs.</p>
+        </div>
+    </main>
+
+    <!-- Language Toggle -->
+    <div class="lang-toggle">
+        <button id="langToggle" class="px-4 py-2 rounded-lg shadow-lg font-medium transition-colors" style="background:var(--accent);color:white;">
+            🇮🇳 हिंदी
+        </button>
+    </div>
+
+    <script>
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        async function loadImpact() {
+            try {
+                const res = await fetch('/api/v1/impact/summary');
+                if (!res.ok) throw new Error('Failed to load');
+                const data = await res.json();
+                renderStats(data);
+                renderTopPlants(data.most_recommended_plants);
+                renderRegions(data.regions);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('topPlants').innerHTML = '<div class="text-center py-8 text-red-600">Failed to load impact data</div>';
+            }
+        }
+
+        function renderStats(data) {
+            document.getElementById('totalReports').textContent = data.total_reports.toLocaleString();
+            document.getElementById('totalUsers').textContent = data.total_users.toLocaleString();
+            document.getElementById('totalLitersSaved').textContent = data.total_liters_saved.toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('avgWaterScore').textContent = data.avg_water_conservation_score.toFixed(1);
+            document.getElementById('totalOrganicMatter').textContent = data.total_organic_matter_kg.toLocaleString(undefined, {maximumFractionDigits: 1});
+            document.getElementById('totalCO2Offset').textContent = data.total_co2_offset_kg.toLocaleString(undefined, {maximumFractionDigits: 1});
+            document.getElementById('totalOrganicSpend').textContent = data.total_organic_spend.toLocaleString(undefined, {maximumFractionDigits: 0});
+            document.getElementById('totalRegions').textContent = data.regions.length;
+        }
+
+        function renderTopPlants(plants) {
+            const container = document.getElementById('topPlants');
+            if (!plants.length) {
+                container.innerHTML = '<div class="text-center py-8" style="color:var(--muted);">No plant data yet</div>';
+                return;
+            }
+            container.innerHTML = plants.map((p, i) => `
+                <div class="plant-row">
+                    <span class="plant-rank">#${i + 1}</span>
+                    <span class="plant-name">${escapeHtml(p.plant)}</span>
+                    <span class="plant-meta">
+                        <span>📊 ${p.count} reports</span>
+                        <span>⭐ ${p.avg_score}% avg</span>
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function renderRegions(regions) {
+            const container = document.getElementById('regions');
+            if (!regions.length) {
+                container.innerHTML = '<div class="text-center py-8" style="color:var(--muted);">No regional data yet</div>';
+                return;
+            }
+            container.innerHTML = regions.map(r => `
+                <div class="region-card">
+                    <div class="region-name">${escapeHtml(r.zone)}</div>
+                    <div class="region-meta">
+                        <span>📍 ${r.reports} reports</span>
+                        <span>🌱 Top: ${escapeHtml(r.top_plant)}</span>
+                        <span>💧 ${r.liters_saved.toLocaleString()} L saved</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Hindi toggle (simple demo - replaces static text)
+        const hindiLabels = {
+            'Community Impact Dashboard': 'सामुदायिक प्रभाव डैशबोर्ड',
+            'Aggregate metrics across all GreenScope users and reports': 'सभी GreenScope उपयोगकर्ताओं और रिपोर्ट्स में संयुक्त मेट्रिक्स',
+            'Total Reports Generated': 'कुल रिपोर्ट्स उत्पन्न',
+            'Registered Users': 'पंजीकृत उपयोगकर्ता',
+            'Liters of Water Saved': 'बचाया गया पानी (लीटर)',
+            'Avg Water Conservation Score': 'औसत जल संरक्षण स्कोर',
+            'Organic Matter Added (kg)': 'जोड़ा गया कार्बनिक पदार्थ (किग्रा)',
+            'CO₂ Offset (kg)': 'CO₂ ऑफसेट (किग्रा)',
+            'Organic Input Spend (₹)': 'जैविक इनपुट खर्च (₹)',
+            'Agro-zones Covered': 'कवर किए गए कृषि-जोन',
+            'Most Recommended Plants': 'सबसे अधिक अनुशंसित पौधे',
+            'Impact by Agro-zone': 'कृषि-जोन के अनुसार प्रभाव',
+        };
+
+        let isHindi = false;
+        document.getElementById('langToggle').addEventListener('click', () => {
+            isHindi = !isHindi;
+            const btn = document.getElementById('langToggle');
+            btn.textContent = isHindi ? '🇬🇧 English' : '🇮🇳 हिंदी';
+            
+            if (isHindi) {
+                // Simple replacement for demo
+                document.querySelector('h1').textContent = hindiLabels['Community Impact Dashboard'];
+                document.querySelector('main > div:first-child > p').textContent = hindiLabels['Aggregate metrics across all GreenScope users and reports'];
+                document.querySelectorAll('.stat-label').forEach(el => {
+                    const key = el.textContent.trim();
+                    if (hindiLabels[key]) el.textContent = hindiLabels[key];
+                });
+                document.querySelectorAll('h2').forEach(el => {
+                    const key = el.textContent.trim();
+                    if (hindiLabels[key]) el.textContent = hindiLabels[key];
+                });
+            } else {
+                location.reload(); // Simple reset
+            }
+        });
+
+        loadImpact();
+    </script>
+</body>
+</html>

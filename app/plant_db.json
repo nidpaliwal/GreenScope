@@ -20,7 +20,8 @@
       "pot_size_cm": 25,
       "pot_depth_cm": 20,
       "container_suitable": true,
-      "pollinator_friendly": true
+      "pollinator_friendly": true,
+      "hindi_name": "तुलसी"
     },
     {
       "id": 2,
@@ -43,7 +44,8 @@
       "pot_size_cm": 50,
       "pot_depth_cm": 50,
       "container_suitable": false,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "नीम"
     },
     {
       "id": 3,
@@ -65,7 +67,8 @@
       "pot_size_cm": 30,
       "pot_depth_cm": 30,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "अश्वगंधा"
     },
     {
       "id": 4,
@@ -87,7 +90,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 15,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "ब्राह्मी"
     },
     {
       "id": 5,
@@ -109,7 +113,8 @@
       "pot_size_cm": 60,
       "pot_depth_cm": 60,
       "container_suitable": false,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "आंवला"
     },
     {
       "id": 6,
@@ -131,7 +136,8 @@
       "pot_size_cm": 30,
       "pot_depth_cm": 30,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "गिलोय"
     },
     {
       "id": 7,
@@ -153,7 +159,8 @@
       "pot_size_cm": 35,
       "pot_depth_cm": 30,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "करी पत्ता"
     },
     {
       "id": 8,
@@ -175,7 +182,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 15,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "एलोवेरा"
     },
     {
       "id": 9,
@@ -197,7 +205,8 @@
       "pot_size_cm": 30,
       "pot_depth_cm": 25,
       "container_suitable": true,
-      "pollinator_friendly": true
+      "pollinator_friendly": true,
+      "hindi_name": "लेमनग्रास"
     },
     {
       "id": 10,
@@ -220,7 +229,8 @@
       "pot_size_cm": 50,
       "pot_depth_cm": 50,
       "container_suitable": false,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "मोरिंगा"
     },
     {
       "id": 11,
@@ -243,7 +253,8 @@
       "pot_size_cm": 30,
       "pot_depth_cm": 30,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "हल्दी"
     },
     {
       "id": 12,
@@ -265,7 +276,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 15,
       "container_suitable": true,
-      "pollinator_friendly": true
+      "pollinator_friendly": true,
+      "hindi_name": "धनिया"
     },
     {
       "id": 13,
@@ -287,7 +299,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 15,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "मेथी"
     },
     {
       "id": 14,
@@ -309,7 +322,8 @@
       "pot_size_cm": 35,
       "pot_depth_cm": 30,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "भिंडी"
     },
     {
       "id": 15,
@@ -331,7 +345,8 @@
       "pot_size_cm": 35,
       "pot_depth_cm": 30,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "बैंगन"
     },
     {
       "id": 16,
@@ -353,7 +368,8 @@
       "pot_size_cm": 25,
       "pot_depth_cm": 20,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "मिर्च"
     },
     {
       "id": 17,
@@ -375,7 +391,8 @@
       "pot_size_cm": 25,
       "pot_depth_cm": 20,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "मूंग"
     },
     {
       "id": 18,
@@ -397,7 +414,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 15,
       "container_suitable": true,
-      "pollinator_friendly": true
+      "pollinator_friendly": true,
+      "hindi_name": "गेंदा"
     },
     {
       "id": 19,
@@ -419,7 +437,8 @@
       "pot_size_cm": 35,
       "pot_depth_cm": 30,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "टमाटर"
     },
     {
       "id": 20,
@@ -441,7 +460,8 @@
       "pot_size_cm": 40,
       "pot_depth_cm": 35,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "लौकी"
     },
     {
       "id": 21,
@@ -463,7 +483,8 @@
       "pot_size_cm": 40,
       "pot_depth_cm": 35,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "तोरई"
     },
     {
       "id": 22,
@@ -485,7 +506,8 @@
       "pot_size_cm": 40,
       "pot_depth_cm": 35,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "करेला"
     },
     {
       "id": 23,
@@ -507,7 +529,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 15,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "पालक"
     },
     {
       "id": 24,
@@ -529,7 +552,8 @@
       "pot_size_cm": 25,
       "pot_depth_cm": 20,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "मटर"
     },
     {
       "id": 25,
@@ -551,7 +575,8 @@
       "pot_size_cm": 30,
       "pot_depth_cm": 25,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "फूलगोभी"
     },
     {
       "id": 26,
@@ -573,7 +598,8 @@
       "pot_size_cm": 30,
       "pot_depth_cm": 25,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "पत्तागोभी"
     },
     {
       "id": 27,
@@ -595,7 +621,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 15,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "प्याज"
     },
     {
       "id": 28,
@@ -617,7 +644,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 15,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "लहसुन"
     },
     {
       "id": 29,
@@ -639,7 +667,8 @@
       "pot_size_cm": 30,
       "pot_depth_cm": 25,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "अदरक"
     },
     {
       "id": 30,
@@ -661,7 +690,8 @@
       "pot_size_cm": 25,
       "pot_depth_cm": 20,
       "container_suitable": true,
-      "pollinator_friendly": true
+      "pollinator_friendly": true,
+      "hindi_name": "सरसों"
     },
     {
       "id": 31,
@@ -684,7 +714,8 @@
       "pot_size_cm": 60,
       "pot_depth_cm": 60,
       "container_suitable": false,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "केला"
     },
     {
       "id": 32,
@@ -706,7 +737,8 @@
       "pot_size_cm": 80,
       "pot_depth_cm": 80,
       "container_suitable": false,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "आम"
     },
     {
       "id": 33,
@@ -729,7 +761,8 @@
       "pot_size_cm": 50,
       "pot_depth_cm": 50,
       "container_suitable": false,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "अमरूद"
     },
     {
       "id": 34,
@@ -751,7 +784,8 @@
       "pot_size_cm": 50,
       "pot_depth_cm": 50,
       "container_suitable": false,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "पपीता"
     },
     {
       "id": 35,
@@ -774,7 +808,8 @@
       "pot_size_cm": 40,
       "pot_depth_cm": 40,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "नींबू"
     },
     {
       "id": 36,
@@ -796,7 +831,8 @@
       "pot_size_cm": 30,
       "pot_depth_cm": 25,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "लोबिया"
     },
     {
       "id": 37,
@@ -818,7 +854,8 @@
       "pot_size_cm": 25,
       "pot_depth_cm": 20,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "उड़द"
     },
     {
       "id": 38,
@@ -841,7 +878,8 @@
       "pot_size_cm": 40,
       "pot_depth_cm": 40,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "अरहर"
     },
     {
       "id": 39,
@@ -863,7 +901,8 @@
       "pot_size_cm": 30,
       "pot_depth_cm": 30,
       "container_suitable": true,
-      "pollinator_friendly": true
+      "pollinator_friendly": true,
+      "hindi_name": "चमेली"
     },
     {
       "id": 40,
@@ -885,7 +924,8 @@
       "pot_size_cm": 40,
       "pot_depth_cm": 40,
       "container_suitable": true,
-      "pollinator_friendly": true
+      "pollinator_friendly": true,
+      "hindi_name": "गुड़हल"
     },
     {
       "id": 41,
@@ -906,7 +946,8 @@
       "pot_size_cm": 60,
       "pot_depth_cm": 40,
       "container_suitable": false,
-      "pollinator_friendly": true
+      "pollinator_friendly": true,
+      "hindi_name": "कमल"
     },
     {
       "id": 42,
@@ -928,7 +969,8 @@
       "pot_size_cm": 40,
       "pot_depth_cm": 40,
       "container_suitable": true,
-      "pollinator_friendly": true
+      "pollinator_friendly": true,
+      "hindi_name": "गुलाब"
     },
     {
       "id": 43,
@@ -950,7 +992,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 15,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "पुदीना"
     },
     {
       "id": 44,
@@ -972,7 +1015,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 15,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "स्टीविया"
     },
     {
       "id": 45,
@@ -994,7 +1038,8 @@
       "pot_size_cm": 50,
       "pot_depth_cm": 40,
       "container_suitable": false,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "आर्टिचोक"
     },
     {
       "id": 46,
@@ -1017,7 +1062,8 @@
       "pot_size_cm": 40,
       "pot_depth_cm": 35,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "शकरकंद"
     },
     {
       "id": 47,
@@ -1039,7 +1085,8 @@
       "pot_size_cm": 40,
       "pot_depth_cm": 40,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "रतालू"
     },
     {
       "id": 48,
@@ -1061,7 +1108,8 @@
       "pot_size_cm": 15,
       "pot_depth_cm": 20,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "मूली"
     },
     {
       "id": 49,
@@ -1083,7 +1131,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 25,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "गाजर"
     },
     {
       "id": 50,
@@ -1105,7 +1154,8 @@
       "pot_size_cm": 20,
       "pot_depth_cm": 20,
       "container_suitable": true,
-      "pollinator_friendly": false
+      "pollinator_friendly": false,
+      "hindi_name": "चुकंदर"
     }
   ]
 }
