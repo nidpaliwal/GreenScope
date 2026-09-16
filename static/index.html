@@ -91,6 +91,9 @@
                 <span class="text-sm" style="color:var(--muted);">AI Gardening Intelligence</span>
             </div>
             <div class="flex items-center gap-4">
+                <button id="loginBtn" onclick="openAuthModal()" class="btn-primary py-2 px-4 text-sm" style="font-weight:500;">📱 Login</button>
+                <button id="myReportsBtn" onclick="openMyReportsModal()" class="hidden btn-primary py-2 px-4 text-sm" style="font-weight:500;background:#059669;">📋 My Reports</button>
+                <button id="logoutBtn" onclick="logout()" class="hidden btn-primary py-2 px-4 text-sm" style="font-weight:500;background:#ef4444;">Logout</button>
                 <button id="darkToggle" onclick="document.documentElement.classList.toggle('dark');localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;color:var(--fg);">🌙</button>
                 <button id="langToggle" onclick="toggleLang()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--fg);">हिंदी</button>
                 <div id="google_translate_element" style="display:none;"></div>
@@ -295,6 +298,84 @@
         </section>
     </main>
 
+    <!-- Login / OTP Modal -->
+    <div id="authModal" class="hidden" role="dialog" aria-modal="true" aria-label="Login with phone" onclick="if(event.target===this)closeAuthModal()">
+        <div class="card" style="max-width:420px;width:90%;margin:auto;">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="authModalTitle" class="text-xl font-bold">📱 Login with Phone</h3>
+                <button onclick="closeAuthModal()" aria-label="Close" style="border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;background:none;color:var(--fg);">✕</button>
+            </div>
+            
+            <!-- Step 1: Enter Phone -->
+            <div id="authStepPhone" class="space-y-4">
+                <p style="font-size:13px;color:var(--muted);">Enter your phone number to receive a 6-digit OTP. <strong style="color:var(--warning);">Demo: OTP is logged to console (no real SMS sent).</strong></p>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Phone Number</label>
+                    <input type="tel" id="authPhone" class="input-field" placeholder="+91 98765 43210" pattern="^\+?[1-9]\d{9,14}$" aria-describedby="phoneHelp" style="background-image:none;padding-right:16px;">
+                    <p id="phoneHelp" class="text-xs mt-1" style="color:var(--muted);">E.164 format: +91XXXXXXXXXX</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="sendOTP()" class="btn-primary flex-1" id="sendOtpBtn">Send OTP</button>
+                </div>
+            </div>
+            
+            <!-- Step 2: Enter OTP -->
+            <div id="authStepOtp" class="hidden space-y-4">
+                <p style="font-size:13px;color:var(--muted);">Enter the 6-digit code sent to <span id="authPhoneDisplay"></span>. <strong style="color:var(--warning);">Demo: Check browser console for the OTP.</strong></p>
+                <div class="grid grid-cols-6 gap-2" style="max-width:300px;">
+                    <input type="text" maxlength="1" class="input-field text-center text-2xl otp-input" data-index="0" pattern="\d" inputmode="numeric" aria-label="OTP digit 1">
+                    <input type="text" maxlength="1" class="input-field text-center text-2xl otp-input" data-index="1" pattern="\d" inputmode="numeric" aria-label="OTP digit 2">
+                    <input type="text" maxlength="1" class="input-field text-center text-2xl otp-input" data-index="2" pattern="\d" inputmode="numeric" aria-label="OTP digit 3">
+                    <input type="text" maxlength="1" class="input-field text-center text-2xl otp-input" data-index="3" pattern="\d" inputmode="numeric" aria-label="OTP digit 4">
+                    <input type="text" maxlength="1" class="input-field text-center text-2xl otp-input" data-index="4" pattern="\d" inputmode="numeric" aria-label="OTP digit 5">
+                    <input type="text" maxlength="1" class="input-field text-center text-2xl otp-input" data-index="5" pattern="\d" inputmode="numeric" aria-label="OTP digit 6">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="verifyOTP()" class="btn-primary flex-1" id="verifyOtpBtn">Verify & Login</button>
+                    <button onclick="backToPhone()" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer;">Back</button>
+                </div>
+                <p style="font-size:11px;color:var(--muted);text-align:center;">Didn't receive OTP? <button onclick="resendOTP()" style="color:var(--accent);background:none;border:none;cursor:pointer;">Resend</button> (30s cooldown)</p>
+            </div>
+            
+            <!-- Loading state -->
+            <div id="authLoading" class="hidden flex items-center justify-center gap-2 py-4">
+                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                <span id="authLoadingText">Sending OTP...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Reports Modal -->
+    <div id="myReportsModal" class="hidden" role="dialog" aria-modal="true" aria-label="My Reports" onclick="if(event.target===this)closeMyReportsModal()">
+        <div class="card" style="max-width:560px;width:90%;max-height:85vh;overflow-y:auto;margin:auto;">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold">📋 My Reports</h3>
+                <button onclick="closeMyReportsModal()" aria-label="Close" style="border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;background:none;color:var(--fg);">✕</button>
+            </div>
+            <div id="myReportsList" class="space-y-3">
+                <div class="text-center py-8" style="color:var(--muted);">Loading your reports...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Push Notification Permission Banner -->
+    <div id="pushBanner" class="hidden fixed bottom-4 left-4 right-4 md:bottom-auto md:left-auto md:right-4 md:w-96 z-50 animate-fade-in-up" style="max-width:360px;">
+        <div class="card shadow-lg">
+            <div class="flex items-start gap-3 p-4">
+                <span style="font-size:24px;">🔔</span>
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium">Get Watering Reminders</div>
+                    <div class="text-sm mt-1" style="color:var(--muted);">Receive push notifications when it's time to water your plants. Works offline too!</div>
+                </div>
+                <button onclick="hidePushBanner()" aria-label="Dismiss" style="border:none;background:none;font-size:18px;cursor:pointer;color:var(--muted);">✕</button>
+            </div>
+            <div class="flex gap-2 p-4 border-t border-border" style="background:var(--bg);">
+                <button onclick="enablePushNotifications()" class="btn-primary flex-1" style="padding:8px 12px;font-size:13px;">Enable</button>
+                <button onclick="hidePushBanner()" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--fg);cursor:pointer;font-size:13px;">Later</button>
+            </div>
+        </div>
+    </div>
+
     <div id="plantModal" class="hidden" role="dialog" aria-modal="true" aria-label="Plant details" onclick="if(event.target===this)closePlantModal()">
         <div id="plantModalCard" class="card">
             <div class="flex items-center justify-between mb-2">
@@ -396,7 +477,281 @@
         let currentReportId = null;
         let currentCategoryFilter = null;
         let currentLang = localStorage.getItem('lang') || 'en';
-
+        
+        // Auth token management
+        function getAuthToken() { return localStorage.getItem('greenscope_token'); }
+        function setAuthToken(token) { localStorage.setItem('greenscope_token', token); }
+        function clearAuthToken() { localStorage.removeItem('greenscope_token'); }
+        
+        function authHeaders() {
+            const token = getAuthToken();
+            return token ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+        }
+        
+        // Update nav auth state
+        function updateAuthNav() {
+            const token = getAuthToken();
+            const loginBtn = document.getElementById('loginBtn');
+            const myReportsBtn = document.getElementById('myReportsBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (token) {
+                if (loginBtn) loginBtn.classList.add('hidden');
+                if (myReportsBtn) myReportsBtn.classList.remove('hidden');
+                if (logoutBtn) logoutBtn.classList.remove('hidden');
+            } else {
+                if (loginBtn) loginBtn.classList.remove('hidden');
+                if (myReportsBtn) myReportsBtn.classList.add('hidden');
+                if (logoutBtn) logoutBtn.classList.add('hidden');
+            }
+        }
+        
+        // --- OTP Login Flow ---
+        let otpCooldown = false;
+        
+        function openAuthModal() {
+            document.getElementById('authModal').classList.remove('hidden');
+            document.getElementById('authStepPhone').classList.remove('hidden');
+            document.getElementById('authStepOtp').classList.add('hidden');
+            document.getElementById('authLoading').classList.add('hidden');
+            document.getElementById('authPhone').value = '';
+            document.getElementById('sendOtpBtn').disabled = false;
+            otpCooldown = false;
+        }
+        
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.add('hidden');
+            document.querySelectorAll('.otp-input').forEach(input => input.value = '');
+        }
+        
+        async function sendOTP() {
+            const phone = document.getElementById('authPhone').value.trim();
+            if (!phone) return showError('Please enter a phone number');
+            if (!/^\+?[1-9]\d{9,14}$/.test(phone)) return showError('Invalid phone format (use +91XXXXXXXXXX)');
+            
+            document.getElementById('sendOtpBtn').disabled = true;
+            document.getElementById('authStepPhone').classList.add('hidden');
+            document.getElementById('authLoading').classList.remove('hidden');
+            document.getElementById('authLoadingText').textContent = 'Sending OTP...';
+            
+            try {
+                const res = await fetch('/api/v1/auth/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('authPhoneDisplay').textContent = phone;
+                    document.getElementById('authLoading').classList.add('hidden');
+                    document.getElementById('authStepOtp').classList.remove('hidden');
+                    document.querySelector('.otp-input').focus();
+                    startOtpCooldown();
+                } else {
+                    throw new Error(data.message || 'Failed to send OTP');
+                }
+            } catch (err) {
+                console.error(err);
+                showError(err.message);
+                document.getElementById('authLoading').classList.add('hidden');
+                document.getElementById('authStepPhone').classList.remove('hidden');
+                document.getElementById('sendOtpBtn').disabled = false;
+            }
+        }
+        
+        function startOtpCooldown() {
+            otpCooldown = true;
+            const resendBtn = document.querySelector('button[onclick="resendOTP()"]');
+            if (resendBtn) {
+                resendBtn.disabled = true;
+                resendBtn.textContent = 'Resend (30s)';
+                let seconds = 30;
+                const timer = setInterval(() => {
+                    seconds--;
+                    if (resendBtn) resendBtn.textContent = `Resend (${seconds}s)`;
+                    if (seconds <= 0) {
+                        clearInterval(timer);
+                        if (resendBtn) {
+                            resendBtn.disabled = false;
+                            resendBtn.textContent = 'Resend';
+                        }
+                        otpCooldown = false;
+                    }
+                }, 1000);
+            }
+        }
+        
+        function resendOTP() {
+            if (otpCooldown) return;
+            sendOTP();
+        }
+        
+        function backToPhone() {
+            document.getElementById('authStepOtp').classList.add('hidden');
+            document.getElementById('authStepPhone').classList.remove('hidden');
+            document.querySelectorAll('.otp-input').forEach(input => input.value = '');
+        }
+        
+        async function verifyOTP() {
+            const code = Array.from(document.querySelectorAll('.otp-input')).map(i => i.value).join('');
+            if (code.length !== 6) return showError('Please enter all 6 digits');
+            
+            const phone = document.getElementById('authPhone').value.trim();
+            document.getElementById('verifyOtpBtn').disabled = true;
+            document.getElementById('authStepOtp').classList.add('hidden');
+            document.getElementById('authLoading').classList.remove('hidden');
+            document.getElementById('authLoadingText').textContent = 'Verifying OTP...';
+            
+            try {
+                const res = await fetch('/api/v1/auth/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone, code, purpose: 'login' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setAuthToken(data.token);
+                    closeAuthModal();
+                    updateAuthNav();
+                    showToast('Logged in successfully!');
+                    // Show push banner after login
+                    setTimeout(() => showPushBanner(), 1000);
+                } else {
+                    throw new Error(data.message || 'Invalid OTP');
+                }
+            } catch (err) {
+                console.error(err);
+                showError(err.message);
+                document.getElementById('authLoading').classList.add('hidden');
+                document.getElementById('authStepOtp').classList.remove('hidden');
+                document.getElementById('verifyOtpBtn').disabled = false;
+            }
+        }
+        
+        // --- My Reports ---
+        async function openMyReportsModal() {
+            const token = getAuthToken();
+            if (!token) {
+                openAuthModal();
+                return;
+            }
+            document.getElementById('myReportsModal').classList.remove('hidden');
+            await loadMyReports();
+        }
+        
+        function closeMyReportsModal() {
+            document.getElementById('myReportsModal').classList.add('hidden');
+        }
+        
+        async function loadMyReports() {
+            const list = document.getElementById('myReportsList');
+            list.innerHTML = '<div class="text-center py-8" style="color:var(--muted);">Loading your reports...</div>';
+            try {
+                const res = await fetch('/api/v1/auth/my-reports', { headers: authHeaders() });
+                if (res.status === 401) {
+                    clearAuthToken();
+                    updateAuthNav();
+                    openAuthModal();
+                    return;
+                }
+                const reports = await res.json();
+                if (!reports.length) {
+                    list.innerHTML = '<div class="text-center py-8" style="color:var(--muted);">No reports yet. Generate your first report!</div>';
+                    return;
+                }
+                list.innerHTML = reports.map(r => `
+                    <div class="card" style="padding:16px;" onclick="window.location.href='/report/${r.report_id}'">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-medium">${escapeHtml(r.location)}</div>
+                                <div class="text-xs mt-1" style="color:var(--muted);">
+                                    ${new Date(r.generated_at * 1000).toLocaleDateString()} &bull; Top: ${escapeHtml(r.top_plant || '—')} &bull; ${r.suitability_score.toFixed(0)}% match
+                                </div>
+                            </div>
+                            <span class="text-sm font-medium" style="color:var(--accent);">${r.suitability_score.toFixed(0)}%</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = '<div class="text-center py-8" style="color:var(--error);">Failed to load reports</div>';
+            }
+        }
+        
+        // --- Push Notifications ---
+        function showPushBanner() {
+            if (localStorage.getItem('pushDismissed')) return;
+            if (Notification.permission === 'granted') return;
+            document.getElementById('pushBanner').classList.remove('hidden');
+        }
+        
+        function hidePushBanner() {
+            document.getElementById('pushBanner').classList.add('hidden');
+        }
+        
+        async function enablePushNotifications() {
+            hidePushBanner();
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                showError('Push notifications not supported in this browser');
+                return;
+            }
+            
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    localStorage.setItem('pushDismissed', 'true');
+                    return;
+                }
+                
+                const registration = await navigator.serviceWorker.ready;
+                const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+                
+                function urlBase64ToUint8Array(base64String) {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+                    const rawData = window.atob(base64);
+                    const outputArray = new Uint8Array(rawData.length);
+                    for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+                    return outputArray;
+                }
+                
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+                });
+                
+                await fetch('/api/v1/push/subscribe', {
+                    method: 'POST',
+                    headers: authHeaders(),
+                    body: JSON.stringify({ subscription: subscription.toJSON(), reportId: currentReportId })
+                });
+                
+                showToast('Watering reminders enabled!');
+            } catch (err) {
+                console.error(err);
+                showError('Failed to enable notifications');
+            }
+        }
+        
+        // --- Logout ---
+        function logout() {
+            clearAuthToken();
+            updateAuthNav();
+            showToast('Logged out');
+        }
+        
+        // OTP input auto-focus
+        document.addEventListener('input', e => {
+            if (e.target.classList.contains('otp-input')) {
+                const idx = parseInt(e.target.dataset.index);
+                if (e.target.value && idx < 5) {
+                    document.querySelector(`.otp-input[data-index="${idx + 1}"]`)?.focus();
+                }
+                if (!e.target.value && idx > 0 && e.inputType === 'deleteContentBackward') {
+                    document.querySelector(`.otp-input[data-index="${idx - 1}"]`)?.focus();
+                }
+            }
+        });
+        
         const LANGUAGES = {
             en: { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
             hi: { code: 'hi', name: 'Hindi', nativeName: 'हिंदी', flag: '🇮🇳' },
@@ -2670,6 +3025,9 @@
       // Service Worker Registration for PWA + Push Notifications
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
+          // Initialize auth nav state
+          updateAuthNav();
+          
           try {
             const registration = await navigator.serviceWorker.register('/sw.js');
             console.log('SW registered:', registration.scope);
