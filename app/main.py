@@ -2911,7 +2911,7 @@ async def get_impact_summary(request: Request):
             if water_score is not None:
                 water_scores.append(water_score)
             
-            # Plant frequency
+            # Plant frequency (global)
             plant_name = rec.get("plant_name", "")
             if plant_name:
                 plant_counts[plant_name] = plant_counts.get(plant_name, 0) + 1
@@ -2919,6 +2919,9 @@ async def get_impact_summary(request: Request):
                 if plant_name not in plant_scores:
                     plant_scores[plant_name] = []
                 plant_scores[plant_name].append(score)
+                
+                # Plant frequency (per region)
+                region_data[agro_zone]["plant_counts"][plant_name] = region_data[agro_zone]["plant_counts"].get(plant_name, 0) + 1
         
         # Organic matter from purchases
         # We'll need to query purchases separately
