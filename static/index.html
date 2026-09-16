@@ -1421,6 +1421,9 @@
         photoInput.addEventListener('change', () => {
             photoLabel.textContent = photoInput.files.length ? photoInput.files[0].name : 'Upload Photo';
         });
+        
+        // Initial button state - enable if location already selected (e.g. autofill)
+        submitBtn.disabled = !locationInput.value;
 
         async function loadCalendar(loc) {
             try {
