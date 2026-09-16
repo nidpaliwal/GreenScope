@@ -69,7 +69,12 @@ Categories | Garden Risk | Comparison Table | Why Not?
 - **Companion Planting Suggestions**: ~50 static rules; shows "grows well with" / "avoid near" per plant based on report's other recommendations
 - **Regenerative Economics Dashboard**: `is_organic` flag on purchases; splits organic vs. conventional spend; estimates organic matter added (kg) and CO₂ offset (kg) from organic inputs (compost, vermicompost, neem cake, etc.)
 - **Pollinator-Friendly Tagging**: 9 plants flagged; 🐝 badge on cards; API filter `pollinator_friendly=true`
+- **User Accounts (Phone OTP)**: Phone-number login with 6-digit OTP; session tokens; "My Reports" dashboard showing all past reports; JWT-like tokens stored in localStorage
+- **Push Notifications**: Watering reminders via browser push (Web Push API); one-click opt-in banner; works offline via Service Worker
+- **PWA Offline Support**: Service Worker caches report pages (`/report/*`, `/impact`); works offline; background sync stub for future offline actions
 
+> ⚠️ **Demo Limitations (be upfront in pitch):** OTP delivery is **mocked** — `send_otp_sms()` logs the code to the server console instead of sending real SMS. In production, integrate Twilio/MSG91. Background sync (`syncOfflineData`, `checkWateringSchedule`) is a stub; core push notifications work end-to-end.
+ 
 ## Demo Script (lead with differentiators, in this order)
 
 1. **Tags** — point at badges on any recommendation: "Air-purifying, pollinator-friendly, companion hints — the app knows these plants relate to each other, not just their climate numbers."
