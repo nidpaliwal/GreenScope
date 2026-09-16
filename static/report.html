@@ -213,6 +213,26 @@
                 </div>`;
             }
 
+            // In-progress features: quick access buttons
+            html += `<div class="card mb-6">
+                <h2 class="text-lg font-bold mb-3">Advanced Tools (Beta)</h2>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                    <button onclick="loadROI('${report.report_id}')" class="btn-primary" style="flex:1;min-width:140px;padding:12px 16px;font-size:13px;">
+                        💰 ROI Calculator
+                    </button>
+                    <button onclick="loadCompanionMatrix('${report.report_id}')" class="btn-primary" style="flex:1;min-width:140px;padding:12px 16px;font-size:13px;background:#8b5cf6;">
+                        🌿 Companion Matrix
+                    </button>
+                    <button onclick="loadHarvestTimeline('${report.report_id}')" class="btn-primary" style="flex:1;min-width:140px;padding:12px 16px;font-size:13px;background:#f59e0b;">
+                        📅 Harvest Timeline
+                    </button>
+                    <button onclick="loadCareCalendar('${report.report_id}')" class="btn-primary" style="flex:1;min-width:140px;padding:12px 16px;font-size:13px;background:#ec4899;">
+                        📅 Care Calendar
+                    </button>
+                </div>
+                <div id="advancedToolsContent" class="mt-4" style="display:none;"></div>
+            </div>`;
+
             if (report.rejected_plants && report.rejected_plants.length) {
                 html += `<div class="card mb-6">
                     <h2 class="text-lg font-bold mb-2">Why Not These Plants?</h2>
@@ -235,6 +255,113 @@
             </div>`;
 
             document.getElementById('content').innerHTML = html;
+        }
+
+        loadReport();
+    </script>
+    <script>
+        // Advanced Tools (Beta) - load functions
+        async function loadROI(reportId) {
+            const container = document.getElementById('advancedToolsContent');
+            container.style.display = 'block';
+            container.innerHTML = '<div class="loading">Loading ROI Calculator...</div>';
+            try {
+                const res = await fetch(`/api/v1/reports/${reportId}/roi`);
+                if (!res.ok) throw new Error('Failed to load ROI');
+                const data = await res.json();
+                let html = `<div class="card mb-4"><h3 class="text-lg font-bold mb-3">💰 Garden ROI Calculator</h3>
+                    <p class="text-sm mb-3" style="color:var(--muted);">${data.disclaimer || ''}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                        <div class="card stat-card"><div class="stat-value">₹${data.total_actual_cost.toLocaleString()}</div><div class="stat-label">Total Cost</div></div>
+                        <div class="card stat-card"><div class="stat-value">₹${data.total_actual_revenue.toLocaleString()}</div><div class="stat-label">Total Revenue</div></div>
+                        <div class="card stat-card"><div class="stat-value" style="color:${data.net_profit >= 0 ? 'var(--accent)' : 'var(--error)'}">₹${data.net_profit.toLocaleString()}</div><div class="stat-label">Net Profit</div></div>
+                    </div>
+                    <div class="card stat-card" style="margin-top:12px;"><div class="stat-value">${data.overall_roi_percent >= 0 ? '+' : ''}${data.overall_roi_percent.toFixed(1)}%</div><div class="stat-label">Overall ROI</div></div>
+                    <h4 class="font-bold mt-4 mb-2">Per-Plant Breakdown</h4>
+                    <div style="overflow-x:auto;"><table class="comp-table"><thead><tr><th>Plant</th><th>Est. Yield (kg)</th><th>Est. Price/kg (₹)</th><th>Est. Revenue (₹)</th><th>Actual Cost (₹)</th><th>Est. Profit (₹)</th><th>ROI %</th></tr></thead><tbody>`;
+                data.bed_estimates.forEach(b => {
+                    html += `<tr><td>${escapeHtml(b.plant_name)}</td><td>${b.estimated_yield_kg.toFixed(2)}</td><td>${b.estimated_price_per_kg.toFixed(2)}</td><td>${b.estimated_revenue.toFixed(2)}</td><td>${b.estimated_cost.toFixed(2)}</td><td>${b.estimated_profit.toFixed(2)}</td><td>${b.roi_percent >= 0 ? '+' : ''}${b.roi_percent.toFixed(1)}%</td></tr>`;
+                });
+                html += `</tbody></table></div></div>`;
+                document.getElementById('advancedToolsContent').innerHTML = html;
+            } catch (err) {
+                document.getElementById('advancedToolsContent').innerHTML = `<div class="error">Failed to load ROI: ${err.message}</div>`;
+            }
+        }
+
+        async function loadCompanionMatrix(reportId) {
+            const container = document.getElementById('advancedToolsContent');
+            container.style.display = 'block';
+            container.innerHTML = '<div class="loading">Loading Companion Matrix...</div>';
+            try {
+                const res = await fetch(`/api/v1/reports/${reportId}/companion-matrix`);
+                if (!res.ok) throw new Error('Failed to load matrix');
+                const data = await res.json();
+                let html = `<div class="card mb-4"><h3 class="text-lg font-bold mb-3">🌿 Companion Planting Matrix</h3>
+                    <div style="overflow-x:auto;"><table class="comp-table"><thead><tr><th></th>`;
+                data.plants.forEach(p => { html += `<th>${escapeHtml(p)}</th>`; });
+                html += `</tr></thead><tbody>`;
+                data.matrix.forEach((row, i) => {
+                    html += `<tr><td><strong>${escapeHtml(data.plants[i])}</strong></td>`;
+                    row.forEach(cell => {
+                        let cls = '', label = '';
+                        if (cell === 'good') { cls = 'style="color:var(--accent);font-weight:600;"'; label = '✓'; }
+                        else if (cell === 'bad') { cls = 'style="color:var(--error);font-weight:600;"'; label = '✗'; }
+                        else if (cell === 'self') { cls = 'style="color:var(--muted);"'; label = '—'; }
+                        else { cls = ''; label = '○'; }
+                        html += `<td ${cls}>${label}</td>`;
+                    });
+                    html += `</tr>`;
+                });
+                html += `</tbody></table></div><div class="text-sm mt-2" style="color:var(--muted);"><strong>Legend:</strong> ${data.legend.good} | ${data.legend.bad} | ${data.legend.neutral} | ${data.legend.self}</div></div>`;
+                document.getElementById('advancedToolsContent').innerHTML = html;
+            } catch (err) {
+                document.getElementById('advancedToolsContent').innerHTML = `<div class="error">Failed to load matrix: ${err.message}</div>`;
+            }
+        }
+
+        async function loadHarvestTimeline(reportId) {
+            const container = document.getElementById('advancedToolsContent');
+            container.style.display = 'block';
+            container.innerHTML = '<div class="loading">Loading Harvest Timeline...</div>';
+            try {
+                const res = await fetch(`/api/v1/reports/${reportId}/harvest-timeline`);
+                if (!res.ok) throw new Error('Failed to load timeline');
+                const data = await res.json();
+                let html = `<div class="card mb-4"><h3 class="text-lg font-bold mb-3">📅 Harvest Timeline</h3>
+                    <div class="text-sm mb-4" style="color:var(--muted);">
+                        <strong>${data.summary.total_plants} plants</strong> • Earliest sowing: ${data.summary.earliest_sowing || '—'} • Latest harvest: ${data.summary.latest_harvest || '—'} • Span: ${data.summary.timeline_span_days} days
+                    </div>
+                    <div style="overflow-x:auto;"><table class="comp-table"><thead><tr><th>Plant</th><th>Stage</th><th>Start</th><th>End</th><th>Duration</th></tr></thead><tbody>`;
+                data.timeline.forEach(t => {
+                    html += `<tr><td>${escapeHtml(t.plant_name)}</td><td><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${t.color};margin-right:8px;"></span>${escapeHtml(t.stage)}</td><td>${t.start_date}</td><td>${t.end_date}</td><td>${t.duration_days} days</td></tr>`;
+                });
+                html += `</tbody></table></div></div>`;
+                document.getElementById('advancedToolsContent').innerHTML = html;
+            } catch (err) {
+                document.getElementById('advancedToolsContent').innerHTML = `<div class="error">Failed to load timeline: ${err.message}</div>`;
+            }
+        }
+
+        async function loadCareCalendar(reportId) {
+            const container = document.getElementById('advancedToolsContent');
+            container.style.display = 'block';
+            container.innerHTML = '<div class="loading">Loading Care Calendar...</div>';
+            try {
+                const res = await fetch(`/api/v1/reports/${reportId}/care-calendar`);
+                if (!res.ok) throw new Error('Failed to load calendar');
+                const data = await res.json();
+                let html = `<div class="card mb-4"><h3 class="text-lg font-bold mb-3">📅 Care Calendar</h3>
+                    <div style="overflow-x:auto;"><table class="comp-table"><thead><tr><th>Plant</th><th>Task</th><th>Frequency</th><th>Next Due</th><th>Priority</th><th>Description</th></tr></thead><tbody>`;
+                data.tasks.forEach(t => {
+                    const priorityCls = t.priority === 'high' ? 'style="color:var(--error);font-weight:600;"' : t.priority === 'medium' ? 'style="color:var(--warning);font-weight:600;"' : 'style="color:var(--accent);font-weight:600;"';
+                    html += `<tr><td>${escapeHtml(t.plant_name)}</td><td>${escapeHtml(t.task_type)}</td><td>${t.frequency_days} days</td><td>${t.next_due_date.split('T')[0]}</td><td ${priorityCls}>${t.priority}</td><td>${escapeHtml(t.description)}</td></tr>`;
+                });
+                html += `</tbody></table></div></div>`;
+                document.getElementById('advancedToolsContent').innerHTML = html;
+            } catch (err) {
+                document.getElementById('advancedToolsContent').innerHTML = `<div class="error">Failed to load calendar: ${err.message}</div>`;
+            }
         }
 
         loadReport();
